@@ -10,6 +10,13 @@ datasource db {
 enum Role {
   STUDENT
   BUSINESS
+  ADMIN
+}
+
+enum Availability {
+  FULL_TIME_AVAILABLE
+  PART_TIME
+  WEEKENDS_ONLY
 }
 
 model User {
@@ -20,4 +27,41 @@ model User {
   name         String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  studentProfile StudentProfile?
+  businessProfile BusinessProfile?
+}
+
+model StudentProfile {
+  userId          String       @id
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  college         String       @default("")
+  skills          String[]     @default([])
+  bio             String       @default("")
+  availability    Availability @default(PART_TIME)
+  profileImageUrl String?
+  isVerified      Boolean      @default(false)
+  portfolioItems  PortfolioItem[]
+}
+
+model PortfolioItem {
+  id               String         @id @default(cuid())
+  studentProfileId String
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [userId], onDelete: Cascade)
+  title            String
+  description      String         @default("")
+  imageUrl         String?
+  createdAt        DateTime       @default(now())
+
+  @@index([studentProfileId])
+}
+
+model BusinessProfile {
+  userId              String   @id
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName        String   @default("")
+  category            String   @default("")
+  registrationNumber  String   @default("")
+  address             String   @default("")
+  shopImageUrl        String?
+  isVerified          Boolean  @default(false)
 }
