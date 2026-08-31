@@ -3,6 +3,7 @@ import express from "express";
 import { authRouter } from "./routes/auth.routes";
 import { profileRouter } from "./routes/profile.routes";
 import { uploadRouter } from "./routes/upload.routes";
+import { gigRouter } from "./routes/gig.routes";
 
 export const app = express();
 
@@ -13,3 +14,4 @@ app.get("/health", (_req, res) => res.json({ status: "ok" }));
 app.use("/api/auth", authRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/upload", uploadRouter);
+app.use("/api/gigs", gigRouter);
