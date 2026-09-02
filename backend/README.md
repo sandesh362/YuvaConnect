@@ -71,6 +71,26 @@ All of these endpoints require the bearer token above.
 
 Set `CLOUDINARY_URL` before using `/api/upload`. It has the format `cloudinary://API_KEY:API_SECRET@CLOUD_NAME`.
 
+### Payments (pilot / Razorpay test mode only)
+
+Set `RAZORPAY_KEY_ID` to an `rzp_test_...` key and `RAZORPAY_KEY_SECRET` to its matching test secret. The API refuses non-test key IDs. All payment endpoints require the bearer token above.
+
+1. A business selects an applicant, then calls `POST /api/gigs/:gigId/create-order`.
+2. Complete the returned order in Razorpay Checkout using a test card (for example `4111 1111 1111 1111`, any future expiry and any CVV), then send Razorpay's three returned fields to `POST /api/gigs/:gigId/verify-payment`:
+
+   ```json
+   {
+     "razorpay_order_id": "order_...",
+     "razorpay_payment_id": "pay_...",
+     "razorpay_signature": "..."
+   }
+   ```
+
+3. Once work is submitted, the business calls `POST /api/gigs/:gigId/release-payment`. In pilot mode this updates the payment to `RELEASED` and the gig to `PAID`; it does not initiate a real payout.
+4. A student calls `GET /api/earnings` for released payments and the total.
+
+Apply the included migration before testing: `npx prisma migrate deploy`.
+
 ## Create a Neon database
 
 1. Sign in to [Neon](https://neon.tech), create a project, and choose a region near your users.
@@ -94,6 +114,8 @@ Add these Render environment variables:
 - `DATABASE_URL`: your Neon direct PostgreSQL URL
 - `JWT_SECRET`: a long, random secret
 - `CLOUDINARY_URL`: `cloudinary://API_KEY:API_SECRET@CLOUD_NAME`
+- `RAZORPAY_KEY_ID`: an `rzp_test_...` Razorpay test key
+- `RAZORPAY_KEY_SECRET`: the matching Razorpay test secret
 - `NODE_ENV`: `production`
 
 Render supplies `PORT` automatically. After deployment, open `https://<your-render-service>.onrender.com/health`; it should return `{ "status": "ok" }`.

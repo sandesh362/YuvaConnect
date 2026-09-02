@@ -4,6 +4,7 @@ import { authRouter } from "./routes/auth.routes";
 import { profileRouter } from "./routes/profile.routes";
 import { uploadRouter } from "./routes/upload.routes";
 import { gigRouter } from "./routes/gig.routes";
+import { paymentRouter } from "./routes/payment.routes";
 
 export const app = express();
 
@@ -15,3 +16,4 @@ app.use("/api/auth", authRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/gigs", gigRouter);
+app.use("/api", paymentRouter);
