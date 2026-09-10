@@ -1,7 +1,8 @@
-import { GigStatus, PaymentStatus, Prisma, Role } from "@prisma/client";
+import { ApplicationStatus, GigStatus, NotificationType, PaymentStatus, Prisma, Role } from "@prisma/client";
 import { createHmac, timingSafeEqual } from "crypto";
 import { Request, Response } from "express";
 import { prisma } from "../config/prisma";
+import { notifySafely } from "../services/notification.service";
 import { env } from "../config/env";
 import { razorpay } from "../config/razorpay";
 
@@ -90,6 +91,18 @@ export async function releasePayment(req: Request, res: Response) {
     prisma.payment.update({ where: { id: payment.id }, data: { status: PaymentStatus.RELEASED } }),
     prisma.gig.update({ where: { id: gig.id }, data: { status: GigStatus.PAID } }),
   ]);
+  const selected = await prisma.application.findFirst({
+    where: { gigId: gig.id, status: ApplicationStatus.SELECTED },
+    select: { studentId: true },
+  });
+  if (selected) {
+    notifySafely({
+      userId: selected.studentId,
+      type: NotificationType.PAYMENT_RELEASED,
+      message: `Payment released for "${gig.title}"`,
+      relatedGigId: gig.id,
+    });
+  }
   return res.json({ payment: updatedPayment, gig: updatedGig });
 }
 

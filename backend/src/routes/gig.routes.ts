@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { applyToGig, approveGig, createGig, getGig, getMyGigs, listApplicants, listGigs, rejectApplicant, requestRevision, selectApplicant, startGig, submitDeliverable, updateGig } from "../controllers/gig.controller";
+import { listMessages, postMessage } from "../controllers/message.controller";
+import { getMyRating, rateGig } from "../controllers/rating.controller";
 import { requireAuth } from "../middleware/auth.middleware";
 
 export const gigRouter = Router();
@@ -13,6 +15,10 @@ gigRouter.patch("/:id/start", startGig);
 gigRouter.post("/:id/submit", submitDeliverable);
 gigRouter.post("/:id/request-revision", requestRevision);
 gigRouter.patch("/:id/approve", approveGig);
+gigRouter.get("/:id/messages", listMessages);
+gigRouter.post("/:id/messages", postMessage);
+gigRouter.post("/:id/rate", rateGig);
+gigRouter.get("/:id/my-rating", getMyRating);
 gigRouter.get("/:id", getGig);
 gigRouter.patch("/:id", updateGig);
 gigRouter.patch("/applications/:id/select", selectApplicant);

@@ -26,6 +26,8 @@ export type StudentProfile = {
   availability: Availability;
   profileImageUrl: string | null;
   isVerified: boolean;
+  avgRating: number;
+  totalRatings: number;
   portfolioItems: PortfolioItem[];
 };
 
@@ -37,6 +39,8 @@ export type BusinessProfile = {
   address: string;
   shopImageUrl: string | null;
   isVerified: boolean;
+  avgRating: number;
+  totalRatings: number;
 };
 
 export type GigStatus = 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'SUBMITTED' | 'REVISION_REQUESTED' | 'APPROVED' | 'PAID' | 'CLOSED';
@@ -47,3 +51,12 @@ export type Deliverable = { id: string; gigId: string; fileUrl: string; note: st
 export type RevisionRequest = { id: string; gigId: string; feedback: string; requestedAt: string };
 export type PaymentStatus = 'PENDING' | 'HELD' | 'RELEASED' | 'REFUNDED' | 'FAILED';
 export type Payment = { id: string; gigId: string; razorpayOrderId: string; razorpayPaymentId: string | null; amount: string; status: PaymentStatus; createdAt: string; updatedAt: string };
+
+export type Message = { id: string; gigId: string; senderId: string; content: string; createdAt: string; sender?: { id: string; name: string } };
+export type MessagesPage = { messages: Message[]; nextCursor: string | null };
+export type Rating = { id: string; gigId: string; fromUserId: string; toUserId: string; score: number; comment: string | null; createdAt: string; fromUser?: { id: string; name: string }; gig?: { id: string; title: string } };
+export type RatingSummary = { avgRating: number; totalRatings: number };
+export type Report = { id: string; gigId: string | null; reporterId: string; reason: string; status: 'OPEN' | 'REVIEWING' | 'RESOLVED'; createdAt: string };
+export type NotificationType = 'NEW_APPLICANT' | 'APPLICATION_SELECTED' | 'APPLICATION_REJECTED' | 'GIG_STATUS_CHANGED' | 'NEW_MESSAGE' | 'PAYMENT_RELEASED';
+export type NotificationItem = { id: string; userId: string; type: NotificationType; message: string; relatedGigId: string | null; isRead: boolean; createdAt: string; relatedGig?: { id: string; title: string; status: GigStatus } | null };
+export type NotificationsPage = { notifications: NotificationItem[]; unreadCount: number; page: number; limit: number; total: number };
