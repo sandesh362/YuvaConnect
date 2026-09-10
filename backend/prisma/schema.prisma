@@ -1,0 +1,253 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  STUDENT
+  BUSINESS
+  ADMIN
+}
+
+enum Availability {
+  FULL_TIME_AVAILABLE
+  PART_TIME
+  WEEKENDS_ONLY
+}
+
+enum GigStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  SUBMITTED
+  REVISION_REQUESTED
+  APPROVED
+  PAID
+  CLOSED
+}
+
+enum ApplicationStatus {
+  PENDING
+  SHORTLISTED
+  SELECTED
+  REJECTED
+}
+
+enum PaymentStatus {
+  PENDING
+  HELD
+  RELEASED
+  REFUNDED
+  FAILED
+}
+
+enum ReportStatus {
+  OPEN
+  REVIEWING
+  RESOLVED
+}
+
+enum NotificationType {
+  NEW_APPLICANT
+  APPLICATION_SELECTED
+  APPLICATION_REJECTED
+  GIG_STATUS_CHANGED
+  NEW_MESSAGE
+  PAYMENT_RELEASED
+}
+
+model User {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  passwordHash    String
+  role            Role
+  name            String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  studentProfile  StudentProfile?
+  businessProfile BusinessProfile?
+  postedGigs      Gig[]            @relation("BusinessGigs")
+  applications    Application[]    @relation("StudentApplications")
+  sentMessages    Message[]
+  ratingsGiven    Rating[]         @relation("RatingsGiven")
+  ratingsReceived Rating[]         @relation("RatingsReceived")
+  reports         Report[]
+  notifications   Notification[]
+}
+
+model StudentProfile {
+  userId          String          @id
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  college         String          @default("")
+  skills          String[]        @default([])
+  bio             String          @default("")
+  availability    Availability    @default(PART_TIME)
+  profileImageUrl String?
+  isVerified      Boolean         @default(false)
+  avgRating       Float           @default(0)
+  totalRatings    Int             @default(0)
+  portfolioItems  PortfolioItem[]
+}
+
+model PortfolioItem {
+  id               String         @id @default(cuid())
+  studentProfileId String
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [userId], onDelete: Cascade)
+  title            String
+  description      String         @default("")
+  imageUrl         String?
+  createdAt        DateTime       @default(now())
+
+  @@index([studentProfileId])
+}
+
+model BusinessProfile {
+  userId             String  @id
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName       String  @default("")
+  category           String  @default("")
+  registrationNumber String  @default("")
+  address            String  @default("")
+  shopImageUrl       String?
+  isVerified         Boolean @default(false)
+  avgRating          Float   @default(0)
+  totalRatings       Int     @default(0)
+}
+
+model Gig {
+  id               String            @id @default(cuid())
+  businessId       String
+  business         User              @relation("BusinessGigs", fields: [businessId], references: [id], onDelete: Cascade)
+  title            String
+  description      String
+  skillsRequired   String[]
+  budget           Decimal           @db.Decimal(12, 2)
+  deadline         DateTime
+  location         String
+  status           GigStatus         @default(OPEN)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  applications     Application[]
+  deliverables     Deliverable[]
+  revisionRequests RevisionRequest[]
+  payment          Payment?
+  messages         Message[]
+  ratings          Rating[]
+  reports          Report[]
+  notifications    Notification[]
+
+  @@index([businessId])
+  @@index([status])
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  gigId             String        @unique
+  gig               Gig           @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  razorpayOrderId   String        @unique
+  razorpayPaymentId String?
+  amount            Decimal       @db.Decimal(12, 2)
+  status            PaymentStatus @default(PENDING)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([status])
+}
+
+model Application {
+  id                 String            @id @default(cuid())
+  gigId              String
+  gig                Gig               @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  studentId          String
+  student            User              @relation("StudentApplications", fields: [studentId], references: [id], onDelete: Cascade)
+  proposal           String
+  relevantExperience String
+  availability       String
+  status             ApplicationStatus @default(PENDING)
+  createdAt          DateTime          @default(now())
+
+  @@unique([gigId, studentId])
+  @@index([studentId])
+}
+
+model Deliverable {
+  id          String   @id @default(cuid())
+  gigId       String
+  gig         Gig      @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  fileUrl     String
+  note        String   @default("")
+  submittedAt DateTime @default(now())
+
+  @@index([gigId])
+}
+
+model RevisionRequest {
+  id          String   @id @default(cuid())
+  gigId       String
+  gig         Gig      @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  feedback    String
+  requestedAt DateTime @default(now())
+
+  @@index([gigId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  gigId     String
+  gig       Gig      @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([gigId, createdAt])
+}
+
+model Rating {
+  id         String   @id @default(cuid())
+  gigId      String
+  gig        Gig      @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  fromUserId String
+  fromUser   User     @relation("RatingsGiven", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId   String
+  toUser     User     @relation("RatingsReceived", fields: [toUserId], references: [id], onDelete: Cascade)
+  score      Int
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@unique([gigId, fromUserId])
+  @@index([toUserId])
+}
+
+model Report {
+  id         String       @id @default(cuid())
+  gigId      String?
+  gig        Gig?         @relation(fields: [gigId], references: [id], onDelete: SetNull)
+  reporterId String
+  reporter   User         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reason     String
+  status     ReportStatus @default(OPEN)
+  createdAt  DateTime     @default(now())
+
+  @@index([reporterId])
+  @@index([status])
+}
+
+model Notification {
+  id           String           @id @default(cuid())
+  userId       String
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         NotificationType
+  message      String
+  relatedGigId String?
+  relatedGig   Gig?             @relation(fields: [relatedGigId], references: [id], onDelete: SetNull)
+  isRead       Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+
+  @@index([userId, createdAt])
+}

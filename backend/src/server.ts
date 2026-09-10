@@ -1,6 +1,6 @@
-import { app } from './app.js';
-import { connectDatabase, disconnectDatabase } from './config/database.js';
-import { env } from './config/env.js';
+import { env } from "./config/env";
+import { app } from "./app";
 
-async function start() { await connectDatabase(); const server = app.listen(env.port, () => console.info(`YuvaConnect API listening on :${env.port}`)); const shutdown = async () => { server.close(async () => { await disconnectDatabase(); process.exit(0); }); }; process.on('SIGINT', shutdown); process.on('SIGTERM', shutdown); }
-start().catch((error) => { console.error('Failed to start YuvaConnect API', error); process.exit(1); });
+app.listen(env.port, () => {
+  console.log(`YuvaConnect API listening on port ${env.port}`);
+});

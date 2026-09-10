@@ -1,23 +1,32 @@
-import type { NextFunction, Request, Response } from 'express';
-import { Types } from 'mongoose';
-import { User } from '../models/index.js';
-import { fail } from '../utils/api.js';
-import { verifyToken } from '../utils/jwt.js';
+import { NextFunction, Request, Response } from "express";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { env } from "../config/env";
+import { prisma } from "../config/prisma";
+import { Role } from "@prisma/client";
 
-export interface AuthRequest extends Request { user?: { id: string; role: 'student' | 'business' } }
+export function requireAuth(req: Request, res: Response, next: NextFunction) {
+  const token = req.header("Authorization")?.replace(/^Bearer\s+/i, "");
+  if (!token) return res.status(401).json({ message: "Authentication required" });
 
-export async function authenticateUser(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const token = req.headers.authorization?.replace(/^Bearer\s+/i, '');
-    if (!token) return fail(res, 401, 'Authentication token is required');
-    const payload = verifyToken(token);
-    if (!Types.ObjectId.isValid(payload.sub)) return fail(res, 401, 'Invalid authentication token');
-    const user = await User.findById(payload.sub).select('_id role');
-    if (!user) return fail(res, 401, 'Account no longer exists');
-    req.user = { id: user.id, role: user.role };
+    const payload = jwt.verify(token, env.jwtSecret) as JwtPayload;
+    if (!payload.sub || typeof payload.sub !== "string") {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+    req.userId = payload.sub;
     next();
-  } catch { return fail(res, 401, 'Invalid or expired authentication token'); }
+  } catch {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
 }
 
-export const requireRole = (...roles: Array<'student' | 'business'>) => (req: AuthRequest, res: Response, next: NextFunction) =>
-  !req.user ? fail(res, 401, 'Authentication token is required') : roles.includes(req.user.role) ? next() : fail(res, 403, 'You do not have permission for this action');
+export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  const user = await prisma.user.findUnique({
+    where: { id: req.userId },
+    select: { role: true },
+  });
+  if (user?.role !== Role.ADMIN) {
+    return res.status(403).json({ message: "Administrator access required" });
+  }
+  next();
+}

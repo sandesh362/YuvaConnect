@@ -1,15 +1,121 @@
 # YuvaConnect API
 
-Node 22+ and MongoDB are required. Copy `.env.example` to `.env`, set a real `JWT_SECRET`, then run:
+Express + TypeScript API for YuvaConnect Phase 1.
 
-```sh
-npm install
-npm run dev
-npm run seed
+## Local setup
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Copy `.env.example` to `.env` and set the values.
+
+3. Create the database tables and Prisma client:
+
+   ```bash
+   npx prisma migrate deploy
+   ```
+
+4. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+The health check is available at `http://localhost:4000/health`.
+
+## API
+
+`POST /api/auth/signup`
+
+```json
+{
+  "email": "student@example.com",
+  "password": "password123",
+  "name": "Aarav Sharma",
+  "role": "STUDENT"
+}
 ```
 
-Use `npm run build` for a production build and `npm start` to run it. The API health endpoint is `GET /api/health`.
+Returns `201` with a public `user` object and one-hour `accessToken`.
 
-Demo accounts (only for local demos): `student@yuvaconnect.demo` / `Demo@123` and `business@yuvaconnect.demo` / `Demo@123`.
+`POST /api/auth/login`
 
-The API is a REST modular monolith backed by MongoDB. It supports authentication, profile/verification, gigs/discovery/matching, applications, engagements/deliverables/payment simulation, reviews/portfolio, conversations/messages, notifications, saved items and support tickets. See [API.md](API.md) for endpoint reference.
+```json
+{
+  "email": "student@example.com",
+  "password": "password123"
+}
+```
+
+`GET /api/auth/me`
+
+Send the access token in the `Authorization` header:
+
+```text
+Authorization: Bearer <accessToken>
+```
+
+### Profiles and uploads
+
+All of these endpoints require the bearer token above.
+
+- `GET /api/profile` returns `{ role, profile }`; a student profile includes `portfolioItems`.
+- `PUT /api/profile` upserts the current user's profile. Student fields: `college`, `skills` (string array), `bio`, `availability`, and `profileImageUrl`. Business fields: `businessName`, `category`, `registrationNumber`, `address`, and `shopImageUrl`.
+- `POST /api/profile/portfolio` adds a student portfolio item with `title`, optional `description`, and optional `imageUrl`.
+- `DELETE /api/profile/portfolio/:id` removes an item owned by the current student.
+- `POST /api/upload` accepts one image as multipart form field `file` and returns `{ "url": "..." }`.
+- `PATCH /api/profile/:userId/verify` requires an `ADMIN` user's bearer token and sets the applicable profile's `isVerified` field to true.
+
+Set `CLOUDINARY_URL` before using `/api/upload`. It has the format `cloudinary://API_KEY:API_SECRET@CLOUD_NAME`.
+
+### Payments (pilot / Razorpay test mode only)
+
+Set `RAZORPAY_KEY_ID` to an `rzp_test_...` key and `RAZORPAY_KEY_SECRET` to its matching test secret. The API refuses non-test key IDs. All payment endpoints require the bearer token above.
+
+1. A business selects an applicant, then calls `POST /api/gigs/:gigId/create-order`.
+2. Complete the returned order in Razorpay Checkout using a test card (for example `4111 1111 1111 1111`, any future expiry and any CVV), then send Razorpay's three returned fields to `POST /api/gigs/:gigId/verify-payment`:
+
+   ```json
+   {
+     "razorpay_order_id": "order_...",
+     "razorpay_payment_id": "pay_...",
+     "razorpay_signature": "..."
+   }
+   ```
+
+3. Once work is submitted, the business calls `POST /api/gigs/:gigId/release-payment`. In pilot mode this updates the payment to `RELEASED` and the gig to `PAID`; it does not initiate a real payout.
+4. A student calls `GET /api/earnings` for released payments and the total.
+
+Apply the included migration before testing: `npx prisma migrate deploy`.
+
+## Create a Neon database
+
+1. Sign in to [Neon](https://neon.tech), create a project, and choose a region near your users.
+2. In the Neon dashboard, open **Connect** and copy the PostgreSQL connection string. Use the direct (non-pooled) URL for this Phase 1 setup.
+3. Paste it into `DATABASE_URL` in `.env`. Keep `?sslmode=require` if Neon includes it.
+4. Set a long random value for `JWT_SECRET`.
+5. Run `npx prisma migrate deploy` from this folder to apply the included profile migration.
+
+## Deploy to Render
+
+Create a new **Web Service** from this repository, then set:
+
+| Setting | Value |
+| --- | --- |
+| Root Directory | `backend` |
+| Build Command | `npm install && npx prisma migrate deploy && npm run build` |
+| Start Command | `npm start` |
+
+Add these Render environment variables:
+
+- `DATABASE_URL`: your Neon direct PostgreSQL URL
+- `JWT_SECRET`: a long, random secret
+- `CLOUDINARY_URL`: `cloudinary://API_KEY:API_SECRET@CLOUD_NAME`
+- `RAZORPAY_KEY_ID`: an `rzp_test_...` Razorpay test key
+- `RAZORPAY_KEY_SECRET`: the matching Razorpay test secret
+- `NODE_ENV`: `production`
+
+Render supplies `PORT` automatically. After deployment, open `https://<your-render-service>.onrender.com/health`; it should return `{ "status": "ok" }`.

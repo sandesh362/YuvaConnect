@@ -1,0 +1,116 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import RazorpayCheckout from 'react-native-razorpay';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Button, colors, Field } from '@/components/ui';
+import { NotificationBell } from '@/components/notification-bell';
+import { RatingModal } from '@/components/rating-modal';
+import { StatusTracker } from '@/components/status-tracker';
+import { apiErrorMessage } from '@/config/api';
+import { createPaymentOrder, getGig, releasePayment, requestRevision, verifyPayment } from '@/lib/gig-api';
+import { getMyRating, rateGig } from '@/lib/trust-api';
+import { useAuth } from '@/providers/auth-provider';
+
+const COMPLETED = ['APPROVED', 'PAID', 'CLOSED'];
+
+export default function BusinessGigScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { token, user } = useAuth();
+  const client = useQueryClient();
+  const [feedback, setFeedback] = useState('');
+  const query = useQuery({ queryKey: ['gig', id], queryFn: () => getGig(token!, id), enabled: !!token && !!id });
+  const refresh = () => {
+    client.invalidateQueries({ queryKey: ['gig', id] });
+    client.invalidateQueries({ queryKey: ['my-gigs'] });
+  };
+  const fund = useMutation({
+    mutationFn: async () => {
+      const { order } = await createPaymentOrder(token!, id);
+      const result = await RazorpayCheckout.open({ key: order.keyId, amount: order.amount, currency: order.currency, name: 'YuvaConnect', description: `Fund ${query.data?.title ?? 'gig'}`, order_id: order.id, prefill: { name: user?.name, email: user?.email }, theme: { color: colors.blue } });
+      await verifyPayment(token!, id, result);
+    },
+    onSuccess: () => {
+      refresh();
+      Alert.alert('Gig funded', 'Payment is held until you approve the completed work.');
+    },
+    onError: (e) => Alert.alert('Could not fund gig', apiErrorMessage(e)),
+  });
+  const approve = useMutation({ mutationFn: () => releasePayment(token!, id), onSuccess: refresh, onError: (e) => Alert.alert('Could not release payment', apiErrorMessage(e)) });
+  const revision = useMutation({ mutationFn: () => requestRevision(token!, id, feedback), onSuccess: refresh, onError: (e) => Alert.alert('Could not request revision', apiErrorMessage(e)) });
+  const gig = query.data;
+  const hasSelected = gig?.applications?.some((item) => item.status === 'SELECTED') ?? false;
+  const canMessage = hasSelected;
+  const canRate = hasSelected && !!gig && COMPLETED.includes(gig.status);
+  const myRating = useQuery({ queryKey: ['my-rating', id], queryFn: () => getMyRating(token!, id), enabled: !!token && !!id && canRate });
+  const [ratingOpen, setRatingOpen] = useState(false);
+  // Prompt once the gig completes if the business hasn't rated the student yet.
+  useEffect(() => {
+    if (canRate && myRating.data === null) setRatingOpen(true);
+  }, [canRate, myRating.data]);
+  const rate = useMutation({
+    mutationFn: (input: { score: number; comment: string }) => rateGig(token!, id, { score: input.score, comment: input.comment || undefined }),
+    onSuccess: () => {
+      setRatingOpen(false);
+      client.invalidateQueries({ queryKey: ['my-rating', id] });
+    },
+    onError: (e) => Alert.alert('Could not submit rating', apiErrorMessage(e)),
+  });
+  if (!gig) return null;
+  return (
+    <SafeAreaView style={s.safe}>
+      <ScrollView contentContainerStyle={s.content}>
+        <View style={s.topRow}><Text style={s.heading}>{gig.title}</Text><NotificationBell /></View>
+        <Text style={s.budget}>₹{Number(gig.budget).toLocaleString()}</Text>
+        <StatusTracker status={gig.status} />
+        <Text style={s.copy}>{gig.description}</Text>
+        <Text style={s.copy}>Due {new Date(gig.deadline).toLocaleDateString()} · {gig.location}</Text>
+        {gig.status === 'OPEN' && <Button title={`View applicants (${gig.applications?.length ?? 0})`} onPress={() => router.push(`/(business)/applicants/${id}` as never)} />}
+        {gig.status === 'ASSIGNED' && (
+          <View style={s.card}>
+            {gig.payment?.status === 'HELD' ? (
+              <Text style={s.held}>Funds held — the student can now start work.</Text>
+            ) : (
+              <>
+                <Text style={s.section}>Fund this gig</Text>
+                <Text style={s.copy}>You will use Razorpay test checkout. Funds are held until you approve the work.</Text>
+                <Button title={fund.isPending ? 'Opening checkout…' : 'Fund this gig'} disabled={fund.isPending} onPress={() => fund.mutate()} />
+              </>
+            )}
+          </View>
+        )}
+        {gig.status === 'SUBMITTED' && (
+          <View style={s.card}>
+            <Text style={s.section}>Review deliverable</Text>
+            <Text style={s.copy}>{gig.deliverables?.[0]?.note || 'No note provided'}</Text>
+            <Field label="Revision feedback" value={feedback} onChangeText={setFeedback} multiline />
+            <Button title={revision.isPending ? 'Sending…' : 'Request revision'} variant="outline" disabled={!feedback || revision.isPending} onPress={() => revision.mutate()} />
+            <Button title={approve.isPending ? 'Approving & releasing…' : 'Approve & release payment'} disabled={approve.isPending} onPress={() => approve.mutate()} />
+          </View>
+        )}
+        {(canMessage || (canRate && myRating.data === null)) && (
+          <View style={s.card}>
+            {canMessage && <Button title="Message student" variant="outline" onPress={() => router.push(`/chat/${id}` as never)} />}
+            {canRate && myRating.data === null && <Button title="Rate this gig" onPress={() => setRatingOpen(true)} />}
+          </View>
+        )}
+        <Pressable onPress={() => router.push(`/report/${id}` as never)}><Text style={s.report}>Report this gig</Text></Pressable>
+      </ScrollView>
+      <RatingModal visible={ratingOpen} gigTitle={gig.title} submitting={rate.isPending} onSubmit={(score, comment) => rate.mutate({ score, comment })} onClose={() => setRatingOpen(false)} />
+    </SafeAreaView>
+  );
+}
+
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.pale },
+  content: { padding: 20, gap: 15 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  heading: { color: colors.navy, fontSize: 28, fontWeight: '800', flex: 1 },
+  budget: { color: colors.blue, fontSize: 20, fontWeight: '800' },
+  copy: { color: colors.text, lineHeight: 21 },
+  held: { color: colors.blue, fontWeight: '700' },
+  card: { backgroundColor: colors.white, borderRadius: 14, padding: 16, gap: 13 },
+  section: { color: colors.navy, fontSize: 18, fontWeight: '800' },
+  report: { color: colors.muted, textAlign: 'center', fontWeight: '700' },
+});

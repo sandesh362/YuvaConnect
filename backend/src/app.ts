@@ -1,13 +1,28 @@
-import cors from 'cors';
-import express from 'express';
-import rateLimit from 'express-rate-limit';
-import helmet from 'helmet';
-import { env } from './config/env.js';
-import { errorHandler } from './middleware/error.middleware.js';
-import routes from './routes/index.js';
+import cors from "cors";
+import express from "express";
+import { errorHandler, notFound } from "./middleware/error.middleware";
+import { authRouter } from "./routes/auth.routes";
+import { profileRouter } from "./routes/profile.routes";
+import { uploadRouter } from "./routes/upload.routes";
+import { gigRouter } from "./routes/gig.routes";
+import { paymentRouter } from "./routes/payment.routes";
+import { userRouter } from "./routes/user.routes";
+import { reportRouter } from "./routes/report.routes";
+import { notificationRouter } from "./routes/notification.routes";
 
 export const app = express();
-const allowedOrigins = env.clientUrl.split(',').map((x) => x.trim());
-app.use(helmet()); app.use(cors({ origin(origin, callback) { if (!origin || allowedOrigins.includes(origin)) return callback(null, true); callback(new Error('Origin not allowed by CORS')); }, credentials: true }));
-app.use(express.json({ limit: '1mb' })); app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: 'draft-8', legacyHeaders: false }));
-app.use('/api', routes); app.use(errorHandler);
+
+app.use(cors());
+app.use(express.json());
+
+app.get("/health", (_req, res) => res.json({ status: "ok" }));
+app.use("/api/auth", authRouter);
+app.use("/api/profile", profileRouter);
+app.use("/api/upload", uploadRouter);
+app.use("/api/gigs", gigRouter);
+app.use("/api", paymentRouter);
+app.use("/api/users", userRouter);
+app.use("/api/reports", reportRouter);
+app.use("/api/notifications", notificationRouter);
+app.use(notFound);
+app.use(errorHandler);
