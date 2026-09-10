@@ -46,6 +46,21 @@ enum PaymentStatus {
   FAILED
 }
 
+enum ReportStatus {
+  OPEN
+  REVIEWING
+  RESOLVED
+}
+
+enum NotificationType {
+  NEW_APPLICANT
+  APPLICATION_SELECTED
+  APPLICATION_REJECTED
+  GIG_STATUS_CHANGED
+  NEW_MESSAGE
+  PAYMENT_RELEASED
+}
+
 model User {
   id              String           @id @default(cuid())
   email           String           @unique
@@ -58,6 +73,11 @@ model User {
   businessProfile BusinessProfile?
   postedGigs      Gig[]            @relation("BusinessGigs")
   applications    Application[]    @relation("StudentApplications")
+  sentMessages    Message[]
+  ratingsGiven    Rating[]         @relation("RatingsGiven")
+  ratingsReceived Rating[]         @relation("RatingsReceived")
+  reports         Report[]
+  notifications   Notification[]
 }
 
 model StudentProfile {
@@ -69,6 +89,8 @@ model StudentProfile {
   availability    Availability    @default(PART_TIME)
   profileImageUrl String?
   isVerified      Boolean         @default(false)
+  avgRating       Float           @default(0)
+  totalRatings    Int             @default(0)
   portfolioItems  PortfolioItem[]
 }
 
@@ -93,6 +115,8 @@ model BusinessProfile {
   address            String  @default("")
   shopImageUrl       String?
   isVerified         Boolean @default(false)
+  avgRating          Float   @default(0)
+  totalRatings       Int     @default(0)
 }
 
 model Gig {
@@ -112,6 +136,10 @@ model Gig {
   deliverables     Deliverable[]
   revisionRequests RevisionRequest[]
   payment          Payment?
+  messages         Message[]
+  ratings          Rating[]
+  reports          Report[]
+  notifications    Notification[]
 
   @@index([businessId])
   @@index([status])
@@ -166,4 +194,60 @@ model RevisionRequest {
   requestedAt DateTime @default(now())
 
   @@index([gigId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  gigId     String
+  gig       Gig      @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([gigId, createdAt])
+}
+
+model Rating {
+  id         String   @id @default(cuid())
+  gigId      String
+  gig        Gig      @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  fromUserId String
+  fromUser   User     @relation("RatingsGiven", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId   String
+  toUser     User     @relation("RatingsReceived", fields: [toUserId], references: [id], onDelete: Cascade)
+  score      Int
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@unique([gigId, fromUserId])
+  @@index([toUserId])
+}
+
+model Report {
+  id         String       @id @default(cuid())
+  gigId      String?
+  gig        Gig?         @relation(fields: [gigId], references: [id], onDelete: SetNull)
+  reporterId String
+  reporter   User         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reason     String
+  status     ReportStatus @default(OPEN)
+  createdAt  DateTime     @default(now())
+
+  @@index([reporterId])
+  @@index([status])
+}
+
+model Notification {
+  id           String           @id @default(cuid())
+  userId       String
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         NotificationType
+  message      String
+  relatedGigId String?
+  relatedGig   Gig?             @relation(fields: [relatedGigId], references: [id], onDelete: SetNull)
+  isRead       Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+
+  @@index([userId, createdAt])
 }
