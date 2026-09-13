@@ -29,17 +29,23 @@ import {
   Avatar,
   Banner,
   BottomTabBar,
+  Divider,
   EmptyState,
   ErrorState,
   GigCard,
   Icon,
   InfoBanner,
   LoadingSkeleton,
+  PrimaryButton,
+  RadioRow,
   Screen,
   ScreenHeader,
   SectionHeader,
   SelectableChip,
+  Sheet,
+  Slider,
   Text,
+  TextField,
 } from '@/components/ui';
 import { apiErrorMessage } from '@/config/api';
 import { listGigs } from '@/lib/gig-api';
@@ -54,6 +60,24 @@ import type { Gig } from '@/types/api';
 
 const RADIUS_KEY = 'yuvaconnect:work-radius';
 const LOC_KEY = 'yuvaconnect:location-availability';
+
+/** Filter-sheet skill list — the six the wireframe draws, plus two common extras. */
+const FILTER_SKILLS = ['Graphic Design', 'Social Media', 'Content Writing', 'Photography', 'Data Entry', 'Video Editing', 'Web Development', 'Python'];
+
+const DURATIONS = ['Single Day', '1-3 Days', '1 Week', '1 Month+'];
+
+type BudgetPreset = 'under1k' | 'mid' | 'over5k' | null;
+
+type FilterDraft = {
+  skills: string[];
+  min: string;
+  max: string;
+  preset: BudgetPreset;
+  duration: string | null;
+  distanceKm: number;
+};
+
+const EMPTY_DRAFT: FilterDraft = { skills: [], min: '', max: '', preset: null, duration: null, distanceKm: 15 };
 
 /** Client-side skill-overlap match — the honest stand-in for matchScore. */
 function matchScore(gig: Gig, skills: string[]) {
@@ -71,6 +95,9 @@ export default function DiscoverFeedScreen() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [location, setLocation] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [draft, setDraft] = useState<FilterDraft>(EMPTY_DRAFT);
+  const [applied, setApplied] = useState<FilterDraft>(EMPTY_DRAFT);
 
   useEffect(() => {
     AsyncStorage.getItem(LOC_KEY)
@@ -104,6 +131,24 @@ export default function DiscoverFeedScreen() {
     return [...gigs].sort((a, b) => matchScore(b, mySkills) - matchScore(a, mySkills));
   }, [gigsQuery.data, mySkills]);
 
+  const draftMatches = (gig: Gig, filters: FilterDraft) => {
+    if (filters.skills.length) {
+      const wanted = new Set(filters.skills.map((skill) => skill.toLowerCase()));
+      if (!gig.skillsRequired?.some((skill) => wanted.has(skill.toLowerCase()))) return false;
+    }
+    const min = filters.min.trim() ? Number(filters.min) : null;
+    const max = filters.max.trim() ? Number(filters.max) : null;
+    const budget = Number(gig.budget);
+    if (min !== null && budget < min) return false;
+    if (max !== null && budget > max) return false;
+    return true;
+  };
+
+  const draftCount = useMemo(() => sorted.filter((gig) => draftMatches(gig, draft)).length, [sorted, draft]);
+  const filtered = useMemo(() => sorted.filter((gig) => draftMatches(gig, applied)), [sorted, applied]);
+  const filtersActive =
+    applied.skills.length > 0 || !!applied.min.trim() || !!applied.max.trim() || !!applied.duration;
+
   const bestMatch = sorted.length ? matchScore(sorted[0], mySkills) : 0;
   const topSkill = mySkills[0] ?? '';
 
@@ -117,6 +162,27 @@ export default function DiscoverFeedScreen() {
           : 'Business verification is not exposed on the feed payload yet — the list stays unfiltered. Flagged, not faked.'
         : null,
     );
+  };
+
+  const setPreset = (preset: BudgetPreset) =>
+    setDraft((current) => {
+      const base = { ...current, preset };
+      if (preset === 'under1k') return { ...base, min: '0', max: '999' };
+      if (preset === 'mid') return { ...base, min: '1000', max: '5000' };
+      if (preset === 'over5k') return { ...base, min: '5001', max: '' };
+      return { ...base, min: '', max: '' };
+    });
+
+  const applyFilters = () => {
+    setApplied(draft);
+    setFiltersOpen(false);
+    if (draft.duration) {
+      setNotice(`Duration “${draft.duration}” is flagged, not faked: the Gig model has no duration field, so it is shown but cannot filter the feed yet.`);
+    } else if (draft.distanceKm !== 15) {
+      setNotice('Distance radius is flagged, not faked: no geo backend exists, so the slider is displayed but does not filter.');
+    } else {
+      setNotice(null);
+    }
   };
 
   return (
@@ -189,7 +255,7 @@ export default function DiscoverFeedScreen() {
 
         {/* --- Feed --- */}
         <View style={styles.section}>
-          <SectionHeader title="Nearby Gigs" />
+          <SectionHeader title="Nearby Gigs" actionLabel="Filters" onAction={() => setFiltersOpen(true)} />
           <Text variant="caption" tone="secondary" style={styles.sectionNote}>
             Sorted by skill match — distance sorting ships with geo support.
           </Text>
@@ -198,14 +264,15 @@ export default function DiscoverFeedScreen() {
             <LoadingSkeleton count={3} variant="card" />
           ) : gigsQuery.isError ? (
             <ErrorState title="Could not load gigs" description={apiErrorMessage(gigsQuery.error)} retryLabel="Retry" onRetry={() => gigsQuery.refetch()} />
-          ) : sorted.length === 0 ? (
+          ) : filtered.length === 0 ? (
             <EmptyState
               title="No gigs match those filters"
-              description="Try clearing the budget or skill chips — businesses post new micro-gigs every week."
+              description={filtersActive ? 'Loosen the Filters sheet (skills / budget) or clear the quick chips.' : 'Try clearing the budget or skill chips — businesses post new micro-gigs every week.'}
               icon="searchEmpty"
+              {...(filtersActive ? { primaryLabel: 'Reset filters', onPrimary: () => { setApplied(EMPTY_DRAFT); setDraft(EMPTY_DRAFT); setNotice(null); } } : {})}
             />
           ) : (
-            sorted.map((gig) => (
+            filtered.map((gig) => (
               <GigCard
                 key={gig.id}
                 gig={toGigCardData(gig)}
@@ -216,6 +283,109 @@ export default function DiscoverFeedScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* --- Gig Filters sheet (wireframe 13, decision 4: modal, no route) --- */}
+      <Sheet
+        visible={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        title="Filters"
+        rightAction={{ label: 'Reset', onPress: () => setDraft(EMPTY_DRAFT) }}
+        footer={
+          <PrimaryButton
+            label={`Show ${draftCount} Gigs`}
+            onPress={applyFilters}
+            testID="filters-apply"
+          />
+        }
+        testID="sheet-filters">
+        <View style={styles.filterHead}>
+          <Text variant="title2">Distance Radius</Text>
+          <Text variant="calloutStrong" tone="brand">
+            Within {draft.distanceKm} km
+          </Text>
+        </View>
+        <Text variant="bodyStrong">Distance</Text>
+        <Slider
+          value={draft.distanceKm}
+          min={1}
+          max={30}
+          step={1}
+          onValueChange={(value) => setDraft((current) => ({ ...current, distanceKm: value }))}
+        />
+        <Text variant="caption" tone="secondary">
+          Showing gigs near {location || 'your saved location'} — distance has no geo backend yet, so the slider is display-only (flagged).
+        </Text>
+
+        <Divider />
+
+        <Text variant="title2">Skills</Text>
+        <Text variant="callout" tone="secondary">
+          Select skills you want to use
+        </Text>
+        <View style={styles.chipWrap}>
+          {FILTER_SKILLS.map((skill) => (
+            <SelectableChip
+              key={skill}
+              label={skill}
+              selected={draft.skills.includes(skill)}
+              onToggle={() =>
+                setDraft((current) => ({
+                  ...current,
+                  skills: current.skills.includes(skill) ? current.skills.filter((item) => item !== skill) : [...current.skills, skill],
+                }))
+              }
+            />
+          ))}
+        </View>
+
+        <Divider />
+
+        <Text variant="title2">Budget Range (₹)</Text>
+        <View style={styles.budgetRow}>
+          <TextField
+            label="Min"
+            icon="wallet"
+            type="number"
+            keyboardType="number-pad"
+            value={draft.min}
+            onChangeText={(value) => setDraft((current) => ({ ...current, min: value, preset: null }))}
+            placeholder="500"
+            style={styles.budgetField}
+          />
+          <TextField
+            label="Max"
+            icon="wallet"
+            type="number"
+            keyboardType="number-pad"
+            value={draft.max}
+            onChangeText={(value) => setDraft((current) => ({ ...current, max: value, preset: null }))}
+            placeholder="5000"
+            style={styles.budgetField}
+          />
+        </View>
+        <View style={styles.chipWrap}>
+          <SelectableChip label="Under ₹1k" selectedStyle="soft" selected={draft.preset === 'under1k'} onToggle={() => setPreset(draft.preset === 'under1k' ? null : 'under1k')} />
+          <SelectableChip label="₹1k - ₹5k" selectedStyle="soft" selected={draft.preset === 'mid'} onToggle={() => setPreset(draft.preset === 'mid' ? null : 'mid')} />
+          <SelectableChip label="₹5k+" selectedStyle="soft" selected={draft.preset === 'over5k'} onToggle={() => setPreset(draft.preset === 'over5k' ? null : 'over5k')} />
+        </View>
+
+        <Divider />
+
+        <Text variant="title2">Gig Duration</Text>
+        <View>
+          {DURATIONS.map((option) => (
+            <RadioRow
+              key={option}
+              label={option}
+              selected={draft.duration === option}
+              onPress={() => setDraft((current) => ({ ...current, duration: current.duration === option ? null : option }))}
+            />
+          ))}
+        </View>
+        <Text variant="caption" tone="tertiary">
+          Duration is flagged: the live Gig model has no duration column, so the selection is recorded but cannot filter yet.
+        </Text>
+      </Sheet>
 
       <BottomTabBar items={STUDENT_TABS} activeKey="discover" onSelect={goStudentTab} />
     </Screen>
@@ -249,6 +419,10 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.8 },
 
   railRow: { gap: space.md, paddingRight: space.md },
+  filterHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
+  budgetRow: { flexDirection: 'row', gap: space.md },
+  budgetField: { flex: 1 },
   section: { gap: space.md },
   sectionNote: { marginTop: -space.sm },
   card: { marginBottom: space.md },

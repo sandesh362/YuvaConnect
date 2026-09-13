@@ -51,6 +51,10 @@ export {
   type ButtonSize,
 } from './Button';
 
+// --- Sheets & radios ---
+export { Sheet, type SheetProps } from './Sheet';
+export { RadioRow, type RadioRowProps } from './RadioRow';
+
 // --- Wizard & files ---
 export { StepProgress, type StepProgressProps } from './StepProgress';
 export { Slider, type SliderProps } from './Slider';
