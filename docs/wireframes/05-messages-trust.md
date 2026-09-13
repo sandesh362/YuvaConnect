@@ -1,7 +1,8 @@
 # 05 · Messages & Trust Center
 
 Route: `/(shared)/chat/[gigId]` exists (rebuild in place). Thread list = NEW additive
-(`/messages`).
+(`/messages`) — has NO wireframe, so it stays out of the 37; the Messages tab remains a
+quiet no-op until a wireframe or a product decision defines it. Status: ✅ built — pending review.
 
 ## 1. What the wireframe shows
 
@@ -27,8 +28,27 @@ Route: `/(shared)/chat/[gigId]` exists (rebuild in place). Thread list = NEW add
 Quick actions: Share Portfolio → profile/portfolio; View Deliverable → submission screen;
 Request Payment → flag if no endpoint.
 
-## 3. Flags
-- Real-time delivery: API is REST poll — no socket; flag (poll interval, not fake realtime).
-- "Request Payment" quick action: needs a payment-request endpoint → flag or hide.
+## 3. Flags (resolved at build)
+- Realtime: REST only → 15s poll (`refetchInterval`), documented in-code, never presented
+  as live socket delivery.
+- Presence "Online" + verified tick: NO backing fields → header subtitle shows the
+  counterparty ROLE ("Business" / "Student") instead. Flagged, not faked.
+- "Request Payment": no endpoint → explainer InfoBanner (approved flag pattern).
+- "View Tracker" / "View Deliverable": screens 17/18 not shipped → visible, quiet no-ops
+  (tab-bar rule).
+- Kebab: no menu defined anywhere → routes to /support (report / help), a real destination.
 
-## 4–5. At build time.
+## 4. Build
+Rebuilt `src/app/(shared)/chat/[gigId].tsx` in place on the new system: custom header row
+(back · initials avatar · name · role caption · kebab), washed gig context bar with
+"View Tracker", day-grouped thread (Today / Yesterday / date) with incoming slate-200 and
+outgoing solid-blue bubbles carrying the timestamp inside the bubble, the mid-thread trust
+notice card, composer (plus-circle toggles the rail · input · 48dp blue send circle) and the
+outlined quick-action rail (Share Portfolio → profile · View Deliverable → no-op ·
+Request Payment → banner). No new components needed; bubbles are local to this screen
+because nothing else in the 37 renders chat bubbles.
+
+## 5. Deviations
+1. Trust notice sits after the 4th message (deterministic) rather than at a hand-placed
+   position in a mock thread.
+2. Bubble corner radii: 4dp on the tail corner per side, as the export draws.

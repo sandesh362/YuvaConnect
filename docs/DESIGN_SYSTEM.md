@@ -165,7 +165,7 @@ Constraint honoured: **no route is renamed or moved.** The bottom tab bar is ren
 | 2 | Global Search | `➕ new` (`/search`) | ➕ |
 | 3 | System States & Feedback | `/design-system` §15 (reference set) | ✅ **built** — pending review |
 | 4 | Report & Support | `/(shared)/report/[gigId]` ✅ + hub `/support` ✅ | ✅ **built** — pending review |
-| 5 | Messages & Trust Center | `/(shared)/chat/[gigId]` ✅ + thread list `➕ new` | ⚠️ |
+| 5 | Messages & Trust Center | `/(shared)/chat/[gigId]` ✅ rebuilt | ✅ **built** — pending review |
 | 6 | Ratings & Reviews Flow | `rating-modal` exists ✅ + dedicated flow `➕ new` | ⚠️ |
 
 ### Student flow
