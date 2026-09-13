@@ -215,11 +215,14 @@ Also present but not in your list: `/(business)/profile`, `/explore` (Expo templ
 
 | # | Question | Decision |
 |---|---|---|
-| 1 | The 35 wireframes did not arrive | **Being re-sent.** STEP 2 starts once they land |
+| 1 | The 35 wireframes did not arrive with the original brief | **Re-sent: all 37 arrived** (35 original + Talent Pool / Saved Talent naming). See decision 7 — they arrived inline only and did not persist to disk |
 | 2 | Brand blue — `#2563EB` vs `#208AEF` | **`#2563EB`** (blue-600), as implemented. No change needed |
 | 3 | The dead prototype | **Deleted** — see §8 |
 | 4 | Gig Filters + Apply for Gig | **Modal sheets** over `/(student)/feed` and `/(student)/gig/[id]`. No new routes |
-| 5 | The ❌/⚠️ gaps in §5 | **Still open.** Per row: small backend addition, or simplify for the pilot? Recommendation: distance → show `location` text; skill match → wire the existing `matchScore()` into `listGigs`/`getGig`; maps → text + directions link; saved gigs/talent → defer (hide the bookmark) or add the two join tables |
+| 5 | Washed banners (white on `#D9E6FB`, ≈1.6:1) vs the solid gradient | **Solid blue→indigo gradient `Banner`** everywhere — the washed fills are a design-export opacity artifact |
+| 6 | `/role` as the logged-out entry point | **Yes** — `src/app/index.tsx` now redirects `/login` → `/role` when there is no token (`cb70179`) |
+| 7 | The 37 wireframe PNGs are not on disk and do not survive context compaction | **Re-attaching all 36 remaining.** PNGs stay **out of git** (gitignored); only the extracted specs in `docs/wireframes/*.md` are committed |
+| 8 | The ❌/⚠️ gaps in §5 | **Still open.** Per row: small backend addition, or simplify for the pilot? Recommendation: distance → show `location` text; skill match → wire the existing `matchScore()` into `listGigs`/`getGig`; maps → text + directions link; saved gigs/talent → defer (hide the bookmark) or add the two join tables |
 
 ---
 
@@ -249,12 +252,14 @@ Also present but not in your list: `/(business)/profile`, `/explore` (Expo templ
 
 One screen per turn: described from the wireframe, mapped to live app data, gaps flagged, built, shown, approved. Route numbers are from §6.
 
+**Per-screen specs live in [`docs/wireframes/`](./wireframes/README.md)** — one `.md` per wireframe, written the moment the image is seen. The source PNGs are deliberately **not** committed (see `.gitignore`); only the extracted specs are, so the literal design spec survives independently of the images.
+
 | # | Screen | Route | Status |
 |---|---|---|---|
-| 1 | Role Selection & Onboarding | `/role` *(new, additive)* | ✅ **built** — pending review |
-| 2–37 | … | | ⬜ not started |
+| 1 | Role Selection & Onboarding | `/role` *(new, additive)* | ✅ **built & approved** — `b27cbc4`, `cb70179` |
+| 2–37 | … | | ⬜ awaiting re-attached images |
 
-### Screen 1 — Role Selection & Onboarding (`src/app/(auth)/role.tsx`)
+### Screen 1 — Role Selection & Onboarding (`src/app/(auth)/role.tsx`) → [full spec](./wireframes/01-role-selection.md)
 
 New component: **`RoleSelectCard`** (`src/components/ui/RoleSelectCard.tsx`) — the two role cards are the same control in two states, so they are one component: selected = `brandSoft` wash + 2px `primary` border + icon tile flips to solid blue with a white glyph + 28dp blue tick circle; unselected = white card, hairline border, blue-50 tile, blue glyph. Titles render uppercase/extrabold via `Text uppercase`.
 

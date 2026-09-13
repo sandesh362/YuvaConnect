@@ -41,3 +41,12 @@ example
 # generated native folders
 /ios
 /android
+
+# Wireframe source images — the literal design spec.
+# Kept on disk so they survive context compaction, deliberately NOT committed
+# (decision: only the extracted specs in docs/wireframes/*.md go into git).
+docs/wireframes/*.png
+docs/wireframes/*.jpg
+docs/wireframes/*.jpeg
+docs/wireframes/*.webp
+/uploads/
