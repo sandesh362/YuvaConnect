@@ -98,12 +98,17 @@ export const icons = {
   analytics: 'analytics-outline',
   gift: 'gift-outline',
 
+  // --- Brand ---
+  /** The YuvaConnect hub mark. */
+  logo: 'git-network',
+
   // --- Domain: trust & identity ---
   shield: 'shield-outline',
   shieldCheck: 'shield-checkmark-outline',
   shieldCheckFilled: 'shield-checkmark',
   verified: 'checkmark-circle',
   student: 'school-outline',
+  studentFilled: 'school',
   business: 'storefront-outline',
   building: 'business-outline',
   idCard: 'id-card-outline',

@@ -1,7 +1,7 @@
 # YuvaConnect — Design System (Phase 7, STEP 1)
 
-Status: **built, typechecks clean, bundled for web.** No product screen has been rebuilt yet.
-Review it live at the `/design-system` route before STEP 2 begins.
+Status: **STEP 1 signed off** (tokens + components + gallery, live at `/design-system`) and the dead prototype deleted (§8).
+**STEP 2 in progress** — screens are rebuilt one at a time against the 37 wireframes; progress in §9.
 
 ```
 src/theme/            ← tokens (single source of truth)
@@ -89,7 +89,8 @@ import { GigCard, StatGrid, PrimaryButton, ScreenHeader } from '@/components/ui'
 | `Text` | Every string goes through it — `variant` + `tone`, so type and colour cannot drift between screens |
 | `Icon`, `IconButton`, `iconName` | The only icon API; `IconButton` guarantees a 44px tap target and supports the unread dot |
 | `Card`, `PressableCard`, `Divider` | White surface, radius 16, hairline `borderSubtle`, `shadow.sm`, 16px padding. `elevation="flat\|raised\|borderless\|sticky"`, `tone="surface\|muted\|…Soft"` |
-| `Button`, `PrimaryButton`, `SecondaryButton`, `SoftButton`, `GhostButton`, `DangerButton`, `TextLink` | Filled blue = the one primary action; outline blue = secondary. `sm/md/lg`, leading/trailing icon, `loading`, `disabled`. Aliases exist so the hierarchy on a screen reads explicitly at the call site |
+| `Button`, `PrimaryButton`, `SecondaryButton`, `SoftButton`, `GhostButton`, `DangerButton` | Filled blue = the one primary action; outline blue = secondary. `label, onPress, variant, size ('sm'\|'md'\|'lg'), icon, iconRight, loading, disabled, fullWidth (default true)`. Aliases exist so the hierarchy on a screen reads explicitly at the call site |
+| `TextLink` | `label, onPress, iconRight (default 'chevronRight', pass `null` for a bare word), tone ('brand'\|'secondary'\|'danger'), style` |
 | `ScreenHeader`, `DashboardHeader`, `InlineBackBar` | Back arrow (left) · title [+ subtitle] · contextual right icons (bookmark / share / bell) with unread count bubbles |
 | `Screen`, `ScrollScreen`, `BottomActionBar`, `SectionHeader` | Page scaffold: safe-area, correct ground colour, 16px gutter, tab-bar-aware bottom padding, 640px cap on tablet/web |
 | `BottomTabBar`, `STUDENT_TABS`, `BUSINESS_TABS` | Icon + label, 5 items, active tab in primary blue with the **filled glyph swap** and a 24px top indicator; badge counts and dots |
@@ -241,3 +242,27 @@ Also present but not in your list: `/(business)/profile`, `/explore` (Expo templ
 **Follow-up, not done:** no file in the repo uses `className` any more, so NativeWind is now entirely unused — yet `babel.config.js` still sets `jsxImportSource: 'nativewind'`, `metro.config.js` still wraps the config in `withNativeWind`, and `tailwind.config.js` + `global.css` + `nativewind-env.d.ts` remain. Removing them is a build-config change that cannot be validated against a native EAS build from here, so it is left as a separate decision rather than bundled into a presentation PR. Say the word and it is a small follow-up commit.
 
 **Also flagged, not touched:** `src/app/explore.tsx` (+ `web-badge.tsx`, `themed-text.tsx`, `themed-view.tsx`, `ui/collapsible.tsx`, `external-link.tsx`, `constants/theme.ts`, `hooks/use-theme.ts`) is leftover Expo template demo content — the "Explore now" screen with the React logo. It is a live route, so deleting it would change navigation. Your call whether it survives the rebuild.
+
+---
+
+## 9. STEP 2 screen tracker
+
+One screen per turn: described from the wireframe, mapped to live app data, gaps flagged, built, shown, approved. Route numbers are from §6.
+
+| # | Screen | Route | Status |
+|---|---|---|---|
+| 1 | Role Selection & Onboarding | `/role` *(new, additive)* | ✅ **built** — pending review |
+| 2–37 | … | | ⬜ not started |
+
+### Screen 1 — Role Selection & Onboarding (`src/app/(auth)/role.tsx`)
+
+New component: **`RoleSelectCard`** (`src/components/ui/RoleSelectCard.tsx`) — the two role cards are the same control in two states, so they are one component: selected = `brandSoft` wash + 2px `primary` border + icon tile flips to solid blue with a white glyph + 28dp blue tick circle; unselected = white card, hairline border, blue-50 tile, blue glyph. Titles render uppercase/extrabold via `Text uppercase`.
+
+New tokens: `icon.logo` (`git-network`, the hub mark) and `icon.studentFilled` (`school`) — both validated against the shipped Ionicons glyphmap.
+
+Data: none. The choice is client state; `Continue` pushes `/(auth)/signup?role=STUDENT|BUSINESS`, which the existing `signup({ role })` mutation in `src/lib/auth-api.ts` already accepts. `Login` → `/login`. No backend gap.
+
+Deliberate deviations from the export, both applied consistently:
+
+1. **The "washed" banners are an export artifact.** This screen's `Trust built-in` banner and the Confirm-Selection / Verification-in-Progress ones export as white text on a ~`#D9E6FB` fill (≈1.6:1 — unreadable). The identical component renders **solid blue→indigo with white text** on Student Home and Discover Gigs, so all of them use the gradient `Banner` (`tone="brand"`).
+2. **`index.tsx` was not touched.** Making `/role` the logged-out entry point is a one-line change to an existing route, so it is left for an explicit go-ahead; until then the screen is reachable at `/role`.

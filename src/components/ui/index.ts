@@ -51,6 +51,9 @@ export {
   type ButtonSize,
 } from './Button';
 
+// --- Onboarding ---
+export { RoleSelectCard, type RoleSelectCardProps } from './RoleSelectCard';
+
 // --- Identity & trust ---
 export { Avatar, BusinessIcon, type AvatarProps, type AvatarSize } from './Avatar';
 export {
