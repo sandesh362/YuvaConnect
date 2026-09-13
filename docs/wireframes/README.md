@@ -41,7 +41,7 @@ Build order and status live in `../DESIGN_SYSTEM.md` §9.
 | 11 | Student Home Dashboard | [`11-student-home.md`](./11-student-home.md) | ✅ built (`/home` student) — pending review |
 | 12 | Discover Gigs | [`12-discover-gigs.md`](./12-discover-gigs.md) | ✅ built (`/feed`) — pending review |
 | 13 | Gig Filters (modal sheet) | [`13-gig-filters.md`](./13-gig-filters.md) | 📝 spec extracted · ⬜ not built |
-| 14 | Gig Details View | [`14-gig-details.md`](./14-gig-details.md) | 📝 spec extracted · ⬜ not built |
+| 14 | Gig Details View | [`14-gig-details.md`](./14-gig-details.md) | ✅ built (`/gig/[id]`) — pending review |
 | 15 | Apply for Gig (modal sheet) | [`15-apply-for-gig.md`](./15-apply-for-gig.md) | 📝 spec extracted · ⬜ not built |
 | 16 | My Applications | [`16-my-applications.md`](./16-my-applications.md) | 📝 spec extracted · ⬜ not built |
 | 17 | Active Work Tracker | [`17-active-work-tracker.md`](./17-active-work-tracker.md) | 📝 spec extracted · ⬜ not built |
