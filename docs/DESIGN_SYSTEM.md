@@ -172,7 +172,7 @@ Constraint honoured: **no route is renamed or moved.** The bottom tab bar is ren
 | # | Wireframe | Route | |
 |---|---|---|---|
 | 7 | Student Login / Signup | `/(auth)/login` + `/(auth)/signup` rebuilt; `?role=` handoff live | ✅ **built** — pending review |
-| 8 | Student Verification Flow | `➕ new` | ➕ |
+| 8 | Student Verification Flow | `/verify` ➕ built | ✅ **built** — pending review |
 | 9 | Student Skill Selection | `➕ new` | ➕ |
 | 10 | Student Location & Availability | `➕ new` | ➕ |
 | 11 | Student Home Dashboard | `/(app)/home` ✅ (role-branching today; will render the student dashboard) | ✅ |

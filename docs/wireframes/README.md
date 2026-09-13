@@ -35,7 +35,7 @@ Build order and status live in `../DESIGN_SYSTEM.md` §9.
 | 5 | Messages & Trust Center | [`05-messages-trust.md`](./05-messages-trust.md) | ✅ built (chat route) — pending review |
 | 6 | Ratings & Reviews Flow | [`06-ratings-reviews.md`](./06-ratings-reviews.md) | ✅ built (`/rate/[gigId]`) — pending review |
 | 7 | Student Login / Signup | [`07-student-login-signup.md`](./07-student-login-signup.md) | ✅ built (login+signup) — pending review |
-| 8 | Student Verification Flow | [`08-student-verification.md`](./08-student-verification.md) | 📝 spec extracted · ⬜ not built |
+| 8 | Student Verification Flow | [`08-student-verification.md`](./08-student-verification.md) | ✅ built (`/verify`) — pending review |
 | 9 | Student Skill Selection | [`09-student-skill-selection.md`](./09-student-skill-selection.md) | 📝 spec extracted · ⬜ not built |
 | 10 | Student Location & Availability | [`10-location-availability.md`](./10-location-availability.md) | 📝 spec extracted · ⬜ not built |
 | 11 | Student Home Dashboard | [`11-student-home.md`](./11-student-home.md) | 📝 spec extracted · ⬜ not built |

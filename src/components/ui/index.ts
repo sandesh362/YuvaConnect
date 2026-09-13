@@ -51,6 +51,11 @@ export {
   type ButtonSize,
 } from './Button';
 
+// --- Wizard & files ---
+export { StepProgress, type StepProgressProps } from './StepProgress';
+export { Slider, type SliderProps } from './Slider';
+export { FileRow, type FileRowProps } from './FileRow';
+
 // --- Disclosure & selection ---
 export { Accordion, type AccordionProps, type AccordionItem } from './Accordion';
 export { SelectTile, type SelectTileProps } from './SelectTile';

@@ -1,7 +1,8 @@
 # 08 · Student Verification Flow
 
-Route: NEW additive (`/verify`). Header shows centred "Step 3 of 5" + help icon; 5-segment
-step bar directly under the header (3 filled).
+Route: NEW additive (`/verify`) — built as `src/app/(student)/verify.tsx`.
+Header shows centred "Step 3 of 5" + help icon; 5-segment step bar directly under the
+header (3 filled). Status: ✅ built — pending review.
 
 ## 1. What the wireframe shows
 
@@ -23,6 +24,22 @@ step bar directly under the header (3 filled).
 (§5 ⚠️). Student-ID upload → NO file endpoint → flag (row can render an already-uploaded
 state only if we fake it — we must not; show picker disabled + flag).
 
-## 3. Flags: radius column, document upload, verification submission endpoint.
-## 4. New components owed: `StepProgress` (5-segment bar), `Slider` (blue), `FileRow`.
-## 5. At build time.
+## 3. Flags (resolved at build)
+- Skills → REAL: `StudentProfile.skills` via `updateProfile()`.
+- Work radius → NO column → AsyncStorage `yuvaconnect:work-radius`, explained by an
+  InfoBanner ("device-local until the backend gains the column").
+- College ID → upload is REAL (`POST /api/upload`) but StudentProfile has no document
+  column → returned URL stored device-local (`yuvaconnect:student-doc`), same banner.
+- Continue = save (real side effects); navigation to the next onboarding step waits for
+  screen 9's `/skills` (quiet no-op rule).
+
+## 4. New shared components (all validated, reused by later screens)
+- `StepProgress` — segmented wizard bar (5 steps here; 4 on Post-a-Gig).
+- `Slider` — view-based blue range slider, no new dependency, web+native.
+- `FileRow` — document row (slate tile + name + meta + navy tick), reused by screens
+  19 and 26.
+
+## 5. Deviations
+1. The wireframe shows the ID already uploaded; the screen renders an upload button
+   until a real upload happens, then the FileRow uploaded state.
+2. File size caption derives from the picked asset (2.4 MB fallback matches the export).
