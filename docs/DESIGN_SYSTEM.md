@@ -17,7 +17,7 @@ Three things that materially affect this work:
 
 | Finding | Impact | Action taken |
 |---|---|---|
-| `src/components/*.tsx` (17 NativeWind components) + `src/screens/*` + `src/navigation/*` + `src/state/DemoContext.tsx` import **`lucide-react-native`**, **`expo-linear-gradient`** and **`@react-navigation/bottom-tabs`** — none of which are in `package.json` or `package-lock.json` | That whole prototype **cannot compile**. `npx tsc` reported 25+ `TS2307 Cannot find module` errors before this change. | Left in place (not wired into the running app) and flagged for a decision — see §7. Installed `expo-linear-gradient@57.0.2` because the gradient banners are in the spec. |
+| `src/components/*.tsx` (17 NativeWind components) + `src/screens/*` + `src/navigation/*` + `src/state/DemoContext.tsx` + `src/api/*` + `src/mockData/*` imported **`lucide-react-native`** and **`@react-navigation/bottom-tabs`** — neither in `package.json` nor `package-lock.json` | That whole prototype **could not compile**: 25+ `TS2307 Cannot find module` errors | **Deleted** (approved). 51 files, 4,225 lines. Installed `expo-linear-gradient@57.0.2` because gradient banners are in the spec. See §8 |
 | `package.json` `main` is `expo-router/entry`, so **`src/app/` is the real app**. `App.tsx` + `index.ts` (which mount `src/navigation/RootNavigator`) are dead code. | The presentation rebuild must happen in `src/app/`, against the live Prisma API in `src/lib/*-api.ts` + `src/types/api.ts`. | Confirmed. STEP 2 targets `src/app/`. |
 | `src/components/ui.tsx` (a file) and `src/components/ui/collapsible.tsx` (a directory) both resolved from `@/components/ui` | Ambiguous module resolution sitting directly on top of the folder the new design system needs. | `git mv src/components/ui.tsx → src/components/legacy-ui.tsx`, 20 import sites updated mechanically. Zero behaviour change. |
 
@@ -210,10 +210,34 @@ Also present but not in your list: `/(business)/profile`, `/explore` (Expo templ
 
 ---
 
-## 7. Open decisions needed before STEP 2
+## 7. Decisions
 
-1. **Re-send the 35 wireframes** — they did not arrive (see the PR description). STEP 1 was built from your written design-language spec plus the prior components in `src/components/`; STEP 2 needs the actual images to match layout, spacing and hierarchy exactly.
-2. **Brand blue** — `#2563EB` (current) or `#208AEF` (splash / legacy)?
-3. **The dead prototype** (`src/screens/`, `src/navigation/`, `src/state/DemoContext.tsx`, the 17 NativeWind `src/components/*.tsx`, `App.tsx`, `index.ts`) — delete, or keep? It cannot compile as-is. Deleting removes ~2,000 lines and all the missing-dependency errors; keeping it means installing `lucide-react-native` + `@react-navigation/bottom-tabs`.
-4. **Gig Filters + Apply for Gig** — real routes, or modal sheets over `/(student)/feed` and `/(student)/gig/[id]`? Sheets change no routes.
-5. **The ❌/⚠️ gaps in §5** — for each: small backend addition, or simplify for the pilot? My recommendation for the pilot: distance → show `location` text; skill match → wire the existing `matchScore()` into `listGigs`/`getGig`; maps → text + directions link; saved gigs/talent → defer (hide the bookmark) or add the two join tables.
+| # | Question | Decision |
+|---|---|---|
+| 1 | The 35 wireframes did not arrive | **Being re-sent.** STEP 2 starts once they land |
+| 2 | Brand blue — `#2563EB` vs `#208AEF` | **`#2563EB`** (blue-600), as implemented. No change needed |
+| 3 | The dead prototype | **Deleted** — see §8 |
+| 4 | Gig Filters + Apply for Gig | **Modal sheets** over `/(student)/feed` and `/(student)/gig/[id]`. No new routes |
+| 5 | The ❌/⚠️ gaps in §5 | **Still open.** Per row: small backend addition, or simplify for the pilot? Recommendation: distance → show `location` text; skill match → wire the existing `matchScore()` into `listGigs`/`getGig`; maps → text + directions link; saved gigs/talent → defer (hide the bookmark) or add the two join tables |
+
+---
+
+## 8. Prototype deletion (approved)
+
+51 files, **4,225 lines** removed. Reachability was computed by BFS over the import graph from `src/app/**` (the live entry, since `package.json` `main` is `expo-router/entry`), then each "unreachable" hit was manually re-checked before deletion.
+
+**Deleted:** `App.tsx`, `index.ts`, `src/api/` (3), `src/mockData/` (6), `src/navigation/` (4), `src/screens/` (10), `src/state/DemoContext.tsx`, `src/types/index.ts`, and 24 files from `src/components/` — the 17 NativeWind components (`AccordionItem`, `AvatarInitials`, `CandidateCard`, `ChatBubble`, `ChecklistItem`, `ChipToggle`, `FormField`, `GigCard`, `GradientBannerCard`, `MilestoneStepper`, `PortfolioItemCard`, `RoleSelectCard`, `StatCard`, `StatusPill`, `SystemInfoBanner`, `SystemStates`, `VerifiedBadge`), their `index.ts` barrel, and 5 orphaned Expo-template files (`animated-icon.tsx`/`.web.tsx`/`.module.css`, `app-tabs.tsx`/`.web.tsx`, `hint-row.tsx`).
+
+**Deliberately kept** — a naive reachability sweep flags these, but all three are live:
+
+| File | Why the sweep missed it |
+|---|---|
+| `src/theme/index.ts` | The design-system barrel. Nothing imports it *yet*; screens import `@/theme/colors` etc. directly |
+| `src/hooks/use-color-scheme.web.ts` | Platform sibling — Metro resolves `.web.ts` at build time, never via an import statement |
+| `src/types/react-native-razorpay.d.ts` | Ambient module declaration. `react-native-razorpay` is imported by the live `/(business)/gig/[id]` screen |
+
+**Result:** every `Cannot find module` error is gone. `tsc` now reports **0 errors** across the whole frontend.
+
+**Follow-up, not done:** no file in the repo uses `className` any more, so NativeWind is now entirely unused — yet `babel.config.js` still sets `jsxImportSource: 'nativewind'`, `metro.config.js` still wraps the config in `withNativeWind`, and `tailwind.config.js` + `global.css` + `nativewind-env.d.ts` remain. Removing them is a build-config change that cannot be validated against a native EAS build from here, so it is left as a separate decision rather than bundled into a presentation PR. Say the word and it is a small follow-up commit.
+
+**Also flagged, not touched:** `src/app/explore.tsx` (+ `web-badge.tsx`, `themed-text.tsx`, `themed-view.tsx`, `ui/collapsible.tsx`, `external-link.tsx`, `constants/theme.ts`, `hooks/use-theme.ts`) is leftover Expo template demo content — the "Explore now" screen with the React logo. It is a live route, so deleting it would change navigation. Your call whether it survives the rebuild.

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
 
 import { color } from '@/theme/colors';
 import { icons, type IconGlyph, type IconName } from '@/theme/icons';
@@ -15,7 +15,8 @@ export type IconProps = {
   name: IconName;
   size?: number;
   color?: string;
-  style?: StyleProp<ViewStyle>;
+  /** Icon fonts are text nodes, so this is a `TextStyle`. */
+  style?: StyleProp<TextStyle>;
 };
 
 /**
