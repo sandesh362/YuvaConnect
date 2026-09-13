@@ -306,7 +306,15 @@ YuvaConnect/
 
 ## Design System
 
-UI is being rebuilt to match a set of FlutterFlow wireframes covering all 35 core screens (student, business, admin, and shared flows). Visual language: clean white cards on a light neutral background, a blue primary accent, pill-shaped skill/status chips, verified-badge trust signals, bordered stat-grid cards on detail screens, and consistent bottom tab navigation. Design tokens live in `src/theme/`; shared components (GigCard, StatBox, SkillPill, StatusBadge, PrimaryButton/SecondaryButton, ScreenHeader, BottomTabBar) are built once and reused across every screen rather than styled ad hoc.
+Phase 7 rebuilds the UI to match a set of FlutterFlow wireframes covering all 35 core screens (student, business, admin, and shared flows). Visual language: clean white cards on a light neutral background, a blue primary accent (`#2563EB`), pill-shaped skill/status chips, verified-badge trust signals, bordered stat-grid cards on detail screens, gradient status banners, and consistent bottom tab navigation.
+
+**STEP 1 — the design system — is built and typechecks clean.** Formal tokens live in `src/theme/` (colour ramps + semantic aliases, an 18-variant type scale, a 4pt spacing grid, radius and `boxShadow` elevation ramps, gradient presets, and a 130-name semantic icon registry over Ionicons from `@expo/vector-icons`). Base components live in `src/components/ui/` and are the only styled primitives screens may use — `GigCard`, `StatBox`/`StatGrid`, `SkillPill`, `StatusBadge`, `VerifiedBadge`, `PrimaryButton`/`SecondaryButton`, `ScreenHeader`, `BottomTabBar`, `SearchBar`, `Banner`, `Avatar`, `TextField`, `SelectableChip`, `SegmentedControl`, `MilestoneStepper`, `CandidateCard`, and the full `EmptyState`/`ErrorState`/`SuccessState`/`LoadingSkeleton` set.
+
+Nothing outside `src/theme/` hardcodes a hex value, font size, padding literal or icon glyph name.
+
+A live reference gallery renders every token and component at the `/design-system` route (a review tool — not linked from any tab or header, and removed once the screen rebuilds are signed off).
+
+Full specification, backend gap register and the wireframe → route map: **[`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)**.
 
 ---
 

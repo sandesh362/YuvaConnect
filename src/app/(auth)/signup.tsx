@@ -3,7 +3,7 @@ import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, colors, Field } from '@/components/ui';
+import { Button, colors, Field } from '@/components/legacy-ui';
 import { apiErrorMessage } from '@/config/api';
 import { signup } from '@/lib/auth-api';
 import { useAuth } from '@/providers/auth-provider';

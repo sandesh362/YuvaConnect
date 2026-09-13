@@ -3,7 +3,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '@/components/ui';
+import { colors } from '@/components/legacy-ui';
 import { apiErrorMessage } from '@/config/api';
 import { listNotifications, markAllNotificationsRead, markNotificationRead } from '@/lib/trust-api';
 import { useAuth } from '@/providers/auth-provider';

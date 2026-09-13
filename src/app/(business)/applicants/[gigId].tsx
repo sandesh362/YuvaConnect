@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, colors } from '@/components/ui';
+import { Button, colors } from '@/components/legacy-ui';
 import { RatingStars } from '@/components/rating-stars';
 import { apiErrorMessage } from '@/config/api';
 import { getApplicants, rejectApplicant, selectApplicant } from '@/lib/gig-api';

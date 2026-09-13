@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { GigStatus } from '@/types/api';
-import { colors } from '@/components/ui';
+import { colors } from '@/components/legacy-ui';
 
 const stages: { label: string; statuses: GigStatus[] }[] = [
   { label: 'Open', statuses: ['OPEN'] }, { label: 'Assigned', statuses: ['ASSIGNED'] }, { label: 'In progress', statuses: ['IN_PROGRESS'] }, { label: 'Submitted', statuses: ['SUBMITTED', 'REVISION_REQUESTED'] }, { label: 'Approved', statuses: ['APPROVED', 'PAID', 'CLOSED'] },

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Button, colors, Field } from '@/components/ui';
+import { Button, colors, Field } from '@/components/legacy-ui';
 
 /** Post-completion prompt to rate the other party. Shown only when the user hasn't rated yet. */
 export function RatingModal({ visible, gigTitle, submitting, onSubmit, onClose }: {

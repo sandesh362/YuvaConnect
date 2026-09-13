@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, colors } from '@/components/ui';
+import { Button, colors } from '@/components/legacy-ui';
 import { NotificationBell } from '@/components/notification-bell';
 import { apiErrorMessage } from '@/config/api';
 import { getMe } from '@/lib/auth-api';

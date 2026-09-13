@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import RazorpayCheckout from 'react-native-razorpay';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, colors, Field } from '@/components/ui';
+import { Button, colors, Field } from '@/components/legacy-ui';
 import { NotificationBell } from '@/components/notification-bell';
 import { RatingModal } from '@/components/rating-modal';
 import { StatusTracker } from '@/components/status-tracker';

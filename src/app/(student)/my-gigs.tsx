@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '@/components/ui';
+import { colors } from '@/components/legacy-ui';
 import { NotificationBell } from '@/components/notification-bell';
 import { getMyGigs } from '@/lib/gig-api';
 import { useAuth } from '@/providers/auth-provider';

@@ -3,7 +3,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '@/components/ui';
+import { colors } from '@/components/legacy-ui';
 import { apiErrorMessage } from '@/config/api';
 import { listMessages, sendMessage } from '@/lib/trust-api';
 import { useAuth } from '@/providers/auth-provider';

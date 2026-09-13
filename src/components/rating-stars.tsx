@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '@/components/ui';
+import { colors } from '@/components/legacy-ui';
 
 /** Read-only star display. Rounds to the nearest full star; the numeric value carries the precision. */
 export function RatingStars({ avgRating, totalRatings }: { avgRating: number; totalRatings: number }) {
