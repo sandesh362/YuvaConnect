@@ -132,6 +132,7 @@ export const icons = {
   // --- Brand ---
   /** The YuvaConnect hub mark. */
   logo: 'git-network',
+  logoGoogle: 'logo-google',
 
   // --- Domain: trust & identity ---
   shield: 'shield-outline',

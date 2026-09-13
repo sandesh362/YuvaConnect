@@ -25,6 +25,8 @@ export const gradient = {
   brandDeep: { ...diagonal, colors: [blue[700], indigo[600]] },
   /** Light brand wash for subtle highlight rows. */
   brandSoft: { ...horizontal, colors: [blue[50], indigo[50]] },
+  /** Student auth hero — blue melting into the teal wash of the export. */
+  auth: { ...diagonal, colors: [blue[600], emerald[400]] },
 
   success: { ...diagonal, colors: [emerald[500], emerald[700]] },
   warning: { ...diagonal, colors: [amber[500], '#EA580C'] },

@@ -1,7 +1,8 @@
 # 07 · Student Login / Signup
 
-Routes: `/(auth)/login`, `/(auth)/signup` (rebuild in place; shared with business until 25).
-Signup MUST start reading the `?role=` param that /role passes (carried from screen 1).
+Routes: `/(auth)/login`, `/(auth)/signup` (rebuilt in place; shared with business until 25).
+Signup reads the `?role=` param from /role — the screen-1 handoff is now live.
+Status: ✅ built — pending review.
 
 ## 1. What the wireframe shows (Login)
 
@@ -26,8 +27,21 @@ Signup variant (not shown separately): same chrome, fields Name/Email/Password +
 param; footer row reversed.
 
 ## 2. Mapping
-`login()` / `signup()` in `src/lib/auth-api.ts` ✅. Google button = NO OAuth in live API →
-flag (render disabled or hide — never fake). Forgot Password = no endpoint → flag.
+`login()` / `signup()` in `src/lib/auth-api.ts` ✅ unchanged. `setSession` → `/home` as before.
 
-## 3. Flags: Google OAuth, forgot-password flow absent from backend.
-## 4–5. At build time.
+## 3. Flags (resolved at build)
+- Google sign-in + Forgot Password: no live endpoints → both stay visible per wireframe and
+  raise an explanatory InfoBanner on tap (approved flag pattern).
+- Business skin (screen 25) will reuse this chrome with the mint segmented control.
+
+## 4. Build
+- `src/app/(auth)/login.tsx`, `src/app/(auth)/signup.tsx` rebuilt on the new system.
+- New token: `gradient.auth` (blue-600 → emerald-400) for the hero; emerald ramp gained
+  300/400 steps. New glyph `logoGoogle` (`logo-google`).
+- Signup role chooser = two `SelectableChip`s seeded from `?role=`; copy adapts per role.
+- Inline `InfoBanner` replaces the legacy `Alert.alert` error popups.
+
+## 5. Deviations
+1. Hero wordmark is dark navy ON the gradient exactly as exported (unusual but literal).
+2. Signup's visuals are not in the wireframe set (only login is drawn), so signup mirrors
+   the login chrome with the role chooser added — consistent, not invented chrome.

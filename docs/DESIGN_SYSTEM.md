@@ -171,7 +171,7 @@ Constraint honoured: **no route is renamed or moved.** The bottom tab bar is ren
 ### Student flow
 | # | Wireframe | Route | |
 |---|---|---|---|
-| 7 | Student Login / Signup | `/(auth)/login`, `/(auth)/signup` (shared with business today — will get a `role` param, not a new route) | ✅ |
+| 7 | Student Login / Signup | `/(auth)/login` + `/(auth)/signup` rebuilt; `?role=` handoff live | ✅ **built** — pending review |
 | 8 | Student Verification Flow | `➕ new` | ➕ |
 | 9 | Student Skill Selection | `➕ new` | ➕ |
 | 10 | Student Location & Availability | `➕ new` | ➕ |
