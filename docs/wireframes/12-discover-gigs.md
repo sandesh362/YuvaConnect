@@ -1,6 +1,6 @@
 # 12 · Discover Gigs
 
-Route: `/(student)/feed` (rebuild in place).
+Route: `/(student)/feed` (rebuilt in place). Status: ✅ built — pending review.
 
 ## 1. What the wireframe shows
 
@@ -22,5 +22,22 @@ list = listGigs ✅; "92% Skill Match" banner = matchScore NOT exposed → flag 
 wire backend per §5 rec); "Nearby/5km" = no geo → flag (render as plain section title);
 chips = Filters sheet state preview.
 
-## 3. Flags: skill-match %, distance, radius copy.
-## 4–5. At build time.
+## 3. Flags (resolved at build)
+- "92% Skill Match": backend matchScore NOT exposed → the % is COMPUTED CLIENT-SIDE from
+  the real overlap between saved StudentProfile.skills and each gig's skillsRequired, and
+  the banner says so ("computed from your saved skills"). The feed sorts by it. No saved
+  skills → the banner is replaced by a CTA strip to /skills. Never a fabricated number.
+- "Nearby Gigs / within 5km": no geo → wireframe title kept, caption states the real
+  sorting ("distance sorting ships with geo support").
+- Chips: Budget ₹1k (maxBudget=1000) and Design (skill=Design) are REAL server params;
+  Near me + Verified Only use the approved toggle+explainer InfoBanner pattern.
+
+## 4. Build
+Rebuilt `src/app/(student)/feed.tsx`: ScreenHeader with real-name avatar, device-local
+location row from screen 10 (tap → /location), read-only search strip → /search, chip
+rail, match Banner (sparkles glyph), vertical GigCard list via the shared
+toGigCardData mapper, student tab bar activeKey="discover".
+
+## 5. Deviations
+1. Match % is a client-side computation (documented above) rather than the backend
+   matchScore the export implies — the only way to render it without faking.

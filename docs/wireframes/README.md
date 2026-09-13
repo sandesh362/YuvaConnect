@@ -39,7 +39,7 @@ Build order and status live in `../DESIGN_SYSTEM.md` §9.
 | 9 | Student Skill Selection | [`09-student-skill-selection.md`](./09-student-skill-selection.md) | ✅ built (`/skills`) — pending review |
 | 10 | Student Location & Availability | [`10-location-availability.md`](./10-location-availability.md) | ✅ built (`/location`) — pending review |
 | 11 | Student Home Dashboard | [`11-student-home.md`](./11-student-home.md) | ✅ built (`/home` student) — pending review |
-| 12 | Discover Gigs | [`12-discover-gigs.md`](./12-discover-gigs.md) | 📝 spec extracted · ⬜ not built |
+| 12 | Discover Gigs | [`12-discover-gigs.md`](./12-discover-gigs.md) | ✅ built (`/feed`) — pending review |
 | 13 | Gig Filters (modal sheet) | [`13-gig-filters.md`](./13-gig-filters.md) | 📝 spec extracted · ⬜ not built |
 | 14 | Gig Details View | [`14-gig-details.md`](./14-gig-details.md) | 📝 spec extracted · ⬜ not built |
 | 15 | Apply for Gig (modal sheet) | [`15-apply-for-gig.md`](./15-apply-for-gig.md) | 📝 spec extracted · ⬜ not built |
