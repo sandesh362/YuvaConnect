@@ -1,6 +1,7 @@
 # 09 · Student Skill Selection
 
-Route: NEW additive (`/skills`). 5-segment step bar at very top (3 filled), NO header bar.
+Route: NEW additive (`/skills`) — built as `src/app/(student)/skills.tsx`.
+5-segment step bar at very top (3 filled), NO header bar. Status: ✅ built — pending review.
 
 ## 1. What the wireframe shows
 
@@ -24,5 +25,17 @@ Route: NEW additive (`/skills`). 5-segment step bar at very top (3 filled), NO h
 skills → `StudentProfile.skills` update call ✅. Grouping/categories = static local taxonomy
 (no skills endpoint) → flag as curated list. Min-3 rule enforced client-side.
 
-## 3. Flags: no server skill taxonomy; "Selected" count pill colour artifact.
-## 4–5. At build time.
+## 3. Flags (resolved at build)
+- Catalogue is curated (no skills endpoint); the SELECTION is real — same
+  `StudentProfile.skills` source as screen 8, so the two screens cannot disagree.
+- Min-3 rule enforced client-side (Continue disabled + "pick N more" caption).
+- Count pill renders indigo-100 wash + primaryText (the export's white-on-wash text is
+  the known opacity artifact).
+
+## 4. Build
+`src/app/(student)/skills.tsx`; reuses StepProgress / SearchBar / ChipGroup / InfoBanner.
+Search filters across the three groups; empty result gets the neutral search banner.
+Screen 8's Continue now routes here (handoff live).
+
+## 5. Deviations
+1. "Back" is a bare text link per the export (not a button).

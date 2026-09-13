@@ -117,6 +117,7 @@ export default function StudentVerificationScreen() {
       await updateProfile(token, { skills });
       await AsyncStorage.setItem(RADIUS_KEY, String(radiusKm));
       setSaved(true);
+      router.push('/skills' as never); // screen 9 shipped — handoff live
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {
