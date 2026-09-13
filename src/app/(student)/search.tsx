@@ -47,6 +47,7 @@ import {
 } from '@/components/ui';
 import { apiErrorMessage } from '@/config/api';
 import { listGigs } from '@/lib/gig-api';
+import { toGigCardData } from '@/lib/gig-card-data';
 import { goStudentTab } from '@/lib/tab-nav';
 import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
@@ -66,15 +67,7 @@ const POPULAR: { label: string; icon: IconName; tint: string; fg: string }[] = [
   { label: 'Content Strategy', icon: 'bulb', tint: color.accentSoft, fg: color.accent },
 ];
 
-const toCard = (gig: Gig): GigCardData => ({
-  id: gig.id,
-  title: gig.title,
-  businessName: gig.business?.businessProfile?.businessName ?? gig.business?.name ?? 'Local business',
-  skills: gig.skillsRequired,
-  budget: Number(gig.budget),
-  location: gig.location,
-  deadline: gig.deadline,
-});
+
 
 export default function GlobalSearchScreen() {
   const { token } = useAuth();
@@ -304,7 +297,7 @@ export default function GlobalSearchScreen() {
               ) : results.length ? (
                 <View style={styles.list}>
                   {results.map((gig) => (
-                    <GigCard key={gig.id} gig={toCard(gig)} onPress={() => router.push(`/(student)/gig/${gig.id}` as never)} />
+                    <GigCard key={gig.id} gig={toGigCardData(gig)} onPress={() => router.push(`/(student)/gig/${gig.id}` as never)} />
                   ))}
                 </View>
               ) : (
