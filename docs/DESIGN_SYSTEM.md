@@ -257,7 +257,7 @@ One screen per turn: described from the wireframe, mapped to live app data, gaps
 | # | Screen | Route | Status |
 |---|---|---|---|
 | 1 | Role Selection & Onboarding | `/role` *(new, additive)* | ✅ **built & approved** — `b27cbc4`, `cb70179` |
-| 2–37 | … | | ⬜ awaiting re-attached images |
+| 3–37 | … | | ⬜ specs extracted, not built |
 
 ### Screen 1 — Role Selection & Onboarding (`src/app/(auth)/role.tsx`) → [full spec](./wireframes/01-role-selection.md)
 

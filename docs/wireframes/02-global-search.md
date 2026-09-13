@@ -1,6 +1,6 @@
 # 02 · Global Search
 
-Route: `/search` (NEW, additive — agreed in DESIGN_SYSTEM.md §6). Status: building.
+Route: `/search` (NEW, additive — agreed in DESIGN_SYSTEM.md §6). Status: ✅ built — pending review.
 
 ## 1. What the wireframe shows
 
@@ -44,5 +44,33 @@ Route: `/search` (NEW, additive — agreed in DESIGN_SYSTEM.md §6). Status: bui
   derive-from-gigs approach (distinct business names on gigs).
 - Recent searches persistence = new local storage, clearly local (not faked server data).
 
-## 4. Build — at build time
-## 5. Deviations — at build time (tab-label inconsistency across exports recorded in README)
+## 4. Build
+
+| File | Change |
+|---|---|
+| `src/app/(student)/search.tsx` | **new** — the screen |
+| `src/lib/tab-nav.ts` | **new** — tab→route map shared by every tab-bar screen; keys whose screen has not shipped yet map to `null` = quiet no-op (tab stays visible per wireframe, tap never crashes, never fakes a destination) |
+| `src/theme/icons.ts` | new semantic glyphs (all validated): brush, code, bulb, laptop, storefront, stopwatch, link, rocket, cloudUpload, shuffle, megaphone, palette, pen, trendUp, alarm, clipboardFilled, gauge, checkmarkDone, locate, locateFilled, shareIos, moreVertical, personRemove |
+
+Behaviour: text query filters the fetched open gigs client-side (title, description,
+business name, skills); "Budget: ₹1k" is a REAL server filter (`maxBudget=1000`); "Remote"
+filters the free-text `location` for remote wording; recent searches persist in
+AsyncStorage (`yuvaconnect:recent-searches`, cap 6); popular tiles set the query; business
+cards set the query to the business name; results render through the canonical `GigCard`.
+
+## 5. Deviations (all flagged, nothing faked)
+
+1. **No server text search.** Live `GET /api/gigs` accepts only `skill / minBudget /
+   maxBudget / sortBy` → client-side filtering over the fetched list.
+2. **"Near Me" and "Verified Only" cannot filter** (no geo; `gigInclude` omits
+   `isVerified`). They toggle, and raise an explanatory `InfoBanner` instead of pretending.
+3. **"Top Verified Businesses"** is derived from the businesses present on the open-gig
+   feed; because verification is not in the payload the card shows an open-gig count
+   instead of a "Verified" badge, plus one neutral InfoBanner saying so.
+4. **Bookmark hidden on GigCards** everywhere until the Saved Gigs decision (screens
+   22/37) — no SavedGig backend exists, so the icon must not pretend to persist.
+5. **Funnel icon** collapses/expands the quick-filter rail here; the full Filters sheet
+   arrives with screen 13.
+6. **Messages tab** is a no-op until screen 5 ships `/messages`.
+7. Tab-label sets differ between exports (see README); canonical student set kept:
+   Home · Discover · My Gigs · Messages · Profile.
