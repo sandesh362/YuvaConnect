@@ -164,7 +164,7 @@ Constraint honoured: **no route is renamed or moved.** The bottom tab bar is ren
 | 1 | Role Selection & Onboarding | role choice currently lives inside `/signup`; a standalone screen is `➕ new` | ⚠️ |
 | 2 | Global Search | `➕ new` (`/search`) | ➕ |
 | 3 | System States & Feedback | `/design-system` §15 (reference set) | ✅ **built** — pending review |
-| 4 | Report & Support | `/(shared)/report/[gigId]` ✅ + support hub `➕ new` | ⚠️ |
+| 4 | Report & Support | `/(shared)/report/[gigId]` ✅ + hub `/support` ✅ | ✅ **built** — pending review |
 | 5 | Messages & Trust Center | `/(shared)/chat/[gigId]` ✅ + thread list `➕ new` | ⚠️ |
 | 6 | Ratings & Reviews Flow | `rating-modal` exists ✅ + dedicated flow `➕ new` | ⚠️ |
 

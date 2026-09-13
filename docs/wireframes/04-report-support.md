@@ -1,6 +1,6 @@
 # 04 · Report & Support
 
-Route: `/(shared)/report/[gigId]` exists; the support hub is NEW additive (`/support`).
+Route: `/(shared)/report/[gigId]` exists; the support hub is NEW additive (`/support`). Status: ✅ built — pending review.
 
 ## 1. What the wireframe shows
 

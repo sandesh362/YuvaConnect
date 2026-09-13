@@ -42,6 +42,8 @@ export const icons = {
   personFilled: 'person',
   grid: 'grid-outline',
   gridFilled: 'grid',
+  add: 'add',
+  remove: 'remove',
   addCircle: 'add-circle-outline',
   addCircleFilled: 'add-circle',
   wallet: 'wallet-outline',

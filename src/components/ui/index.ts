@@ -51,6 +51,10 @@ export {
   type ButtonSize,
 } from './Button';
 
+// --- Disclosure & selection ---
+export { Accordion, type AccordionProps, type AccordionItem } from './Accordion';
+export { SelectTile, type SelectTileProps } from './SelectTile';
+
 // --- Onboarding ---
 export { RoleSelectCard, type RoleSelectCardProps } from './RoleSelectCard';
 
