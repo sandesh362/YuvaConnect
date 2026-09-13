@@ -174,7 +174,7 @@ Constraint honoured: **no route is renamed or moved.** The bottom tab bar is ren
 | 7 | Student Login / Signup | `/(auth)/login` + `/(auth)/signup` rebuilt; `?role=` handoff live | ✅ **built** — pending review |
 | 8 | Student Verification Flow | `/verify` ➕ built | ✅ **built** — pending review |
 | 9 | Student Skill Selection | `/skills` ➕ built | ✅ **built** — pending review |
-| 10 | Student Location & Availability | `➕ new` | ➕ |
+| 10 | Student Location & Availability | `/location` ➕ built | ✅ **built** — pending review |
 | 11 | Student Home Dashboard | `/(app)/home` ✅ (role-branching today; will render the student dashboard) | ✅ |
 | 12 | Discover Gigs | `/(student)/feed` ✅ | ✅ |
 | 13 | Gig Filters | inline in `feed` today → `➕ new` route or a modal sheet (**your call**) | ⚠️ |

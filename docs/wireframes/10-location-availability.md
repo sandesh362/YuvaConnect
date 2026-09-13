@@ -1,7 +1,8 @@
 # 10 · Student Location & Availability
 
-Route: NEW additive (`/location`). Header: back + title + caption "Step 4 of 5"; step bar
-4/5 filled.
+Route: NEW additive (`/location`) — built as `src/app/(student)/location.tsx`.
+Header: back + title + caption "Step 4 of 5"; step bar 4/5 filled.
+Status: ✅ built — pending review.
 
 ## 1. What the wireframe shows
 
@@ -26,5 +27,18 @@ workPreference all absent); availability = 3-value enum TODAY/EVENINGS/WEEKENDS 
 7-day picker has NO home → flag. Map = no geo → text + static illustration or hide (per
 decision: maps text-only for pilot) → DEVIATION, documented.
 
-## 3. Flags: location, radius, weekday availability, map.
-## 4–5. At build time.
+## 3. Flags (resolved at build)
+- No columns for location / radius / preference / weekdays → all device-local
+  (AsyncStorage `yuvaconnect:location-availability`) behind one explanatory InfoBanner.
+- Map → approved pilot decision: text-only radius treatment + flag banner; no fake map.
+- "Current Location" never shows a hardcoded place: stored value or "Tap to set"; tapping
+  reveals a real editable field.
+
+## 4. Build
+`src/app/(student)/location.tsx`; reuses StepProgress, Slider, SelectTile (`align="center"`
+variant's first real use), InfoBanner; local DayCircle (52dp round toggles, Mon–Fri default).
+Save & Continue persists and replaces to /home (onboarding complete).
+
+## 5. Deviations
+1. Map image replaced by the text treatment above (documented pilot decision).
+2. Day circles are 52dp rather than 56dp to fit seven across at the 320dp minimum width.

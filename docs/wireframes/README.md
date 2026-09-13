@@ -37,7 +37,7 @@ Build order and status live in `../DESIGN_SYSTEM.md` §9.
 | 7 | Student Login / Signup | [`07-student-login-signup.md`](./07-student-login-signup.md) | ✅ built (login+signup) — pending review |
 | 8 | Student Verification Flow | [`08-student-verification.md`](./08-student-verification.md) | ✅ built (`/verify`) — pending review |
 | 9 | Student Skill Selection | [`09-student-skill-selection.md`](./09-student-skill-selection.md) | ✅ built (`/skills`) — pending review |
-| 10 | Student Location & Availability | [`10-location-availability.md`](./10-location-availability.md) | 📝 spec extracted · ⬜ not built |
+| 10 | Student Location & Availability | [`10-location-availability.md`](./10-location-availability.md) | ✅ built (`/location`) — pending review |
 | 11 | Student Home Dashboard | [`11-student-home.md`](./11-student-home.md) | 📝 spec extracted · ⬜ not built |
 | 12 | Discover Gigs | [`12-discover-gigs.md`](./12-discover-gigs.md) | 📝 spec extracted · ⬜ not built |
 | 13 | Gig Filters (modal sheet) | [`13-gig-filters.md`](./13-gig-filters.md) | 📝 spec extracted · ⬜ not built |
