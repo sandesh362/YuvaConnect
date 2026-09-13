@@ -17,6 +17,12 @@ export type SelectableChipProps = {
   count?: number;
   /** `check` renders a tick, `dot` a filled dot, `none` only recolours. */
   indicator?: 'check' | 'none';
+  /**
+   * Selected skin: `solid` = primary blue fill (filters, skills);
+   * `soft` = primary-50 wash + blue check + blue label (review tags,
+   * Post-a-Gig required skills).
+   */
+  selectedStyle?: 'solid' | 'soft';
   size?: 'sm' | 'md';
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -35,6 +41,7 @@ export function SelectableChip({
   icon,
   count,
   indicator = 'check',
+  selectedStyle = 'solid',
   size = 'md',
   disabled = false,
   style,
@@ -51,25 +58,34 @@ export function SelectableChip({
       style={({ pressed }) => [
         styles.chip,
         size === 'sm' ? styles.chipSm : styles.chipMd,
-        selected ? styles.chipSelected : styles.chipIdle,
+        selected ? (selectedStyle === 'soft' ? styles.chipSelectedSoft : styles.chipSelected) : styles.chipIdle,
         pressed && { opacity: 0.75 },
         disabled && { opacity: 0.4 },
         style,
       ]}>
-      {icon ? <Icon name={icon} size={size === 'sm' ? 13 : 15} color={selected ? color.textInverse : color.iconDefault} /> : null}
+      {icon ? (
+        <Icon
+          name={icon}
+          size={size === 'sm' ? 13 : 15}
+          color={selected ? (selectedStyle === 'soft' ? color.primaryText : color.textInverse) : color.iconDefault}
+        />
+      ) : null}
       <Text
         variant={size === 'sm' ? 'caption' : 'label'}
-        style={{ color: selected ? color.textInverse : color.textPrimary, fontWeight: selected ? '700' : '500' }}
+        style={{
+          color: selected ? (selectedStyle === 'soft' ? color.primaryText : color.textInverse) : color.textPrimary,
+          fontWeight: selected ? '700' : '500',
+        }}
         numberOfLines={1}>
         {label}
       </Text>
       {count !== undefined ? (
-        <Text variant="caption" style={{ color: selected ? 'rgba(255,255,255,0.8)' : color.textTertiary }}>
+        <Text variant="caption" style={{ color: selected ? (selectedStyle === 'soft' ? color.primaryText : 'rgba(255,255,255,0.8)') : color.textTertiary }}>
           {count}
         </Text>
       ) : null}
       {selected && indicator === 'check' ? (
-        <Icon name="check" size={size === 'sm' ? 13 : 15} color={color.textInverse} />
+        <Icon name="check" size={size === 'sm' ? 13 : 15} color={selectedStyle === 'soft' ? color.primaryText : color.textInverse} />
       ) : null}
     </Pressable>
   );
@@ -147,6 +163,10 @@ const styles = StyleSheet.create({
   chipSm: { paddingHorizontal: space.md, paddingVertical: 6 },
   chipMd: { paddingHorizontal: space.base, paddingVertical: 9 },
   chipIdle: { backgroundColor: color.surface, borderColor: color.border },
+  chipSelectedSoft: {
+    backgroundColor: color.primarySoft,
+    borderColor: color.primaryBorder,
+  },
   chipSelected: { backgroundColor: color.primary, borderColor: color.primary },
 
   rail: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.xs },

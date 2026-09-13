@@ -33,7 +33,7 @@ Build order and status live in `../DESIGN_SYSTEM.md` §9.
 | 3 | System States & Feedback | [`03-system-states.md`](./03-system-states.md) | ✅ built (gallery §15) — pending review |
 | 4 | Report & Support | [`04-report-support.md`](./04-report-support.md) | ✅ built (`/support`) — pending review |
 | 5 | Messages & Trust Center | [`05-messages-trust.md`](./05-messages-trust.md) | ✅ built (chat route) — pending review |
-| 6 | Ratings & Reviews Flow | [`06-ratings-reviews.md`](./06-ratings-reviews.md) | 📝 spec extracted · ⬜ not built |
+| 6 | Ratings & Reviews Flow | [`06-ratings-reviews.md`](./06-ratings-reviews.md) | ✅ built (`/rate/[gigId]`) — pending review |
 | 7 | Student Login / Signup | [`07-student-login-signup.md`](./07-student-login-signup.md) | 📝 spec extracted · ⬜ not built |
 | 8 | Student Verification Flow | [`08-student-verification.md`](./08-student-verification.md) | 📝 spec extracted · ⬜ not built |
 | 9 | Student Skill Selection | [`09-student-skill-selection.md`](./09-student-skill-selection.md) | 📝 spec extracted · ⬜ not built |

@@ -15,12 +15,17 @@ export function RatingStars({
   size = 14,
   count,
   showValue = true,
+  starColor = color.star,
+  emptyColor = color.starEmpty,
   style,
 }: {
   value: number;
   size?: number;
   count?: number;
   showValue?: boolean;
+  /** Review blocks in the wireframes use navy stars; small pills use amber. */
+  starColor?: string;
+  emptyColor?: string;
   style?: StyleProp<ViewStyle>;
 }) {
   return (
@@ -36,7 +41,7 @@ export function RatingStars({
             key={star}
             name={filled ? 'starFilled' : half ? 'starHalf' : 'star'}
             size={size}
-            color={filled || half ? color.star : color.starEmpty}
+            color={filled || half ? starColor : emptyColor}
           />
         );
       })}
@@ -63,12 +68,17 @@ export function RatingInput({
   onChange,
   size = 34,
   labels = ['Poor', 'Fair', 'Good', 'Very good', 'Excellent'],
+  starColor = color.star,
+  emptyColor = color.starEmpty,
   style,
 }: {
   value: number;
   onChange: (value: number) => void;
   size?: number;
   labels?: string[];
+  /** The wireframe's rate-experience stars are navy, not amber. */
+  starColor?: string;
+  emptyColor?: string;
   style?: StyleProp<ViewStyle>;
 }) {
   return (
@@ -83,7 +93,7 @@ export function RatingInput({
             hitSlop={6}
             onPress={() => onChange(star)}
             style={({ pressed }) => [styles.starButton, pressed && { transform: [{ scale: 0.9 }] }]}>
-            <Icon name={star <= value ? 'starFilled' : 'star'} size={size} color={star <= value ? color.star : color.starEmpty} />
+            <Icon name={star <= value ? 'starFilled' : 'star'} size={size} color={star <= value ? starColor : emptyColor} />
           </Pressable>
         ))}
       </View>
