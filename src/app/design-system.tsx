@@ -18,11 +18,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   Avatar,
+  BUSINESS_TABS,
   Banner,
   BottomActionBar,
   BottomTabBar,
   Button,
-  BUSINESS_TABS,
   CandidateCard,
   Card,
   ChecklistItem,
@@ -36,22 +36,24 @@ import {
   Icon,
   IconButton,
   InfoBanner,
-  ListItem,
+  InlineLoader,
   ListGroup,
+  ListItem,
   LoadingSkeleton,
   MilestoneStepper,
   ProgressBar,
   RatingInput,
   RatingStars,
+  STUDENT_TABS,
   ScreenHeader,
   SearchBar,
   SegmentedControl,
   SelectField,
+  Skeleton,
   SkillPill,
   SkillPillRow,
   StatGrid,
   StatusBadge,
-  STUDENT_TABS,
   SuccessState,
   SwitchRow,
   Text,
@@ -615,9 +617,70 @@ export default function DesignSystemScreen() {
         </Section>
 
         {/* ---------------- SYSTEM STATES ---------------- */}
-        <Section title="15 · System states" note="Loading / empty / error / success — the reference set for every screen.">
+        <Section
+          title="15 · System states"
+          note="The wireframe 'System States & Feedback' reference set, verbatim — every product screen reuses these five blocks.">
           <Text variant="overline" tone="tertiary" uppercase style={g.subLabel}>
-            Loading skeleton
+            Success — wireframe copy
+          </Text>
+          <Card padding="none">
+            <SuccessState
+              fill={false}
+              title="Application Sent!"
+              description="Sandesh, your application for 'Social Media Manager' has been delivered to the business owner."
+              primaryLabel="View My Applications"
+              onPrimary={() => undefined}
+              secondaryLabel="Back to Home"
+              onSecondary={() => undefined}
+              secondaryAsLink
+            />
+          </Card>
+
+          <Text variant="overline" tone="tertiary" uppercase style={g.subLabel}>
+            Loading — label left, spinner right, skeleton blocks
+          </Text>
+          <Card>
+            <InlineLoader label="Finding Nearby Gigs…" align="split" />
+            <View style={{ gap: 12, marginTop: 12 }}>
+              <Skeleton width="100%" height={110} radius="md" />
+              <Skeleton width="100%" height={90} radius="md" />
+              <Skeleton width="100%" height={64} radius="md" />
+            </View>
+          </Card>
+
+          <Text variant="overline" tone="tertiary" uppercase style={g.subLabel}>
+            Empty — 96dp well, outline action
+          </Text>
+          <Card padding="none">
+            <EmptyState
+              fill={false}
+              wellSize="lg"
+              icon="searchEmpty"
+              title="No Gigs in Mumbai"
+              description="We couldn't find any micro-gigs matching your current filters. Try expanding your radius."
+              primaryVariant="outline"
+              primaryLabel="Adjust Filters"
+              onPrimary={() => undefined}
+            />
+          </Card>
+
+          <Text variant="overline" tone="tertiary" uppercase style={g.subLabel}>
+            Error — white card, red hairline, square tile, Retry link
+          </Text>
+          <ErrorState title="Connection Lost" description="Check your internet and try again." retryLabel="Retry" onRetry={() => undefined} />
+
+          <Text variant="overline" tone="tertiary" uppercase style={g.subLabel}>
+            Info banner — gradient per the washed-banner decision
+          </Text>
+          <Banner
+            tone="brand"
+            icon="shieldCheckFilled"
+            title="Verification in Progress"
+            description="Our team is reviewing your Student ID. This usually takes 24 hours."
+          />
+
+          <Text variant="overline" tone="tertiary" uppercase style={g.subLabel}>
+            Further variants used across product screens
           </Text>
           <LoadingSkeleton count={2} variant="card" />
           <LoadingSkeleton count={2} variant="row" />

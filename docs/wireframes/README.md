@@ -30,7 +30,7 @@ Build order and status live in `../DESIGN_SYSTEM.md` §9.
 |---|---|---|---|
 | 1 | Role Selection & Onboarding | [`01-role-selection.md`](./01-role-selection.md) | ✅ built (`/role`) |
 | 2 | Global Search | [`02-global-search.md`](./02-global-search.md) | ✅ built (`/search`) — pending review |
-| 3 | System States & Feedback | [`03-system-states.md`](./03-system-states.md) | 📝 spec extracted · ⬜ not built |
+| 3 | System States & Feedback | [`03-system-states.md`](./03-system-states.md) | ✅ built (gallery §15) — pending review |
 | 4 | Report & Support | [`04-report-support.md`](./04-report-support.md) | 📝 spec extracted · ⬜ not built |
 | 5 | Messages & Trust Center | [`05-messages-trust.md`](./05-messages-trust.md) | 📝 spec extracted · ⬜ not built |
 | 6 | Ratings & Reviews Flow | [`06-ratings-reviews.md`](./06-ratings-reviews.md) | 📝 spec extracted · ⬜ not built |

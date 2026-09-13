@@ -5,7 +5,7 @@ import { color } from '@/theme/colors';
 import { radius } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
 import type { IconName } from '@/theme/icons';
-import { Button, PrimaryButton, SecondaryButton } from './Button';
+import { Button, PrimaryButton, SecondaryButton, TextLink } from './Button';
 import { Icon } from './Icon';
 import { Text } from './Text';
 
@@ -22,6 +22,14 @@ export type EmptyStateProps = {
   onPrimary?: () => void;
   secondaryLabel?: string;
   onSecondary?: () => void;
+  /**
+   * The wireframe's empty states use an OUTLINE action ("Adjust Filters"),
+   * not a filled one. `primary` stays the default for product screens that
+   * need the emphasis.
+   */
+  primaryVariant?: 'primary' | 'outline';
+  /** `lg` = 96dp icon well (System States reference), `md` = 68dp. */
+  wellSize?: 'md' | 'lg';
   /** Fill the available height and centre (list placeholders). */
   fill?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -29,7 +37,8 @@ export type EmptyStateProps = {
 };
 
 const EMPTY_TONES: Record<NonNullable<EmptyStateProps['tone']>, { well: string; fg: string }> = {
-  neutral: { well: color.surfaceMuted, fg: color.textTertiary },
+  // The wireframe's empty-state glyph is dark navy on a light well.
+  neutral: { well: color.surfaceMuted, fg: color.textPrimary },
   brand: { well: color.primarySoft, fg: color.primary },
   success: { well: color.successSoft, fg: color.success },
   warning: { well: color.warningSoft, fg: color.warningStrong },
@@ -49,15 +58,18 @@ export function EmptyState({
   onPrimary,
   secondaryLabel,
   onSecondary,
+  primaryVariant = 'primary',
+  wellSize = 'md',
   fill = true,
   style,
   testID,
 }: EmptyStateProps) {
   const skin = EMPTY_TONES[tone];
+  const Primary = primaryVariant === 'outline' ? SecondaryButton : PrimaryButton;
   return (
     <View testID={testID} style={[styles.state, fill && styles.fill, style]}>
-      <View style={[styles.well, { backgroundColor: skin.well }]}>
-        <Icon name={icon} size={30} color={skin.fg} />
+      <View style={[styles.well, wellSize === 'lg' && styles.wellLg, { backgroundColor: skin.well }]}>
+        <Icon name={icon} size={wellSize === 'lg' ? 40 : 30} color={skin.fg} />
       </View>
       <Text variant="title3" style={styles.stateTitle}>
         {title}
@@ -69,7 +81,7 @@ export function EmptyState({
       ) : null}
       {primaryLabel && onPrimary ? (
         <View style={styles.stateActions}>
-          <PrimaryButton label={primaryLabel} onPress={onPrimary} fullWidth={false} style={styles.stateButton} />
+          <Primary label={primaryLabel} onPress={onPrimary} fullWidth={false} style={styles.stateButton} />
           {secondaryLabel && onSecondary ? (
             <SecondaryButton label={secondaryLabel} onPress={onSecondary} fullWidth={false} style={styles.stateButton} />
           ) : null}
@@ -143,8 +155,8 @@ export function ErrorState({
 
   return (
     <View testID={testID} style={[styles.errorCard, style]}>
-      <View style={[styles.wellSm, { backgroundColor: color.dangerSoft }]}>
-        <Icon name="offline" size={18} color={color.danger} />
+      <View style={[styles.wellSq, { backgroundColor: color.dangerSoft }]}>
+        <Icon name="offline" size={20} color={color.danger} />
       </View>
       <View style={styles.body}>
         <Text variant="calloutStrong">{title}</Text>
@@ -171,6 +183,8 @@ export type SuccessStateProps = {
   onPrimary?: () => void;
   secondaryLabel?: string;
   onSecondary?: () => void;
+  /** Render the secondary action as a bare text link ("Back to Home"). */
+  secondaryAsLink?: boolean;
   /** Set false when embedding inside a card/preview. */
   fill?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -186,6 +200,7 @@ export function SuccessState({
   onPrimary,
   secondaryLabel,
   onSecondary,
+  secondaryAsLink = false,
   fill = true,
   style,
   testID,
@@ -193,7 +208,7 @@ export function SuccessState({
   return (
     <View testID={testID} style={[styles.state, fill && styles.fill, style]}>
       <View style={[styles.well, { backgroundColor: color.successSoft }]}>
-        <Icon name={icon} size={34} color={color.success} />
+        <Icon name={icon} size={40} color={color.textPrimary} />
       </View>
       <Text variant="title2" style={styles.stateTitle}>
         {title}
@@ -207,10 +222,13 @@ export function SuccessState({
         {primaryLabel && onPrimary ? (
           <PrimaryButton label={primaryLabel} onPress={onPrimary} fullWidth={false} style={styles.stateButton} />
         ) : null}
-        {secondaryLabel && onSecondary ? (
+        {secondaryLabel && onSecondary && !secondaryAsLink ? (
           <SecondaryButton label={secondaryLabel} onPress={onSecondary} fullWidth={false} style={styles.stateButton} />
         ) : null}
       </View>
+      {secondaryLabel && onSecondary && secondaryAsLink ? (
+        <TextLink label={secondaryLabel} iconRight={null} onPress={onSecondary} />
+      ) : null}
     </View>
   );
 }
@@ -311,13 +329,26 @@ export function LoadingSkeleton({ count = 3, variant = 'card' }: { count?: numbe
 }
 
 /** Inline spinner row for pagination / background refresh. */
-export function InlineLoader({ label = 'Loading…' }: { label?: string }) {
+export function InlineLoader({ label = 'Loading…', align = 'center' }: { label?: string; align?: 'center' | 'split' }) {
   return (
-    <View style={styles.inlineLoader} accessibilityRole="progressbar" accessibilityLabel={label}>
-      <ActivityIndicator size="small" color={color.primary} />
-      <Text variant="caption" tone="secondary">
-        {label}
-      </Text>
+    <View
+      style={[styles.inlineLoader, align === 'split' && styles.inlineLoaderSplit]}
+      accessibilityRole="progressbar"
+      accessibilityLabel={label}>
+      {align === 'split' ? (
+        <Text variant="body" tone="secondary">
+          {label}
+        </Text>
+      ) : (
+        <ActivityIndicator size="small" color={color.primary} />
+      )}
+      {align === 'split' ? (
+        <ActivityIndicator size="small" color={color.primary} />
+      ) : (
+        <Text variant="caption" tone="secondary">
+          {label}
+        </Text>
+      )}
     </View>
   );
 }
@@ -334,6 +365,8 @@ const styles = StyleSheet.create({
     marginBottom: space.sm,
   },
   wellSm: { width: 34, height: 34, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  wellLg: { width: 96, height: 96 },
+  wellSq: { width: 48, height: 48, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   stateTitle: { textAlign: 'center' },
   stateDescription: { textAlign: 'center', marginTop: space.xs, lineHeight: 20 },
   stateActions: { marginTop: space.lg, gap: space.md, alignItems: 'stretch', width: '100%', maxWidth: 320 },
@@ -347,7 +380,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: color.dangerBorder,
-    backgroundColor: color.dangerSoft,
+    backgroundColor: color.surface,
     marginBottom: space.md,
   },
   body: { flex: 1 },
@@ -368,6 +401,7 @@ const styles = StyleSheet.create({
   skeletonFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   skeletonRowItem: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   inlineLoader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm, paddingVertical: space.base },
+  inlineLoaderSplit: { justifyContent: 'space-between', paddingHorizontal: space.xs },
 });
 
 export default EmptyState;

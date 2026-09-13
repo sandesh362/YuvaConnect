@@ -24,7 +24,21 @@ Stacked reference cards on light ground:
    "Verification in Progress" + "Our team is reviewing your Student ID. This usually takes
    24 hours."
 
-## 2–5. Mapping / flags / build / deviations
-All five are implemented as `SuccessState`, `LoadingSkeleton`/`Skeleton`, `EmptyState`,
-`ErrorState`, `Banner`/`InfoBanner` in `src/components/ui/`. Product screens must call these,
-never hand-roll a state. No backend dependency.
+## 2. Mapping
+No backend dependency — pure reference set. Product screens must call these components and
+never hand-roll a state.
+
+## 4. Build (component corrections to match the wireframe exactly)
+
+| Component | Correction |
+|---|---|
+| `SuccessState` | glyph is a **dark-navy filled check-circle on the mint well** (was green); new `secondaryAsLink` renders the secondary action as a bare text link ("Back to Home") |
+| `EmptyState` | new `wellSize="lg"` = 96dp well; neutral glyph is **navy**, not light slate; new `primaryVariant="outline"` for outline actions ("Adjust Filters") |
+| `ErrorState` (card) | **white ground + red hairline + 48dp square red-50 tile** (was a red wash with a circular well); Retry stays a blue text-style button |
+| `InlineLoader` | new `align="split"` = label left, spinner right (wireframe loading block) |
+| gallery §15 | now renders the five wireframe blocks with **verbatim copy** before the extra variants |
+
+## 5. Deviations
+1. The empty-state glyph in the export is a magnifier with a small ×; Ionicons has no
+   search-with-x glyph, so `searchEmpty` (plain magnifier) is used in the navy colour.
+2. Washed "Verification in Progress" banner → gradient `Banner` per the standing decision.
