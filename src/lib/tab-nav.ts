@@ -23,8 +23,8 @@ export const BUSINESS_TAB_ROUTES: Record<string, string | null> = {
   home: '/(app)/home',
   gigs: '/(business)/my-gigs',
   post: '/(business)/post-gig',
-  /** Saved Talent (screen 37) — no backend yet, decision owed. */
-  talent: null,
+  /** Saved Talent (screen 37) — ships empty + flagged per the approved decision. */
+  talent: '/talent',
   profile: '/(business)/profile',
 };
 

@@ -29,42 +29,42 @@ Build order and status live in `../DESIGN_SYSTEM.md` §9.
 | # | Wireframe | Spec | Status |
 |---|---|---|---|
 | 1 | Role Selection & Onboarding | [`01-role-selection.md`](./01-role-selection.md) | ✅ built (`/role`) |
-| 2 | Global Search | [`02-global-search.md`](./02-global-search.md) | ✅ built (`/search`) — pending review |
-| 3 | System States & Feedback | [`03-system-states.md`](./03-system-states.md) | ✅ built (gallery §15) — pending review |
-| 4 | Report & Support | [`04-report-support.md`](./04-report-support.md) | ✅ built (`/support`) — pending review |
-| 5 | Messages & Trust Center | [`05-messages-trust.md`](./05-messages-trust.md) | ✅ built (chat route) — pending review |
-| 6 | Ratings & Reviews Flow | [`06-ratings-reviews.md`](./06-ratings-reviews.md) | ✅ built (`/rate/[gigId]`) — pending review |
-| 7 | Student Login / Signup | [`07-student-login-signup.md`](./07-student-login-signup.md) | ✅ built (login+signup) — pending review |
-| 8 | Student Verification Flow | [`08-student-verification.md`](./08-student-verification.md) | ✅ built (`/verify`) — pending review |
-| 9 | Student Skill Selection | [`09-student-skill-selection.md`](./09-student-skill-selection.md) | ✅ built (`/skills`) — pending review |
-| 10 | Student Location & Availability | [`10-location-availability.md`](./10-location-availability.md) | ✅ built (`/location`) — pending review |
-| 11 | Student Home Dashboard | [`11-student-home.md`](./11-student-home.md) | ✅ built (`/home` student) — pending review |
-| 12 | Discover Gigs | [`12-discover-gigs.md`](./12-discover-gigs.md) | ✅ built (`/feed`) — pending review |
-| 13 | Gig Filters (modal sheet) | [`13-gig-filters.md`](./13-gig-filters.md) | 📝 spec extracted · ⬜ not built |
-| 14 | Gig Details View | [`14-gig-details.md`](./14-gig-details.md) | ✅ built (`/gig/[id]`) — pending review |
-| 15 | Apply for Gig (modal sheet) | [`15-apply-for-gig.md`](./15-apply-for-gig.md) | 📝 spec extracted · ⬜ not built |
-| 16 | My Applications | [`16-my-applications.md`](./16-my-applications.md) | ✅ built (`/my-gigs`) — pending review |
-| 17 | Active Work Tracker | [`17-active-work-tracker.md`](./17-active-work-tracker.md) | ✅ built (`/tracker/[gigId]`) — pending review |
-| 18 | Deliverable Submission | [`18-deliverable-submission.md`](./18-deliverable-submission.md) | ✅ built (`/submit/[gigId]`) — pending review |
-| 19 | Revision Requested | [`19-revision-requested.md`](./19-revision-requested.md) | ✅ built (`/revision/[gigId]`) — pending review |
-| 20 | Student Earnings | [`20-student-earnings.md`](./20-student-earnings.md) | ✅ built (`/earnings`) — pending review |
-| 21 | Student Notifications | [`21-student-notifications.md`](./21-student-notifications.md) | ✅ built (`/notifications`) — pending review |
-| 22 | Saved Gigs | [`22-saved-gigs.md`](./22-saved-gigs.md) | 📝 spec extracted · ⬜ not built · ❌ no backend |
-| 23 | Student Portfolio & Profile | [`23-student-profile.md`](./23-student-profile.md) | ✅ built (`/profile`) — pending review |
-| 24 | Student Reviews | [`24-student-reviews.md`](./24-student-reviews.md) | ✅ built (`/reviews`) — pending review |
-| 25 | Business Login / Signup | [`25-business-login.md`](./25-business-login.md) | 📝 spec extracted · ⬜ not built |
-| 26 | Business Verification | [`26-business-verification.md`](./26-business-verification.md) | 📝 spec extracted · ⬜ not built |
-| 27 | Business Dashboard | [`27-business-dashboard.md`](./27-business-dashboard.md) | 📝 spec extracted · ⬜ not built |
-| 28 | Post a New Gig | [`28-post-a-gig.md`](./28-post-a-gig.md) | 📝 spec extracted · ⬜ not built |
-| 29 | Applicant Management | [`29-applicant-management.md`](./29-applicant-management.md) | 📝 spec extracted · ⬜ not built |
-| 30 | Candidate Profile View | [`30-candidate-profile.md`](./30-candidate-profile.md) | 📝 spec extracted · ⬜ not built |
-| 31 | Candidate Comparison | [`31-candidate-comparison.md`](./31-candidate-comparison.md) | 📝 spec extracted · ⬜ not built |
-| 32 | Select Student Confirmation | [`32-confirm-selection.md`](./32-confirm-selection.md) | 📝 spec extracted · ⬜ not built |
-| 33 | Business Gig Management | [`33-business-gig-management.md`](./33-business-gig-management.md) | 📝 spec extracted · ⬜ not built |
-| 34 | Business Active Work Tracker | [`34-business-work-tracker.md`](./34-business-work-tracker.md) | 📝 spec extracted · ⬜ not built |
-| 35 | Business Payments | [`35-business-payments.md`](./35-business-payments.md) | 📝 spec extracted · ⬜ not built |
-| 36 | Business Notifications | [`36-business-notifications.md`](./36-business-notifications.md) | 📝 spec extracted · ⬜ not built |
-| 37 | Saved Talent / Talent Pool | [`37-saved-talent.md`](./37-saved-talent.md) | 📝 spec extracted · ⬜ not built · ❌ no backend |
+| 2 | Global Search | [`02-global-search.md`](./02-global-search.md) | ✅ built (`/search`) — approved |
+| 3 | System States & Feedback | [`03-system-states.md`](./03-system-states.md) | ✅ built (gallery §15) — approved |
+| 4 | Report & Support | [`04-report-support.md`](./04-report-support.md) | ✅ built (`/support`) — approved |
+| 5 | Messages & Trust Center | [`05-messages-trust.md`](./05-messages-trust.md) | ✅ built (chat route) — approved |
+| 6 | Ratings & Reviews Flow | [`06-ratings-reviews.md`](./06-ratings-reviews.md) | ✅ built (`/rate/[gigId]`) — approved |
+| 7 | Student Login / Signup | [`07-student-login-signup.md`](./07-student-login-signup.md) | ✅ built (login+signup) — approved |
+| 8 | Student Verification Flow | [`08-student-verification.md`](./08-student-verification.md) | ✅ built (`/verify`) — approved |
+| 9 | Student Skill Selection | [`09-student-skill-selection.md`](./09-student-skill-selection.md) | ✅ built (`/skills`) — approved |
+| 10 | Student Location & Availability | [`10-location-availability.md`](./10-location-availability.md) | ✅ built (`/location`) — approved |
+| 11 | Student Home Dashboard | [`11-student-home.md`](./11-student-home.md) | ✅ built (`/home` student) — approved |
+| 12 | Discover Gigs | [`12-discover-gigs.md`](./12-discover-gigs.md) | ✅ built (`/feed`) — approved |
+| 13 | Gig Filters (modal sheet) | [`13-gig-filters.md`](./13-gig-filters.md) | ✅ built (sheet in `/feed`) — approved |
+| 14 | Gig Details View | [`14-gig-details.md`](./14-gig-details.md) | ✅ built (`/gig/[id]`) — approved |
+| 15 | Apply for Gig (modal sheet) | [`15-apply-for-gig.md`](./15-apply-for-gig.md) | ✅ built (sheet in `/gig/[id]`) — approved |
+| 16 | My Applications | [`16-my-applications.md`](./16-my-applications.md) | ✅ built (`/my-gigs`) — approved |
+| 17 | Active Work Tracker | [`17-active-work-tracker.md`](./17-active-work-tracker.md) | ✅ built (`/tracker/[gigId]`) — approved |
+| 18 | Deliverable Submission | [`18-deliverable-submission.md`](./18-deliverable-submission.md) | ✅ built (`/submit/[gigId]`) — approved |
+| 19 | Revision Requested | [`19-revision-requested.md`](./19-revision-requested.md) | ✅ built (`/revision/[gigId]`) — approved |
+| 20 | Student Earnings | [`20-student-earnings.md`](./20-student-earnings.md) | ✅ built (`/earnings`) — approved |
+| 21 | Student Notifications | [`21-student-notifications.md`](./21-student-notifications.md) | ✅ built (`/notifications`) — approved |
+| 22 | Saved Gigs | [`22-saved-gigs.md`](./22-saved-gigs.md) | ✅ built (`/saved`) — ship-empty + flagged per decision · ❌ no backend |
+| 23 | Student Portfolio & Profile | [`23-student-profile.md`](./23-student-profile.md) | ✅ built (`/profile`) — approved |
+| 24 | Student Reviews | [`24-student-reviews.md`](./24-student-reviews.md) | ✅ built (`/reviews`) — approved |
+| 25 | Business Login / Signup | [`25-business-login.md`](./25-business-login.md) | ✅ built (`/login?role=BUSINESS`, `/signup?role=BUSINESS`) — pending review |
+| 26 | Business Verification | [`26-business-verification.md`](./26-business-verification.md) | ✅ built (`/business/verify`) — pending review |
+| 27 | Business Dashboard | [`27-business-dashboard.md`](./27-business-dashboard.md) | ✅ built (`/home` business) — pending review |
+| 28 | Post a New Gig | [`28-post-a-gig.md`](./28-post-a-gig.md) | ✅ built (`/post-gig`, + edit mode) — pending review |
+| 29 | Applicant Management | [`29-applicant-management.md`](./29-applicant-management.md) | ✅ built (`/applicants/[gigId]`) — pending review |
+| 30 | Candidate Profile View | [`30-candidate-profile.md`](./30-candidate-profile.md) | ✅ built (`/candidate/[userId]`) — pending review |
+| 31 | Candidate Comparison | [`31-candidate-comparison.md`](./31-candidate-comparison.md) | ✅ built (`/compare/[gigId]`) — pending review |
+| 32 | Select Student Confirmation | [`32-confirm-selection.md`](./32-confirm-selection.md) | ✅ built (`/assign/[applicationId]`) — pending review |
+| 33 | Business Gig Management | [`33-business-gig-management.md`](./33-business-gig-management.md) | ✅ built (`/my-gigs` business) — pending review |
+| 34 | Business Active Work Tracker | [`34-business-work-tracker.md`](./34-business-work-tracker.md) | ✅ built (`/gig/[id]` business) — pending review |
+| 35 | Business Payments | [`35-business-payments.md`](./35-business-payments.md) | ✅ built (`/payment/[id]`) — pending review |
+| 36 | Business Notifications | [`36-business-notifications.md`](./36-business-notifications.md) | ✅ built (`/notifications` business) — pending review |
+| 37 | Saved Talent / Talent Pool | [`37-saved-talent.md`](./37-saved-talent.md) | ✅ built (`/talent`) — ship-empty + flagged per decision · ❌ no backend |
 
 ## Cross-screen design language (applies to every file above)
 

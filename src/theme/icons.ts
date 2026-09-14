@@ -148,6 +148,7 @@ export const icons = {
   building: 'business-outline',
   fingerprint: 'finger-print-outline',
   people: 'people-outline',
+  peopleFilled: 'people',
   personAdd: 'person-add-outline',
   lock: 'lock-closed-outline',
   mail: 'mail-outline',

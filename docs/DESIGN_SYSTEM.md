@@ -1,7 +1,7 @@
 # YuvaConnect — Design System (Phase 7, STEP 1)
 
 Status: **STEP 1 signed off** (tokens + components + gallery, live at `/design-system`) and the dead prototype deleted (§8).
-**STEP 2 in progress** — screens are rebuilt one at a time against the 37 wireframes; progress in §9.
+**STEP 2 complete (pending final review)** — all 37 wireframe screens are rebuilt one at a time; progress in §9.
 
 ```
 src/theme/            ← tokens (single source of truth)
@@ -257,7 +257,42 @@ One screen per turn: described from the wireframe, mapped to live app data, gaps
 | # | Screen | Route | Status |
 |---|---|---|---|
 | 1 | Role Selection & Onboarding | `/role` *(new, additive)* | ✅ **built & approved** — `b27cbc4`, `cb70179` |
-| 3–37 | … | | ⬜ specs extracted, not built |
+| 2 | Splash / Auth Gate | `index.tsx` (untouched) | ✅ **built & approved** — `6d53df2` (kept existing route) |
+| 3 | Student Login / Signup | `/(auth)/login`, `/(auth)/signup` | ✅ **built & approved** — `8fd3ac0` |
+| 4 | OTP / Contact Verification | `(auth)` flow | ✅ **built & approved** — `02d2c8f` |
+| 5 | Messages & Trust Center | `(shared)/chat`, `(shared)/support` | ✅ **built & approved** — `5b26407` |
+| 6 | Ratings & Reviews Flow | `(shared)/rate/[gigId]` | ✅ **built & approved** — `7b6fe95` |
+| 7 | Student Login/Signup (full) | `/(auth)/login`, `/(auth)/signup` | ✅ **built & approved** — `d587e21` |
+| 8 | Student Verification | `/(student)/verify` | ✅ **built & approved** — `365dba5` |
+| 9 | Skills Selection | `/(student)/skills` | ✅ **built & approved** — `8448a6a` |
+| 10 | Location & Availability | `/(student)/location` | ✅ **built & approved** — `b5e967d` |
+| 11 | Student Home Dashboard | `/(app)/home` (student) | ✅ **built & approved** — `95c7d84` |
+| 12 | Discover Gigs | `/(student)/feed` | ✅ **built & approved** — `2d58351` |
+| 13 | Gig Filters (sheet) | sheet in `/(student)/feed` | ✅ **built & approved** — `334aefb` |
+| 14 | Gig Details | `/(student)/gig/[id]` | ✅ **built & approved** — `24d8c6a` |
+| 15 | Apply for Gig (sheet) | sheet in `/(student)/gig/[id]` | ✅ **built & approved** — `e3842b9` |
+| 16 | My Applications | `/(student)/my-gigs` | ✅ **built & approved** — `b07bae0`, `b6b532e` |
+| 17 | Active Work Tracker | `/(student)/tracker/[gigId]` | ✅ **built & approved** — `9e68d28` |
+| 18 | Deliverable Submission | `/(student)/submit/[gigId]` | ✅ **built & approved** — `34932d5` |
+| 19 | Revision Requested | `/(student)/revision/[gigId]` | ✅ **built & approved** — `0b25acc` |
+| 20 | Student Earnings | `/(student)/earnings` | ✅ **built & approved** — `15d8840` |
+| 21 | Student Notifications | `/(shared)/notifications` | ✅ **built & approved** — `dec9b30` |
+| 22 | Saved Gigs | `/(student)/saved` | ✅ **built & approved** — ship-empty + flagged (`114d394`, `5aa9652`) |
+| 23 | Student Profile | `/(student)/profile` | ✅ **built & approved** — `d0acdc9` |
+| 24 | Student Reviews | `/(student)/reviews` | ✅ **built & approved** — `bcce113` |
+| 25 | Business Login / Signup | `/(auth)/login?role=BUSINESS`, `/(auth)/signup?role=BUSINESS` | ✅ built — pending review |
+| 26 | Business Verification | `/business/verify` *(new, real dir)* | ✅ built — pending review |
+| 27 | Business Dashboard | `/(app)/home` (business) | ✅ built — pending review |
+| 28 | Post a New Gig | `/(business)/post-gig` (+ edit mode `?gigId=`) | ✅ built — pending review |
+| 29 | Applicant Management | `/(business)/applicants/[gigId]` | ✅ built — pending review |
+| 30 | Candidate Profile | `/candidate/[userId]` *(new, real dir)* | ✅ built — pending review |
+| 31 | Candidate Comparison | `/compare/[gigId]` *(new, real dir)* | ✅ built — pending review |
+| 32 | Confirm Selection | `/assign/[applicationId]` *(new, real dir)* | ✅ built — pending review |
+| 33 | Business Gig Management | `/(business)/my-gigs` | ✅ built — pending review |
+| 34 | Business Work Tracker | `/(business)/gig/[id]` | ✅ built — pending review |
+| 35 | Business Payments | `/payment/[id]` *(new, real dir)* | ✅ built — pending review |
+| 36 | Business Notifications | `/(shared)/notifications` (business branch) | ✅ built — pending review |
+| 37 | Saved Talent | `/talent` *(new, real dir)* | ✅ built — ship-empty + flagged, pending review |
 
 ### Screen 1 — Role Selection & Onboarding (`src/app/(auth)/role.tsx`) → [full spec](./wireframes/01-role-selection.md)
 
