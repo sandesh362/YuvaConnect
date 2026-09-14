@@ -43,7 +43,7 @@ Build order and status live in `../DESIGN_SYSTEM.md` §9.
 | 13 | Gig Filters (modal sheet) | [`13-gig-filters.md`](./13-gig-filters.md) | 📝 spec extracted · ⬜ not built |
 | 14 | Gig Details View | [`14-gig-details.md`](./14-gig-details.md) | ✅ built (`/gig/[id]`) — pending review |
 | 15 | Apply for Gig (modal sheet) | [`15-apply-for-gig.md`](./15-apply-for-gig.md) | 📝 spec extracted · ⬜ not built |
-| 16 | My Applications | [`16-my-applications.md`](./16-my-applications.md) | 📝 spec extracted · ⬜ not built |
+| 16 | My Applications | [`16-my-applications.md`](./16-my-applications.md) | ✅ built (`/my-gigs`) — pending review |
 | 17 | Active Work Tracker | [`17-active-work-tracker.md`](./17-active-work-tracker.md) | 📝 spec extracted · ⬜ not built |
 | 18 | Deliverable Submission | [`18-deliverable-submission.md`](./18-deliverable-submission.md) | 📝 spec extracted · ⬜ not built |
 | 19 | Revision Requested | [`19-revision-requested.md`](./19-revision-requested.md) | 📝 spec extracted · ⬜ not built |

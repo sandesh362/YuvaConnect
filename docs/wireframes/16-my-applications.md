@@ -1,6 +1,6 @@
 # 16 · My Applications
 
-Route: `/(student)/my-gigs` (rebuild in place).
+Route: `/(student)/my-gigs` (rebuilt in place). Status: ✅ built — pending review.
 
 ## 1. What the wireframe shows
 
@@ -26,5 +26,23 @@ my applications = applications filtered by me ✅; status pill = Application.sta
 progress % = derive from GigStatus lifecycle (no % column) → flag/derive; withdraw = check
 endpoint (likely absent → flag); "15 applicants" count ✅ on gig.
 
-## 3. Flags: progress %, withdraw endpoint.
-## 4–5. At build time.
+## 3. Flags (resolved at build)
+- Progress % has no column → DERIVED from the lifecycle (IN_PROGRESS 50, REVISION 60,
+  SUBMITTED 75), shown only on Active cards, derivation documented.
+- Withdraw exists only on the dead Mongoose router → link renders, tap explains (flag).
+- "Open Tracker" → quiet no-op until screen 17 ships /tracker/[gigId].
+- Verified-Business teal row: no isVerified in payload → the location-caption card variant
+  (also drawn in the export) is used instead.
+
+## 4. Build
+Rebuilt `src/app/(student)/my-gigs.tsx`: ScreenHeader with plain bell, check-mark filter
+rail (bare "✓ All" + outlined pills, style 2), application cards with mint/blue initials
+avatar, derived status pill (Applied/Shortlisted/Active/Completed/Rejected from the REAL
+Application.status + gig lifecycle), applied-on + due + applicant-count caption, green
+ProgressBar on Active cards (1.5px blue border), Budget-over-price footer and per-status
+actions (View Status → gig · Open Tracker · Rate Gig → /rate). Tab bar activeKey="mygigs".
+
+## 5. Deviations
+1. Card subtitle "3 days duration" variants → honest composition: applied-ago label +
+   real deadline + real applicant count (no duration column).
+2. "Completed" group label instead of the clipped "Comp…" pill.
