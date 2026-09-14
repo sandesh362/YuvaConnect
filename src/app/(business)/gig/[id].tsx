@@ -12,7 +12,12 @@
  *  - Assigned student: real SELECTED application → name/college/rating via
  *    GET /api/gigs/:id/applicants.
  *  - Fund: POST payment create-order → RazorpayCheckout → verify-payment
- *    (Payment PENDING→HELD) — preserved from the previous build.
+ *    (Payment PENDING→HELD) — preserved from the previous build. The Razorpay
+ *    module is loaded LAZILY at tap time (dynamic import + catch): its
+ *    top-level `new NativeEventEmitter(undefined)` throws in Expo Go, which
+ *    does not ship Razorpay's native code — a top-level import crashed the
+ *    whole app at startup there. Without the native module the funding step
+ *    shows an explanatory flag instead (custom dev client or web needed).
  *  - Request Revision: Sheet → PATCH requestRevision (SUBMITTED only, real
  *    feedback row + student notification + REVISION_REQUESTED).
  *  - Approve & Pay: POST release-payment (SUBMITTED + HELD → RELEASED, gig
@@ -35,7 +40,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import RazorpayCheckout from 'react-native-razorpay';
 
 import {
   Button,
@@ -53,7 +57,7 @@ import {
 import type { Milestone } from '@/components/ui';
 import { Applicant, initialsOf } from '@/components/business/candidate-card';
 import { apiErrorMessage } from '@/config/api';
-import { createPaymentOrder, getApplicants, getGig, releasePayment, requestRevision, verifyPayment } from '@/lib/gig-api';
+import { createPaymentOrder, getApplicants, getGig, releasePayment, requestRevision, verifyPayment, type RazorpayPaymentResponse } from '@/lib/gig-api';
 import { getMyRating } from '@/lib/trust-api';
 import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
@@ -130,6 +134,16 @@ export default function BusinessWorkTrackerScreen() {
 
   const fund = useMutation({
     mutationFn: async () => {
+      // Deferred on purpose: importing react-native-razorpay throws in Expo Go
+      // (no native module → NativeEventEmitter invariant), which used to kill
+      // the app at startup because route modules load eagerly.
+      let RazorpayCheckout: { open: (options: Record<string, unknown>) => Promise<RazorpayPaymentResponse> };
+      try {
+        const mod = await import('react-native-razorpay');
+        RazorpayCheckout = (mod.default ?? mod) as typeof RazorpayCheckout;
+      } catch {
+        throw new Error('RAZORPAY_NATIVE_MISSING');
+      }
       const { order } = await createPaymentOrder(token!, id);
       const result = await RazorpayCheckout.open({
         key: order.keyId,
@@ -144,7 +158,12 @@ export default function BusinessWorkTrackerScreen() {
       await verifyPayment(token!, id, result);
     },
     onSuccess: refresh,
-    onError: (err) => setError(apiErrorMessage(err)),
+    onError: (err) =>
+      setError(
+        err instanceof Error && err.message === 'RAZORPAY_NATIVE_MISSING'
+          ? 'Razorpay checkout needs its native module, which Expo Go does not include. Fund gigs from the web preview, or build a custom dev client (npx expo run:android / run:ios). Everything else on this screen works in Expo Go.'
+          : apiErrorMessage(err),
+      ),
   });
 
   const revision = useMutation({

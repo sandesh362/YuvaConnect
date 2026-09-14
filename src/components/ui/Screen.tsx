@@ -49,7 +49,7 @@ export function Screen({
       testID={testID}
       edges={['top', 'left', 'right']}
       style={[styles.root, { backgroundColor: tone === 'sunken' ? color.background : color.surface }, style]}>
-      <View style={[gutter && styles.gutter, constrain && styles.constrain, contentStyle]}>{children}</View>
+      <View style={[styles.fill, gutter && styles.gutter, constrain && styles.constrain, contentStyle]}>{children}</View>
     </SafeAreaView>
   );
 }
