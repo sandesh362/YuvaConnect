@@ -101,7 +101,7 @@ export default function RoleSelectionScreen() {
             <Text variant="callout" tone="secondary">
               Already have an account?
             </Text>
-            <TextLink label="Login" iconRight={null} onPress={() => router.push('/login' as never)} />
+            <TextLink label="Login" iconRight={null} onPress={() => router.push(`/(auth)/login?role=${role}` as never)} />
           </View>
         </View>
       </BottomActionBar>

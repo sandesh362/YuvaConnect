@@ -13,6 +13,7 @@ import React, { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button, Icon, InfoBanner, Screen, SelectableChip, Text, TextField, TextLink } from '@/components/ui';
+import { BusinessHero, MintAuthSegments, OrContinueWith, SwitchStudentFooter, WhyHireCard } from '@/components/auth/business-skin';
 import { apiErrorMessage } from '@/config/api';
 import { signup } from '@/lib/auth-api';
 import { useAuth } from '@/providers/auth-provider';
@@ -37,6 +38,7 @@ export default function SignupScreen() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const isStudent = role === 'STUDENT';
+  const businessSkin = params.role === 'BUSINESS';
 
   const submit = async () => {
     setPending(true);
@@ -55,47 +57,60 @@ export default function SignupScreen() {
   return (
     <Screen testID="screen-signup">
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {/* --- Gradient hero --- */}
-        <LinearGradient
-          colors={[...gradient.auth.colors] as [string, string, ...string[]]}
-          start={gradient.auth.start}
-          end={gradient.auth.end}
-          style={styles.hero}>
-          <View style={styles.heroTile}>
-            <Icon name="logo" size={44} color={color.primary} />
-          </View>
-          <Text variant="display" style={styles.heroWordmark}>
-            YuvaConnect
-          </Text>
-          <Text variant="bodyStrong" tone="secondary">
-            Local skills. Real opportunities.
-          </Text>
-        </LinearGradient>
+        {/* --- Hero: business skin (25) or student gradient (07) --- */}
+        {businessSkin ? (
+          <BusinessHero />
+        ) : (
+          <LinearGradient
+            colors={[...gradient.auth.colors] as [string, string, ...string[]]}
+            start={gradient.auth.start}
+            end={gradient.auth.end}
+            style={styles.hero}>
+            <View style={styles.heroTile}>
+              <Icon name="logo" size={44} color={color.primary} />
+            </View>
+            <Text variant="display" style={styles.heroWordmark}>
+              YuvaConnect
+            </Text>
+            <Text variant="bodyStrong" tone="secondary">
+              Local skills. Real opportunities.
+            </Text>
+          </LinearGradient>
+        )}
 
         {/* --- Form card --- */}
         <View style={styles.card}>
+          {businessSkin ? (
+            <MintAuthSegments
+              active="signup"
+              onNavigate={(key) => router.replace((key === 'login' ? '/login?role=BUSINESS' : '/signup?role=BUSINESS') as never)}
+              onReports={() => setNotice('Reports has no route or backend yet — it is kept visible per the wireframe and flagged, not faked.')}
+            />
+          ) : null}
           <Text variant="title1">Create Account</Text>
           <Text variant="body" tone="secondary">
             {isStudent ? 'Join as a student and get verified by your college.' : 'Join as a business and hire verified students.'}
           </Text>
 
-          <View style={styles.roleBlock}>
-            <Text variant="label" tone="secondary">
-              I am joining as
-            </Text>
-            <View style={styles.roleRow} accessibilityRole="radiogroup" accessibilityLabel="Account role">
-              <SelectableChip label="Student" selected={isStudent} onToggle={() => setRole('STUDENT')} indicator="none" style={styles.roleChip} />
-              <SelectableChip label="Business" selected={!isStudent} onToggle={() => setRole('BUSINESS')} indicator="none" style={styles.roleChip} />
+          {!businessSkin ? (
+            <View style={styles.roleBlock}>
+              <Text variant="label" tone="secondary">
+                I am joining as
+              </Text>
+              <View style={styles.roleRow} accessibilityRole="radiogroup" accessibilityLabel="Account role">
+                <SelectableChip label="Student" selected={isStudent} onToggle={() => setRole('STUDENT')} indicator="none" style={styles.roleChip} />
+                <SelectableChip label="Business" selected={!isStudent} onToggle={() => setRole('BUSINESS')} indicator="none" style={styles.roleChip} />
+              </View>
             </View>
-          </View>
+          ) : null}
 
           <TextField label="Name" icon="person" value={name} onChangeText={setName} placeholder="Your full name" testID="signup-name" />
           <TextField
-            label="Email"
+            label={businessSkin ? 'Business Email' : 'Email'}
             icon="mail"
             value={email}
             onChangeText={setEmail}
-            placeholder="you@example.com"
+            placeholder={businessSkin ? 'owner@business.com' : 'you@example.com'}
             autoCapitalize="none"
             keyboardType="email-address"
             testID="signup-email"
@@ -116,30 +131,47 @@ export default function SignupScreen() {
 
           <Button label="Create Account" size="lg" loading={pending} onPress={submit} testID="signup-submit" />
 
-          <View style={styles.orRow}>
-            <View style={styles.orLine} />
-            <Text variant="captionStrong" tone="tertiary">
-              OR
-            </Text>
-            <View style={styles.orLine} />
+          {businessSkin ? (
+            <OrContinueWith
+              onGoogle={() => setNotice('Google sign-in has no live backend endpoint yet — email signup is the real path.')}
+              onPhone={() => setNotice('Phone OTP has no live backend endpoint yet — email signup is the real path.')}
+            />
+          ) : (
+            <>
+              <View style={styles.orRow}>
+                <View style={styles.orLine} />
+                <Text variant="captionStrong" tone="tertiary">
+                  OR
+                </Text>
+                <View style={styles.orLine} />
+              </View>
+
+              <Button
+                label="Continue with Google"
+                variant="secondary"
+                size="lg"
+                icon="logoGoogle"
+                onPress={() => setNotice('Google sign-in has no live backend endpoint yet — email signup is the real path.')}
+                testID="signup-google"
+              />
+            </>
+          )}
+        </View>
+
+        {businessSkin ? <WhyHireCard /> : null}
+
+        {businessSkin ? (
+          <View style={styles.footerWrap}>
+            <SwitchStudentFooter onSwitch={() => router.replace('/signup' as never)} />
           </View>
-
-          <Button
-            label="Continue with Google"
-            variant="secondary"
-            size="lg"
-            icon="logoGoogle"
-            onPress={() => setNotice('Google sign-in has no live backend endpoint yet — email signup is the real path.')}
-            testID="signup-google"
-          />
-        </View>
-
-        <View style={styles.footerRow}>
-          <Text variant="body" tone="secondary">
-            Already have an account?
-          </Text>
-          <TextLink label="Login" iconRight={null} onPress={() => router.push('/login' as never)} />
-        </View>
+        ) : (
+          <View style={styles.footerRow}>
+            <Text variant="body" tone="secondary">
+              Already have an account?
+            </Text>
+            <TextLink label="Login" iconRight={null} onPress={() => router.push('/login' as never)} />
+          </View>
+        )}
 
         <InfoBanner
           tone="success"
@@ -201,5 +233,6 @@ const styles = StyleSheet.create({
     gap: space.md,
     marginTop: space.xl,
   },
+  footerWrap: { marginTop: space.xl, marginHorizontal: layout.screenGutter },
   security: { marginHorizontal: layout.screenGutter, marginTop: space.xl },
 });
