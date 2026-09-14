@@ -1,4 +1,4 @@
-# 22 · Saved Gigs — ❌ NO BACKEND (register). Route NEW additive (`/saved`).
+# 22 · Saved Gigs — ❌ NO BACKEND (register). Route NEW additive (`/saved`). Status: ✅ built (ship-empty per user decision) — pending review.
 
 ## 1. What the wireframe shows
 
@@ -14,7 +14,18 @@
 - Tab bar: Home · Discover · **Saved (ACTIVE blue filled bookmark)** · Messages · Profile.
 
 ## 2. Mapping — NONE. No SavedGig model/route (§5 ❌).
-## 3. Flags — screen can only ship as an honest EMPTY state ("Nothing saved yet") until a
-   join table + 3 endpoints exist; bookmark taps elsewhere must not pretend to persist.
-   DECISION NEEDED from user: hide tab+screen, or ship empty-state version.
-## 4–5. At build time.
+## 3. Flags — DECISION MADE (user, screen-21 review): **ship-empty + flagged**.
+The screen renders the exact wireframe chrome (header + search action, check-mark skill
+rail, Saved tab active) over a neutral InfoBanner + honest EmptyState ("Nothing saved
+yet"). No fake cards; bookmark taps elsewhere keep their explanatory banners. When the
+backend gains a SavedGig join table + endpoints, the list slots real GigCards in via
+toGigCardData.
+
+## 4. Build
+`src/app/(student)/saved.tsx` (route `/saved`); tab-nav gained `saved`; the tab bar uses
+the per-export Saved variant (My Gigs slot → Saved bookmark, matching how Earnings swaps
+Messages). Skill rail chips are interactive state over the empty list — honest chrome.
+
+## 5. Deviations
+1. List content = flag banner + EmptyState instead of the five mock GigCards (decision
+   above).
