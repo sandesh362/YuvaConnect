@@ -22,6 +22,23 @@ application create ✅ (applications API); cover-letter field name per API (veri
 `message`/`coverLetter`); availability/est-days/portfolio links → check Application schema,
 likely absent → flag; verified strip = user.isVerified + name ✅.
 
-## 3. Flags: extra proposal fields vs Application schema; step-bar semantics (2/5).
-## 4. Uses `StepProgress` + `Sheet`.
-## 5. At build time.
+## 3. Flags (resolved at build)
+- Application schema is { proposal, relevantExperience, availability } only. Est. Days and
+  Portfolio Links have NO columns → composed into the proposal as labelled lines
+  ("Estimated days: …", "Portfolio: …") — same honest composition as screens 4/6.
+- Step bar 2/5 is decorative semantics from the export (the real flow is one form); kept
+  because the wireframe draws it, flagged here.
+- "Applying as Verified Student" uses the REAL StudentProfile.isVerified — falls back to
+  "Applying as Student" when unverified.
+
+## 4. Build
+- `Sheet` gained `leftIcon` ('close' | 'arrowBack') and `onInfo` (right info action).
+- The apply sheet on `/gig/[id]` rebuilt to the wireframe: washed gig strip (title ·
+  storefront + business · blue price), StepProgress 2/5, "Your Proposal" intro, the four
+  labelled fields incl. the two-column Availability / Est. Days row, Portfolio Links, the
+  protected-application info card, and the sticky footer ("Applying as …" + shield + name
+  over the full-width Submit Application button).
+
+## 5. Deviations
+1. Info icon tap raises the protection copy as a notice (the sheet already shows it in the
+   white card; the icon adds the same text on demand).

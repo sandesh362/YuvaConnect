@@ -39,6 +39,7 @@ import {
   ScreenHeader,
   Sheet,
   StatBox,
+  StepProgress,
   StatusBadge,
   Text,
   TextField,
@@ -46,7 +47,7 @@ import {
 import { apiErrorMessage } from '@/config/api';
 import { applyToGig, getGig, startGig, submitGig } from '@/lib/gig-api';
 import { getUserRatings } from '@/lib/trust-api';
-import { uploadImage } from '@/lib/profile-api';
+import { getProfile, uploadImage } from '@/lib/profile-api';
 import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
@@ -78,10 +79,17 @@ export default function GigDetailsScreen() {
   const [proposal, setProposal] = useState('');
   const [experience, setExperience] = useState('');
   const [availability, setAvailability] = useState('');
+  const [estDays, setEstDays] = useState('');
+  const [links, setLinks] = useState('');
   const [deliverNote, setDeliverNote] = useState('');
   const [deliverFile, setDeliverFile] = useState<string | null>(null);
 
   const gigQuery = useQuery({ queryKey: ['gig', id], queryFn: () => getGig(token!, id!), enabled: !!token && !!id });
+  const profileQuery = useQuery({ queryKey: ['profile', token], queryFn: () => getProfile(token!), enabled: !!token });
+  const isVerifiedStudent = (() => {
+    const profile = profileQuery.data?.profile;
+    return !!(profile && 'isVerified' in profile && profile.isVerified);
+  })();
   const businessId = gigQuery.data?.business?.id;
   const ratingsQuery = useQuery({
     queryKey: ['user-ratings', businessId],
@@ -102,9 +110,22 @@ export default function GigDetailsScreen() {
   };
 
   const applyMutation = useMutation({
-    mutationFn: () => applyToGig(token!, id!, { proposal: proposal.trim(), relevantExperience: experience.trim(), availability: availability.trim() }),
+    mutationFn: () =>
+      applyToGig(token!, id!, {
+        proposal: [
+          proposal.trim(),
+          estDays.trim() ? `\nEstimated days: ${estDays.trim()}` : '',
+          links.trim() ? `\nPortfolio: ${links.trim()}` : '',
+        ]
+          .filter(Boolean)
+          .join(''),
+        relevantExperience: experience.trim(),
+        availability: availability.trim(),
+      }),
     onSuccess: () => {
       setApplyOpen(false);
+      setEstDays('');
+      setLinks('');
       setNotice('Application submitted — the business will review it shortly.');
       refresh();
     },
@@ -303,17 +324,118 @@ export default function GigDetailsScreen() {
         </BottomActionBar>
       ) : null}
 
-      {/* --- Apply sheet (real applyToGig contract) --- */}
-      <Sheet visible={applyOpen} onClose={() => setApplyOpen(false)} title="Apply for this Gig" testID="sheet-apply">
-        <TextField label="Proposal" value={proposal} onChangeText={setProposal} placeholder="Why are you a good fit?" type="textarea" />
-        <TextField label="Relevant Experience" value={experience} onChangeText={setExperience} placeholder="Similar work you've done" type="textarea" />
-        <TextField label="Availability" value={availability} onChangeText={setAvailability} placeholder="e.g. Evenings and weekends" />
-        {applyMutation.isError ? <InfoBanner tone="danger" icon="offline" title="Could not apply" description={apiErrorMessage(applyMutation.error)} /> : null}
-        <PrimaryButton
-          label={applyMutation.isPending ? 'Submitting…' : 'Submit Application'}
-          disabled={!proposal.trim()}
-          onPress={() => applyMutation.mutate()}
+      {/* --- Apply for Gig sheet (wireframe 15) --- */}
+      <Sheet
+        visible={applyOpen}
+        onClose={() => setApplyOpen(false)}
+        title="Apply for Gig"
+        leftIcon="arrowBack"
+        onInfo={() => setNotice('Your application is protected — private contact details are never shared until you are selected.')}
+        footer={
+          <View style={styles.applyFooter}>
+            <View style={styles.applyingRow}>
+              <Text variant="captionStrong" tone="secondary">
+                Applying as {isVerifiedStudent ? 'Verified Student' : 'Student'}
+              </Text>
+              <View style={styles.applyingName}>
+                <Icon name="shieldCheckFilled" size={14} color={color.primary} />
+                <Text variant="captionStrong" numberOfLines={1}>
+                  {user?.name ?? '—'}
+                </Text>
+              </View>
+            </View>
+            <PrimaryButton
+              label={applyMutation.isPending ? 'Submitting…' : 'Submit Application'}
+              disabled={!proposal.trim()}
+              onPress={() => applyMutation.mutate()}
+              testID="apply-submit"
+            />
+          </View>
+        }
+        testID="sheet-apply">
+        {/* Washed gig strip */}
+        {gig ? (
+          <View style={styles.applyStrip}>
+            <View style={styles.applyStripCopy}>
+              <Text variant="title3" numberOfLines={1}>
+                {gig.title}
+              </Text>
+              <View style={styles.applyStripMeta}>
+                <Icon name="storefront" size={13} color={color.textSecondary} />
+                <Text variant="caption" tone="secondary" numberOfLines={1}>
+                  {gig.business?.businessProfile?.businessName ?? gig.business?.name ?? 'Local business'}
+                </Text>
+              </View>
+            </View>
+            <Text variant="title3" tone="brand">
+              ₹{Number(gig.budget).toLocaleString()}
+            </Text>
+          </View>
+        ) : null}
+
+        <StepProgress total={5} current={2} />
+
+        <View style={styles.applyIntro}>
+          <Text variant="title1">Your Proposal</Text>
+          <Text variant="body" tone="secondary">
+            Tell the business why you are the best fit
+          </Text>
+        </View>
+
+        <TextField
+          label="Why are you a good fit?"
+          value={proposal}
+          onChangeText={setProposal}
+          placeholder="Mention your specific approach to this gig..."
+          type="textarea"
+          testID="apply-proposal"
         />
+        <TextField
+          label="Relevant Experience"
+          value={experience}
+          onChangeText={setExperience}
+          placeholder="Have you done similar work before?"
+          type="textarea"
+        />
+        <View style={styles.applyTwoCol}>
+          <TextField
+            label="Availability"
+            icon="clock"
+            value={availability}
+            onChangeText={setAvailability}
+            placeholder="e.g. Evenings"
+            style={styles.applyCol}
+          />
+          <TextField
+            label="Est. Days"
+            icon="stopwatch"
+            type="number"
+            keyboardType="number-pad"
+            value={estDays}
+            onChangeText={setEstDays}
+            placeholder="e.g. 3 days"
+            style={styles.applyCol}
+          />
+        </View>
+        <TextField
+          label="Portfolio Links"
+          icon="link"
+          value={links}
+          onChangeText={setLinks}
+          placeholder="Behance, GitHub, or Drive link"
+          autoCapitalize="none"
+        />
+
+        <View style={styles.protectCard}>
+          <Icon name="help" size={20} color={color.textPrimary} />
+          <Text variant="callout" tone="secondary" style={styles.protectCopy}>
+            Your application is protected. We never share your private contact details until you are selected.
+          </Text>
+        </View>
+
+        {applyMutation.isError ? (
+          <InfoBanner tone="danger" icon="offline" title="Could not apply" description={apiErrorMessage(applyMutation.error)} />
+        ) : null}
       </Sheet>
 
       {/* --- Submit deliverable sheet (functionality preserved until screen 18) --- */}
@@ -388,5 +510,36 @@ const styles = StyleSheet.create({
   applyRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, width: '100%' },
   applyButton: { flex: 1 },
   pendingRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, width: '100%' },
+
+  applyFooter: { gap: space.md, width: '100%' },
+  applyingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
+  applyingName: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexShrink: 1 },
+  applyStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space.md,
+    backgroundColor: color.primarySoft,
+    borderRadius: radius.lg,
+    paddingHorizontal: space.base,
+    paddingVertical: space.base,
+  },
+  applyStripCopy: { flex: 1, gap: space.xs },
+  applyStripMeta: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
+  applyIntro: { gap: space.sm, marginTop: space.sm },
+  applyTwoCol: { flexDirection: 'row', gap: space.md },
+  applyCol: { flex: 1 },
+  protectCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    backgroundColor: color.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: color.borderSubtle,
+    paddingHorizontal: space.base,
+    paddingVertical: space.base,
+  },
+  protectCopy: { flex: 1, lineHeight: 20 },
   pendingCopy: { flex: 1 },
 });

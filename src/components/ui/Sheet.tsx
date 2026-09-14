@@ -13,6 +13,10 @@ export type SheetProps = {
   onClose: () => void;
   /** Centred title2, per the Filters / Apply sheets. */
   title: string;
+  /** Swap the default X for another leading glyph (the Apply sheet uses arrow-back). */
+  leftIcon?: 'close' | 'arrowBack';
+  /** Optional right-side info icon (Apply for Gig). */
+  onInfo?: () => void;
   /** Right header action, e.g. blue "Reset". */
   rightAction?: { label: string; onPress: () => void };
   /** Sticky bottom area (the "Show N Gigs" bar). */
@@ -27,7 +31,7 @@ export type SheetProps = {
  * dim scrim, radius-24 top corners, X · centred title · right action header,
  * scrollable body and an optional sticky footer.
  */
-export function Sheet({ visible, onClose, title, rightAction, footer, children, contentStyle, testID }: SheetProps) {
+export function Sheet({ visible, onClose, title, leftIcon = 'close', onInfo, rightAction, footer, children, contentStyle, testID }: SheetProps) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.backdropWrap}>
@@ -35,11 +39,15 @@ export function Sheet({ visible, onClose, title, rightAction, footer, children, 
         <View testID={testID} style={styles.sheet}>
           <View style={styles.handle} />
           <View style={styles.header}>
-            <IconButton name="close" accessibilityLabel="Close" onPress={onClose} />
+            <IconButton name={leftIcon} accessibilityLabel="Close" onPress={onClose} />
             <Text variant="title2" style={styles.title}>
               {title}
             </Text>
-            {rightAction ? (
+            {onInfo ? (
+              <View style={styles.rightAction}>
+                <IconButton name="info" accessibilityLabel="About applications" onPress={onInfo} />
+              </View>
+            ) : rightAction ? (
               <Pressable accessibilityRole="button" accessibilityLabel={rightAction.label} onPress={rightAction.onPress} style={styles.rightAction}>
                 <Text variant="calloutStrong" tone="brand">
                   {rightAction.label}
