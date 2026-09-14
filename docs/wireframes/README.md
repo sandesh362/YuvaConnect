@@ -50,7 +50,7 @@ Build order and status live in `../DESIGN_SYSTEM.md` §9.
 | 20 | Student Earnings | [`20-student-earnings.md`](./20-student-earnings.md) | ✅ built (`/earnings`) — pending review |
 | 21 | Student Notifications | [`21-student-notifications.md`](./21-student-notifications.md) | ✅ built (`/notifications`) — pending review |
 | 22 | Saved Gigs | [`22-saved-gigs.md`](./22-saved-gigs.md) | 📝 spec extracted · ⬜ not built · ❌ no backend |
-| 23 | Student Portfolio & Profile | [`23-student-profile.md`](./23-student-profile.md) | 📝 spec extracted · ⬜ not built |
+| 23 | Student Portfolio & Profile | [`23-student-profile.md`](./23-student-profile.md) | ✅ built (`/profile`) — pending review |
 | 24 | Student Reviews | [`24-student-reviews.md`](./24-student-reviews.md) | 📝 spec extracted · ⬜ not built |
 | 25 | Business Login / Signup | [`25-business-login.md`](./25-business-login.md) | 📝 spec extracted · ⬜ not built |
 | 26 | Business Verification | [`26-business-verification.md`](./26-business-verification.md) | 📝 spec extracted · ⬜ not built |

@@ -62,6 +62,7 @@ export const icons = {
   options: 'options-outline',
   edit: 'create-outline',
   trash: 'trash-outline',
+  film: 'film-outline',
   send: 'paper-plane-outline',
   sendFilled: 'paper-plane',
   upload: 'cloud-upload-outline',
