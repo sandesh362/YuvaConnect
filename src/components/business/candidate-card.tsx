@@ -54,6 +54,7 @@ export function CandidateCard({
   gigId,
   onShortlist,
   onOpenProfile,
+  onSelect,
   style,
 }: {
   applicant: Applicant;
@@ -62,6 +63,8 @@ export function CandidateCard({
   /** Raises the "no live shortlist endpoint" notice — owned by the screen. */
   onShortlist: () => void;
   onOpenProfile: () => void;
+  /** Deep-links Confirm Selection (/assign/[applicationId]?gigId=). */
+  onSelect: () => void;
   style?: StyleProp<ViewStyle>;
 }) {
   return (
@@ -131,10 +134,10 @@ export function CandidateCard({
           </Text>
         </Pressable>
         <Button
-          label="Select"
+          label={applicant.status === 'SELECTED' ? 'Selected' : 'Select'}
           size="sm"
           style={styles.actionBtn}
-          onPress={() => undefined /* Confirm Selection (screen 32) wires this */}
+          onPress={onSelect}
           testID={`select-${applicant.id}`}
         />
       </View>

@@ -23,7 +23,8 @@
  *    carries a flag notice instead of cards.
  *  - Share + Heart (Saved Talent): no backend — flag notices on tap.
  *  - Chat: real per-gig thread when ?gigId= is present; flagged otherwise.
- *  - Select Student: quiet no-op until Confirm Selection (screen 32) ships.
+ *  - Select Student: deep-links Confirm Selection (screen 32) when the
+ *    application is resolvable via the ?gigId= applicants payload.
  */
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -253,7 +254,8 @@ export default function CandidateProfileScreen() {
           label="Select Student"
           size="lg"
           style={styles.selectButton}
-          onPress={() => undefined /* Confirm Selection (screen 32) wires this */}
+          disabled={!applicant || !gigId}
+          onPress={() => applicant && gigId && router.push(`/assign/${applicant.id}?gigId=${gigId}` as never)}
           testID="candidate-select"
         />
       </View>

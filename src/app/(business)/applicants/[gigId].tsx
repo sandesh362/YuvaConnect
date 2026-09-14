@@ -20,7 +20,7 @@
  *    and the button raises a flag notice.
  *  - Blue verified check: applicants payload does not expose User.isVerified —
  *    omitted rather than faked.
- *  - Select: quiet no-op until Confirm Selection (screen 32) ships.
+ *  - Select: deep-links Confirm Selection /assign/[applicationId] (screen 32).
  */
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -185,6 +185,7 @@ export default function ManageApplicantsScreen() {
             gigId={gigId}
             onShortlist={() => setNotice(SHORTLIST_FLAG)}
             onOpenProfile={() => router.push(`/candidate/${applicant.student.id}?gigId=${gigId}` as never)}
+            onSelect={() => router.push(`/assign/${applicant.id}?gigId=${gigId}` as never)}
           />
         ))}
 

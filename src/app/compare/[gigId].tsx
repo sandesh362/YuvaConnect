@@ -18,7 +18,7 @@
  *  - Shortlist button: same no-endpoint flag as screen 29.
  *  - Compare Finalists: with no way to shortlist, there are never finalists to
  *    compare — the green button raises the flag notice instead of a fake view.
- *  - Select (inside cards): quiet no-op until screen 32 ships.
+ *  - Select (inside cards): deep-links Confirm Selection (screen 32).
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -130,6 +130,7 @@ export default function CompareCandidatesScreen() {
               gigId={gigId}
               onShortlist={() => setNotice(SHORTLIST_FLAG)}
               onOpenProfile={() => router.push(`/candidate/${applicant.student.id}?gigId=${gigId}` as never)}
+              onSelect={() => router.push(`/assign/${applicant.id}?gigId=${gigId}` as never)}
             />
             {/* Compare-mode action row: solid Shortlist + outline Reject (real) */}
             <View style={styles.pairActions}>
