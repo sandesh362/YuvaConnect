@@ -61,6 +61,8 @@ export const icons = {
   filterFilled: 'funnel',
   options: 'options-outline',
   edit: 'create-outline',
+  archive: 'archive-outline',
+  pause: 'pause',
   trash: 'trash-outline',
   film: 'film-outline',
   send: 'paper-plane-outline',

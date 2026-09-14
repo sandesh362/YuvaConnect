@@ -20,9 +20,13 @@
  *    profile address when set; Remote stores "Remote".
  *  - "Review & Publish" opens a real review Sheet summarising exactly what
  *    will be sent before the POST fires.
+ *  - EDIT MODE (?gigId=, entered from the Manage Gigs pencil): preloads the
+ *    real gig — parsing the labelled description block back into category /
+ *    payment type / duration / deliverables — and saves via the real
+ *    PATCH /api/gigs/:id (server allows edits only while the gig is OPEN).
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -42,7 +46,7 @@ import {
   TextLink,
 } from '@/components/ui';
 import { apiErrorMessage } from '@/config/api';
-import { createGig } from '@/lib/gig-api';
+import { createGig, getGig, updateGig } from '@/lib/gig-api';
 import { getProfile } from '@/lib/profile-api';
 import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
@@ -92,9 +96,33 @@ function prettyDate(iso: string): string {
   return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+/** Inverse of the publish-time composition: split the labelled block back out. */
+function parseStoredGig(description: string) {
+  const [base, extras = ''] = description.split('\n---\n');
+  const parsed: { category?: string; paymentType?: string; duration?: string; workMode?: string; deliverables: string[] } = { deliverables: [] };
+  let inDeliverables = false;
+  for (const rawLine of extras.split('\n')) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    if (line.startsWith('- ') && inDeliverables) {
+      parsed.deliverables.push(line.slice(2).trim());
+      continue;
+    }
+    inDeliverables = false;
+    if (line.startsWith('Category: ')) parsed.category = line.slice('Category: '.length);
+    else if (line.startsWith('Payment type: ')) parsed.paymentType = line.slice('Payment type: '.length);
+    else if (line.startsWith('Duration: ')) parsed.duration = line.slice('Duration: '.length);
+    else if (line.startsWith('Work mode: ')) parsed.workMode = line.slice('Work mode: '.length);
+    else if (line === 'Deliverables:') inDeliverables = true;
+  }
+  return { base: base.trim(), ...parsed };
+}
+
 export default function PostGigScreen() {
   const { token } = useAuth();
   const client = useQueryClient();
+  const { gigId } = useLocalSearchParams<{ gigId?: string }>();
+  const editMode = !!gigId;
 
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
@@ -119,6 +147,27 @@ export default function PostGigScreen() {
     queryFn: () => getProfile(token!),
     enabled: !!token,
   });
+  const editGigQuery = useQuery({
+    queryKey: ['gig', gigId, token],
+    queryFn: () => getGig(token!, gigId!),
+    enabled: !!token && editMode,
+  });
+
+  useEffect(() => {
+    const gig = editGigQuery.data;
+    if (!gig) return;
+    const stored = parseStoredGig(gig.description);
+    setTitle(gig.title);
+    setDescription(stored.base);
+    if (stored.category) setCategory(stored.category);
+    if (stored.paymentType) setPaymentType(stored.paymentType);
+    if (stored.duration) setDuration(stored.duration);
+    if (stored.deliverables.length) setDeliverables(stored.deliverables);
+    if (stored.workMode) setWorkMode(stored.workMode.toLowerCase() === 'remote' ? 'remote' : 'onsite');
+    setSkills(gig.skillsRequired ?? []);
+    setBudget(String(Number(gig.budget)));
+    setDeadline(new Date(gig.deadline).toISOString().slice(0, 10));
+  }, [editGigQuery.data]);
 
   useEffect(() => {
     const profile = profileQuery.data?.profile;
@@ -138,14 +187,15 @@ export default function PostGigScreen() {
         deliverables.length ? `Deliverables:\n${deliverables.map((item) => `- ${item}`).join('\n')}` : null,
       ].filter(Boolean);
       const finalDescription = extras.length ? `${description.trim()}\n\n---\n${extras.join('\n')}` : description.trim();
-      return createGig(token!, {
+      const input = {
         title: title.trim(),
         description: finalDescription,
         skillsRequired: skills,
         budget: Number(budget),
         deadline: new Date(deadline).toISOString(),
         location: workMode === 'onsite' ? address.trim() || 'On-site' : 'Remote',
-      });
+      };
+      return editMode ? updateGig(token!, gigId!, input) : createGig(token!, input);
     },
     onSuccess: (gig) => {
       client.invalidateQueries({ queryKey: ['my-gigs'] });
@@ -352,7 +402,7 @@ export default function PostGigScreen() {
 
       {/* Sticky publish bar */}
       <View style={styles.stickyBar}>
-        <Button label="Review & Publish" size="lg" disabled={!canPublish} onPress={() => setSheet('review')} style={styles.publishBtn} testID="post-gig-review" />
+        <Button label={editMode ? 'Review & Save' : 'Review & Publish'} size="lg" disabled={!canPublish} onPress={() => setSheet('review')} style={styles.publishBtn} testID="post-gig-review" />
       </View>
 
       {/* --- Sheets --- */}
@@ -427,7 +477,7 @@ export default function PostGigScreen() {
         <Button label="Add Deliverable" disabled={!deliverableDraft.trim()} onPress={addDeliverable} />
       </Sheet>
 
-      <Sheet visible={sheet === 'review'} onClose={() => setSheet(null)} title="Review & Publish">
+      <Sheet visible={sheet === 'review'} onClose={() => setSheet(null)} title={editMode ? 'Review & Save' : 'Review & Publish'}>
         <View style={styles.reviewBlock}>
           <ReviewRow label="Title" value={title.trim() || '—'} />
           <ReviewRow label="Category" value={category || '—'} />
@@ -444,7 +494,7 @@ export default function PostGigScreen() {
           title="What gets stored where"
           description="Title, description, skills, budget, deadline and location are real Gig columns. Category, payment type, duration and deliverables will be appended to the description under a labelled block — the schema has no columns for them."
         />
-        <Button label={publish.isPending ? 'Publishing…' : 'Publish Gig'} size="lg" loading={publish.isPending} onPress={() => publish.mutate()} testID="post-gig-publish" />
+        <Button label={publish.isPending ? 'Saving…' : editMode ? 'Save Changes' : 'Publish Gig'} size="lg" loading={publish.isPending} onPress={() => publish.mutate()} testID="post-gig-publish" />
       </Sheet>
     </Screen>
   );
