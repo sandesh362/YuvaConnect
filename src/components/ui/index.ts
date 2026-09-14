@@ -53,6 +53,7 @@ export {
 
 // --- Sheets & radios ---
 export { Sheet, type SheetProps } from './Sheet';
+export { FloatingLabelSelect, type FloatingLabelSelectProps } from './FloatingLabelSelect';
 export { RadioRow, type RadioRowProps } from './RadioRow';
 
 // --- Wizard & files ---
