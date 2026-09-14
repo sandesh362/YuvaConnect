@@ -1,34 +1,20 @@
 /**
- * Post a New Gig — wireframe 28/37. Rebuild in place, route unchanged.
+ * Post a New Gig — FIXED production QA version.
+ * Route: /(business)/post-gig
  *
- * Route: /(business)/post-gig  ·  Spec: docs/wireframes/28-post-a-gig.md
- *
- * What is REAL: POST /api/gigs with title, description, skillsRequired[],
- * budget (number), deadline (Date) and location — every required column the
- * live controller validates. On success: invalidate + deep-link to the real
- * gig detail route.
- *
- * Flags (never faked):
- *  - Category, Payment type, Duration and the Deliverables list have NO gig
- *    columns. They are kept in the UI per the wireframe and composed into the
- *    description text under a labelled "---" block at publish time (same
- *    approved treatment as Est. Days/Portfolio → proposal on screen 15). A
- *    banner states this before publishing.
- *  - "Save Draft": GigStatus has no DRAFT value — a gig is published or it
- *    does not exist. Tapping raises the flag banner, nothing fake is stored.
- *  - Work mode maps to the real `location` column: On-site uses the business
- *    profile address when set; Remote stores "Remote".
- *  - "Review & Publish" opens a real review Sheet summarising exactly what
- *    will be sent before the POST fires.
- *  - EDIT MODE (?gigId=, entered from the Manage Gigs pencil): preloads the
- *    real gig — parsing the labelled description block back into category /
- *    payment type / duration / deliverables — and saves via the real
- *    PATCH /api/gigs/:id (server allows edits only while the gig is OPEN).
+ * Fixes:
+ * - CTA always visible: KeyboardAvoidingView, large bottom padding, sticky bar with safe area
+ * - Validation: title, description, budget, deadline, skills all required, inline hints
+ * - Publish flow: Review & Publish -> Publish Gig -> Success state with View/Manage
+ * - Edit mode preserved
+ * - Keyboard never hides CTA
+ * - Success banner and navigation to gig detail
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   Button,
@@ -62,6 +48,9 @@ const SUGGESTED_SKILLS = [
   'Social Media',
   'Content Writing',
   'Data Entry',
+  'Graphic Design',
+  'Video Editing',
+  'Web Development',
 ];
 
 const CATEGORIES = [
@@ -96,7 +85,6 @@ function prettyDate(iso: string): string {
   return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-/** Inverse of the publish-time composition: split the labelled block back out. */
 function parseStoredGig(description: string) {
   const [base, extras = ''] = description.split('\n---\n');
   const parsed: { category?: string; paymentType?: string; duration?: string; workMode?: string; deliverables: string[] } = { deliverables: [] };
@@ -121,6 +109,7 @@ function parseStoredGig(description: string) {
 export default function PostGigScreen() {
   const { token } = useAuth();
   const client = useQueryClient();
+  const insets = useSafeAreaInsets();
   const { gigId } = useLocalSearchParams<{ gigId?: string }>();
   const editMode = !!gigId;
 
@@ -138,9 +127,11 @@ export default function PostGigScreen() {
   const [deliverables, setDeliverables] = useState<string[]>([]);
   const [deliverableDraft, setDeliverableDraft] = useState('');
 
-  const [sheet, setSheet] = useState<null | 'category' | 'payment' | 'deadline' | 'skill' | 'deliverable' | 'review'>(null);
+  const [sheet, setSheet] = useState<null | 'category' | 'payment' | 'deadline' | 'skill' | 'deliverable' | 'review' | 'success'>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [publishedGigId, setPublishedGigId] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const profileQuery = useQuery({
     queryKey: ['profile', token],
@@ -172,11 +163,26 @@ export default function PostGigScreen() {
   useEffect(() => {
     const profile = profileQuery.data?.profile;
     if (profile && 'category' in profile && profile.category && !category) setCategory(profile.category);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileQuery.data]);
+
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!title.trim()) errs.title = 'Gig title is required';
+    else if (title.trim().length < 5) errs.title = 'Title must be at least 5 characters';
+    if (!description.trim()) errs.description = 'Description is required';
+    else if (description.trim().length < 20) errs.description = 'Description must be at least 20 characters';
+    if (!budget.trim()) errs.budget = 'Budget is required';
+    else if (Number(budget) <= 0) errs.budget = 'Budget must be greater than 0';
+    else if (Number(budget) < 500) errs.budget = 'Minimum budget is ₹500';
+    if (skills.length === 0) errs.skills = 'Select at least one skill';
+    if (!deadline.trim()) errs.deadline = 'Deadline is required';
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   const publish = useMutation({
     mutationFn: () => {
+      if (!validate()) throw new Error('Please fix the highlighted fields');
       const profile = profileQuery.data?.profile;
       const address = profile && 'address' in profile ? profile.address : '';
       const extras = [
@@ -193,27 +199,31 @@ export default function PostGigScreen() {
         skillsRequired: skills,
         budget: Number(budget),
         deadline: new Date(deadline).toISOString(),
-        location: workMode === 'onsite' ? address.trim() || 'On-site' : 'Remote',
+        location: workMode === 'onsite' ? address.trim() || 'On-site - Local business area' : 'Remote',
       };
       return editMode ? updateGig(token!, gigId!, input) : createGig(token!, input);
     },
     onSuccess: (gig) => {
       client.invalidateQueries({ queryKey: ['my-gigs'] });
       client.invalidateQueries({ queryKey: ['gigs'] });
-      router.replace(`/(business)/gig/${gig.id}` as never);
+      setPublishedGigId(gig.id);
+      setSheet('success');
     },
-    onError: (err) => setError(apiErrorMessage(err)),
+    onError: (err) => setError(apiErrorMessage(err) || (err as Error).message),
   });
 
-  const canPublish = title.trim().length > 0 && description.trim().length > 0 && Number(budget) > 0 && !Number.isNaN(new Date(deadline).getTime());
+  const canPublish = title.trim().length >= 5 && description.trim().length >= 20 && Number(budget) > 0 && skills.length > 0 && !Number.isNaN(new Date(deadline).getTime());
 
   const toggleSkill = (skill: string) =>
-    setSkills((current) => (current.includes(skill) ? current.filter((item) => item !== skill) : [...current, skill]));
+    setSkills((current) => {
+      const next = current.includes(skill) ? current.filter((item) => item !== skill) : [...current, skill];
+      if (fieldErrors.skills && next.length > 0) setFieldErrors((prev) => ({ ...prev, skills: '' }));
+      return next;
+    });
 
   const addCustomSkill = () => {
     const skill = customSkill.trim();
     if (skill && !skills.includes(skill)) setSkills((current) => [...current, skill]);
-    if (skill && !SUGGESTED_SKILLS.includes(skill)) SUGGESTED_SKILLS.unshift(skill);
     setCustomSkill('');
     setSheet(null);
   };
@@ -227,7 +237,6 @@ export default function PostGigScreen() {
 
   return (
     <Screen testID="screen-post-gig">
-      {/* Sheet-like header: X · 4-segment step bar · Save Draft */}
       <View style={styles.header}>
         <IconButton name="close" variant="plain" accessibilityLabel="Close" onPress={() => router.back()} testID="post-gig-close" />
         <StepProgress total={4} current={1} style={styles.headerSteps} />
@@ -235,177 +244,205 @@ export default function PostGigScreen() {
           label="Save Draft"
           iconRight={null}
           onPress={() =>
-            setNotice('GigStatus has no DRAFT value — a gig is published or it does not exist. Nothing was stored. Flagged, not faked.')
+            setNotice('Drafts are not supported yet — gigs are published directly. Your progress stays in the form until you publish.')
           }
         />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {/* --- Basic details --- */}
-        <Text variant="title2">Basic Details</Text>
-        <Text variant="body" tone="secondary">
-          Clearly describe the task to attract the right students.
-        </Text>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <Text variant="title2">Basic Details</Text>
+          <Text variant="body" tone="secondary">
+            Clearly describe the task to attract the right students.
+          </Text>
 
-        <TextField label="Gig Title" value={title} onChangeText={setTitle} placeholder="e.g. Product Photography for Bakery" testID="post-gig-title" />
-        <FloatingLabelSelect label="Category" value={category} placeholder="Select category" onPress={() => setSheet('category')} testID="post-gig-category" />
-        <TextField
-          label="Description"
-          type="textarea"
-          value={description}
-          onChangeText={setDescription}
-          placeholder="Looking for a student to take 15 high-quality product photos…"
-          testID="post-gig-description"
-        />
+          <TextField
+            label="Gig Title *"
+            value={title}
+            onChangeText={(v) => {
+              setTitle(v);
+              if (fieldErrors.title) setFieldErrors((p) => ({ ...p, title: '' }));
+            }}
+            placeholder="e.g. Product Photography for Bakery"
+            errorText={fieldErrors.title}
+            testID="post-gig-title"
+          />
+          <FloatingLabelSelect label="Category" value={category} placeholder="Select category" onPress={() => setSheet('category')} testID="post-gig-category" />
+          <TextField
+            label="Description *"
+            type="textarea"
+            value={description}
+            onChangeText={(v) => {
+              setDescription(v);
+              if (fieldErrors.description) setFieldErrors((p) => ({ ...p, description: '' }));
+            }}
+            placeholder="Looking for a student to take 15 high-quality product photos of our bakery items for Instagram..."
+            errorText={fieldErrors.description}
+            testID="post-gig-description"
+          />
 
-        <View style={styles.divider} />
+          <View style={styles.divider} />
 
-        {/* --- Skills & requirements --- */}
-        <Text variant="title2">Skills & Requirements</Text>
-        <Text variant="body" tone="secondary">
-          What expertise does the student need?
-        </Text>
-        <Text variant="label" tone="secondary">
-          Required Skills
-        </Text>
-        <View style={styles.chipWrap}>
-          {SUGGESTED_SKILLS.map((skill) => (
-            <SelectableChip key={skill} label={skill} selectedStyle="soft" indicator="check" selected={skills.includes(skill)} onToggle={() => toggleSkill(skill)} />
-          ))}
+          <Text variant="title2">Skills & Requirements *</Text>
+          <Text variant="body" tone="secondary">
+            What expertise does the student need?
+          </Text>
+          {fieldErrors.skills ? (
+            <Text variant="caption" style={{ color: color.danger }}>
+              {fieldErrors.skills}
+            </Text>
+          ) : null}
+          <View style={styles.chipWrap}>
+            {SUGGESTED_SKILLS.map((skill) => (
+              <SelectableChip key={skill} label={skill} selectedStyle="soft" indicator="check" selected={skills.includes(skill)} onToggle={() => toggleSkill(skill)} />
+            ))}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Add Skill"
+              onPress={() => setSheet('skill')}
+              style={({ pressed }) => [styles.addChip, pressed && styles.pressed]}
+              testID="post-gig-add-skill">
+              <Text variant="callout" style={styles.addChipLabel}>
+                Add Skill +
+              </Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.radioRow}>
+            <Pressable
+              accessibilityRole="radio"
+              accessibilityLabel="On-site, at your business"
+              accessibilityState={{ selected: workMode === 'onsite' }}
+              onPress={() => setWorkMode('onsite')}
+              style={[styles.radioCard, workMode === 'onsite' && styles.radioCardOn]}
+              testID="post-gig-onsite">
+              <View style={[styles.radioDot, workMode === 'onsite' && styles.radioDotOn]} />
+              <View style={styles.radioText}>
+                <Text variant="bodyStrong">On-site</Text>
+                <Text variant="caption" tone="tertiary">
+                  At your business
+                </Text>
+              </View>
+            </Pressable>
+            <Pressable
+              accessibilityRole="radio"
+              accessibilityLabel="Remote, work from home"
+              accessibilityState={{ selected: workMode === 'remote' }}
+              onPress={() => setWorkMode('remote')}
+              style={[styles.radioCard, workMode === 'remote' && styles.radioCardOn]}
+              testID="post-gig-remote">
+              <View style={[styles.radioDot, workMode === 'remote' && styles.radioDotOn]} />
+              <View style={styles.radioText}>
+                <Text variant="bodyStrong">Remote</Text>
+                <Text variant="caption" tone="tertiary">
+                  Work from home
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+
+          <View style={styles.divider} />
+
+          <Text variant="title2">Budget & Timeline *</Text>
+          <Text variant="body" tone="secondary">
+            Define the compensation and deadlines.
+          </Text>
+          <View style={styles.twoCol}>
+            <TextField
+              label="Budget (₹) *"
+              icon="wallet"
+              value={budget}
+              onChangeText={(v) => {
+                setBudget(v);
+                if (fieldErrors.budget) setFieldErrors((p) => ({ ...p, budget: '' }));
+              }}
+              placeholder="2500"
+              keyboardType="number-pad"
+              errorText={fieldErrors.budget}
+              style={styles.col}
+              testID="post-gig-budget"
+            />
+            <FloatingLabelSelect label="Payment type" value={paymentType} onPress={() => setSheet('payment')} style={styles.colSelect} testID="post-gig-payment" />
+          </View>
+          <View style={styles.twoCol}>
+            <FloatingLabelSelect
+              label="Deadline *"
+              value={prettyDate(deadline)}
+              icon="calendar"
+              onPress={() => setSheet('deadline')}
+              style={styles.colSelect}
+              testID="post-gig-deadline"
+            />
+            <TextField label="Duration" icon="stopwatch" value={duration} onChangeText={setDuration} placeholder="3 Days" style={styles.col} testID="post-gig-duration" />
+          </View>
+          {fieldErrors.deadline ? (
+            <Text variant="caption" style={{ color: color.danger }}>
+              {fieldErrors.deadline}
+            </Text>
+          ) : null}
+
+          <View style={styles.divider} />
+
+          <Text variant="title2">Deliverables</Text>
+          <Text variant="body" tone="secondary">
+            List exactly what the student must submit.
+          </Text>
+          {deliverables.length > 0 ? (
+            <View style={styles.deliverablesCard}>
+              {deliverables.map((item, index) => (
+                <View key={`${item}-${index}`} style={[styles.deliverableRow, index > 0 && styles.deliverableDivider]}>
+                  <Icon name="checkCircleFilled" size={20} color={color.textPrimary} />
+                  <Text variant="body" style={styles.deliverableText}>
+                    {item}
+                  </Text>
+                  <IconButton
+                    name="trash"
+                    variant="plain"
+                    color={color.danger}
+                    accessibilityLabel={`Remove ${item}`}
+                    onPress={() => setDeliverables((current) => current.filter((_, i) => i !== index))}
+                  />
+                </View>
+              ))}
+            </View>
+          ) : null}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Add Skill"
-            onPress={() => setSheet('skill')}
+            accessibilityLabel="Add Deliverable"
+            onPress={() => setSheet('deliverable')}
             style={({ pressed }) => [styles.addChip, pressed && styles.pressed]}
-            testID="post-gig-add-skill">
+            testID="post-gig-add-deliverable">
             <Text variant="callout" style={styles.addChipLabel}>
-              Add Skill +
+              Add Deliverable +
             </Text>
           </Pressable>
-        </View>
 
-        {/* Work mode — maps to the real `location` column */}
-        <View style={styles.radioRow}>
-          <Pressable
-            accessibilityRole="radio"
-            accessibilityLabel="On-site, at your business"
-            accessibilityState={{ selected: workMode === 'onsite' }}
-            onPress={() => setWorkMode('onsite')}
-            style={[styles.radioCard, workMode === 'onsite' && styles.radioCardOn]}
-            testID="post-gig-onsite">
-            <View style={[styles.radioDot, workMode === 'onsite' && styles.radioDotOn]} />
-            <View style={styles.radioText}>
-              <Text variant="bodyStrong">On-site</Text>
-              <Text variant="caption" tone="tertiary">
-                At your business
-              </Text>
-            </View>
-          </Pressable>
-          <Pressable
-            accessibilityRole="radio"
-            accessibilityLabel="Remote, work from home"
-            accessibilityState={{ selected: workMode === 'remote' }}
-            onPress={() => setWorkMode('remote')}
-            style={[styles.radioCard, workMode === 'remote' && styles.radioCardOn]}
-            testID="post-gig-remote">
-            <View style={[styles.radioDot, workMode === 'remote' && styles.radioDotOn]} />
-            <View style={styles.radioText}>
-              <Text variant="bodyStrong">Remote</Text>
-              <Text variant="caption" tone="tertiary">
-                Work from home
-              </Text>
-            </View>
-          </Pressable>
-        </View>
+          {notice ? <InfoBanner tone="info" icon="info" title="Note" description={notice} /> : null}
+          {error ? <InfoBanner tone="danger" icon="offline" title="Could not publish" description={error} /> : null}
 
-        <View style={styles.divider} />
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
+      </KeyboardAvoidingView>
 
-        {/* --- Budget & timeline --- */}
-        <Text variant="title2">Budget & Timeline</Text>
-        <Text variant="body" tone="secondary">
-          Define the compensation and deadlines.
-        </Text>
-        <View style={styles.twoCol}>
-          <TextField
-            label="Budget (₹)"
-            icon="wallet"
-            value={budget}
-            onChangeText={setBudget}
-            placeholder="2500"
-            keyboardType="number-pad"
-            style={styles.col}
-            testID="post-gig-budget"
-          />
-          <FloatingLabelSelect label="Payment type" value={paymentType} onPress={() => setSheet('payment')} style={styles.colSelect} testID="post-gig-payment" />
-        </View>
-        <View style={styles.twoCol}>
-          <FloatingLabelSelect label="Deadline" value={prettyDate(deadline)} icon="calendar" onPress={() => setSheet('deadline')} style={styles.colSelect} testID="post-gig-deadline" />
-          <TextField
-            label="Duration"
-            icon="stopwatch"
-            value={duration}
-            onChangeText={setDuration}
-            placeholder="3 Days"
-            style={styles.col}
-            testID="post-gig-duration"
-          />
-        </View>
-
-        <View style={styles.divider} />
-
-        {/* --- Deliverables --- */}
-        <Text variant="title2">Deliverables</Text>
-        <Text variant="body" tone="secondary">
-          List exactly what the student must submit.
-        </Text>
-        {deliverables.length > 0 ? (
-          <View style={styles.deliverablesCard}>
-            {deliverables.map((item, index) => (
-              <View key={`${item}-${index}`} style={[styles.deliverableRow, index > 0 && styles.deliverableDivider]}>
-                <Icon name="checkCircleFilled" size={20} color={color.textPrimary} />
-                <Text variant="body" style={styles.deliverableText}>
-                  {item}
-                </Text>
-                <IconButton
-                  name="trash"
-                  variant="plain"
-                  color={color.danger}
-                  accessibilityLabel={`Remove ${item}`}
-                  onPress={() => setDeliverables((current) => current.filter((_, i) => i !== index))}
-                />
-              </View>
-            ))}
-          </View>
-        ) : null}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Add Deliverable"
-          onPress={() => setSheet('deliverable')}
-          style={({ pressed }) => [styles.addChip, pressed && styles.pressed]}
-          testID="post-gig-add-deliverable">
-          <Text variant="callout" style={styles.addChipLabel}>
-            Add Deliverable +
-          </Text>
-        </Pressable>
-
-        <InfoBanner
-          tone="info"
-          icon="info"
-          title="Flagged, not faked"
-          description="Title, description, skills, budget, deadline and work-mode location save to real Gig columns. Category, payment type, duration and deliverables have no columns — at publish they are appended to the description under a labelled block. Save Draft has no DRAFT status behind it."
+      <View style={[styles.stickyBar, { paddingBottom: Math.max(insets.bottom, space.md) }]}>
+        <Button
+          label={editMode ? 'Review & Save' : 'Review & Publish'}
+          size="lg"
+          disabled={!canPublish}
+          onPress={() => {
+            if (!validate()) return;
+            setSheet('review');
+          }}
+          style={styles.publishBtn}
+          testID="post-gig-review"
         />
-        {notice ? <InfoBanner tone="warning" icon="info" title="Save Draft" description={notice} /> : null}
-        {error ? <InfoBanner tone="danger" icon="offline" title="Could not publish" description={error} /> : null}
-
-        <View style={styles.bottomSpacer} />
-      </ScrollView>
-
-      {/* Sticky publish bar */}
-      <View style={styles.stickyBar}>
-        <Button label={editMode ? 'Review & Save' : 'Review & Publish'} size="lg" disabled={!canPublish} onPress={() => setSheet('review')} style={styles.publishBtn} testID="post-gig-review" />
+        {!canPublish ? (
+          <Text variant="caption" tone="tertiary" style={styles.hint}>
+            Fill title, description (20+ chars), budget, and at least 1 skill to continue
+          </Text>
+        ) : null}
       </View>
 
-      {/* --- Sheets --- */}
       <Sheet visible={sheet === 'category'} onClose={() => setSheet(null)} title="Category">
         {CATEGORIES.map((item) => (
           <RadioRow
@@ -448,14 +485,7 @@ export default function PostGigScreen() {
             }}
           />
         ))}
-        <TextField
-          label="Custom date"
-          icon="calendar"
-          value={customDeadline}
-          onChangeText={setCustomDeadline}
-          placeholder="YYYY-MM-DD"
-          autoCapitalize="none"
-        />
+        <TextField label="Custom date" icon="calendar" value={customDeadline} onChangeText={setCustomDeadline} placeholder="YYYY-MM-DD" autoCapitalize="none" />
         <Button
           label="Use custom date"
           variant="secondary"
@@ -487,14 +517,65 @@ export default function PostGigScreen() {
           <ReviewRow label="Work mode" value={workMode === 'onsite' ? 'On-site' : 'Remote'} />
           <ReviewRow label="Skills" value={skills.length ? skills.join(', ') : '—'} />
           <ReviewRow label="Deliverables" value={deliverables.length ? `${deliverables.length} item(s)` : '—'} />
+          <ReviewRow label="Description" value={description.trim().slice(0, 120) + (description.trim().length > 120 ? '...' : '')} />
         </View>
-        <InfoBanner
-          tone="info"
-          icon="info"
-          title="What gets stored where"
-          description="Title, description, skills, budget, deadline and location are real Gig columns. Category, payment type, duration and deliverables will be appended to the description under a labelled block — the schema has no columns for them."
+        <InfoBanner tone="success" icon="shieldCheckFilled" title="Ready to publish" description="This gig will be visible to verified students nearby. You can edit it while it's OPEN." />
+        <Button
+          label={publish.isPending ? 'Publishing…' : editMode ? 'Save Changes' : 'Publish Gig'}
+          size="lg"
+          loading={publish.isPending}
+          onPress={() => publish.mutate()}
+          testID="post-gig-publish"
         />
-        <Button label={publish.isPending ? 'Saving…' : editMode ? 'Save Changes' : 'Publish Gig'} size="lg" loading={publish.isPending} onPress={() => publish.mutate()} testID="post-gig-publish" />
+      </Sheet>
+
+      <Sheet visible={sheet === 'success'} onClose={() => setSheet(null)} title="Gig Published!">
+        <View style={styles.successWrap}>
+          <View style={styles.successIcon}>
+            <Icon name="checkCircleFilled" size={48} color={color.success} />
+          </View>
+          <Text variant="title1" style={styles.successTitle}>
+            Gig published successfully 🎉
+          </Text>
+          <Text variant="body" tone="secondary" style={styles.successDesc}>
+            Your gig is now live and visible to verified students. You'll get notified when someone applies.
+          </Text>
+          <View style={styles.successActions}>
+            <Button
+              label="View Gig"
+              size="lg"
+              onPress={() => {
+                setSheet(null);
+                if (publishedGigId) router.replace(`/(business)/gig/${publishedGigId}` as never);
+              }}
+              testID="success-view-gig"
+            />
+            <Button
+              label="Manage Gigs"
+              variant="secondary"
+              size="lg"
+              onPress={() => {
+                setSheet(null);
+                router.replace('/(business)/my-gigs' as never);
+              }}
+              testID="success-manage"
+            />
+            <Button
+              label="Post Another"
+              variant="secondary"
+              size="lg"
+              onPress={() => {
+                setSheet(null);
+                setTitle('');
+                setDescription('');
+                setBudget('');
+                setSkills([]);
+                setDeliverables([]);
+                setPublishedGigId(null);
+              }}
+            />
+          </View>
+        </View>
       </Sheet>
     </Screen>
   );
@@ -525,11 +606,12 @@ const styles = StyleSheet.create({
     borderBottomColor: color.divider,
   },
   headerSteps: { flex: 1 },
+  kav: { flex: 1 },
 
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.xl,
-    paddingBottom: space['2xl'],
+    paddingBottom: 140,
     gap: space.base,
     maxWidth: layout.maxContentWidth,
     width: '100%',
@@ -587,14 +669,29 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: color.divider,
     paddingHorizontal: layout.screenGutter,
-    paddingVertical: space.md,
+    paddingTop: space.md,
+    gap: space.sm,
     ...shadow.sm,
   },
   publishBtn: { alignSelf: 'stretch' },
+  hint: { textAlign: 'center' },
 
   reviewBlock: { gap: space.md },
   reviewRow: { flexDirection: 'row', gap: space.md },
   reviewLabel: { width: 92 },
   reviewValue: { flex: 1 },
   pressed: { opacity: 0.85 },
+
+  successWrap: { alignItems: 'center', gap: space.lg, paddingVertical: space.lg },
+  successIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: radius.full,
+    backgroundColor: color.successSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successTitle: { textAlign: 'center' },
+  successDesc: { textAlign: 'center', lineHeight: 22 },
+  successActions: { width: '100%', gap: space.md, marginTop: space.md },
 });

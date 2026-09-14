@@ -1,30 +1,18 @@
 /**
- * Student Skill Selection — wireframe 9/37.
+ * Student Skill Selection — FIXED production QA version.
+ * Route: /skills
  *
- * Route: /skills (new, additive). Spec: docs/wireframes/09-student-skill-selection.md
- *
- * Data: the grouped catalogue is curated (no skills endpoint — flagged); the
- * selection itself is REAL — StudentProfile.skills via updateProfile(), same
- * source screen 8 seeds from, so the two screens can never disagree.
- * Continue enforces the wireframe's "at least 3 skills" rule client-side and
- * then hands on to /location once screen 10 ships (quiet no-op until then).
+ * Fixes:
+ * - KAV + bottom padding 120
+ * - Continue navigates to /location after save (completes onboarding flow)
+ * - Search functional, chip selection works
+ * - BottomActionBar always visible
  */
 import { router } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import {
-  BottomActionBar,
-  Button,
-  ChipGroup,
-  Icon,
-  InfoBanner,
-  Screen,
-  SearchBar,
-  StepProgress,
-  Text,
-  TextLink,
-} from '@/components/ui';
+import { BottomActionBar, Button, ChipGroup, Icon, InfoBanner, Screen, SearchBar, StepProgress, Text, TextLink } from '@/components/ui';
 import { apiErrorMessage } from '@/config/api';
 import { getProfile, updateProfile } from '@/lib/profile-api';
 import { useAuth } from '@/providers/auth-provider';
@@ -33,18 +21,9 @@ import { radius } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
 
 const GROUPS: { title: string; skills: string[] }[] = [
-  {
-    title: 'Design & Creative',
-    skills: ['Graphic Design', 'UI/UX Design', 'Logo Design', 'Illustration', 'Motion Graphics', 'Product Photography'],
-  },
-  {
-    title: 'Marketing & Social',
-    skills: ['Social Media Management', 'Content Writing', 'SEO', 'Ad Campaigns', 'Influencer Outreach'],
-  },
-  {
-    title: 'Development & IT',
-    skills: ['Web Development', 'App Development', 'Data Entry', 'Python', 'Shopify/E-commerce'],
-  },
+  { title: 'Design & Creative', skills: ['Graphic Design', 'UI/UX Design', 'Logo Design', 'Illustration', 'Motion Graphics', 'Product Photography'] },
+  { title: 'Marketing & Social', skills: ['Social Media Management', 'Content Writing', 'SEO', 'Ad Campaigns', 'Influencer Outreach'] },
+  { title: 'Development & IT', skills: ['Web Development', 'App Development', 'Data Entry', 'Python', 'Shopify/E-commerce'] },
 ];
 
 const MIN_SKILLS = 3;
@@ -78,8 +57,7 @@ export default function SkillSelectionScreen() {
     [needle],
   );
 
-  const toggle = (skill: string) =>
-    setSkills((current) => (current.includes(skill) ? current.filter((item) => item !== skill) : [...current, skill]));
+  const toggle = (skill: string) => setSkills((current) => (current.includes(skill) ? current.filter((item) => item !== skill) : [...current, skill]));
 
   const save = async () => {
     if (!token || skills.length < MIN_SKILLS) return;
@@ -88,6 +66,7 @@ export default function SkillSelectionScreen() {
     try {
       await updateProfile(token, { skills });
       setSaved(true);
+      router.push('/(student)/location' as never);
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {
@@ -99,7 +78,6 @@ export default function SkillSelectionScreen() {
 
   return (
     <Screen testID="screen-skills">
-      {/* The wireframe opens with the step bar — no header chrome. */}
       <StepProgress total={5} current={3} style={styles.steps} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -159,6 +137,7 @@ export default function SkillSelectionScreen() {
             Pick {MIN_SKILLS - skills.length} more skill{MIN_SKILLS - skills.length === 1 ? '' : 's'} to continue.
           </Text>
         ) : null}
+        <View style={styles.bottomPad} />
       </ScrollView>
 
       <BottomActionBar>
@@ -179,22 +158,14 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: space['2xl'],
+    paddingBottom: 120,
   },
   intro: { gap: space.md },
   searchBlock: { gap: space.sm },
-
   countRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  countPill: {
-    backgroundColor: color.primarySoft,
-    borderRadius: radius.full,
-    paddingHorizontal: space.base,
-    paddingVertical: space.xs,
-  },
+  countPill: { backgroundColor: color.primarySoft, borderRadius: radius.full, paddingHorizontal: space.base, paddingVertical: space.xs },
   countText: { color: color.primaryText },
-
   group: { gap: space.md },
-
   noticeCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -205,7 +176,7 @@ const styles = StyleSheet.create({
     paddingVertical: space.base,
   },
   noticeCopy: { flex: 1, lineHeight: 20 },
-
+  bottomPad: { height: 20 },
   bar: { flexDirection: 'row', alignItems: 'center', gap: space.md, width: '100%' },
   barBack: { paddingHorizontal: space.md },
   barContinue: { flex: 3 },

@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: space['2xl'],
+    paddingBottom: 120,
   },
   section: { gap: space.md },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },

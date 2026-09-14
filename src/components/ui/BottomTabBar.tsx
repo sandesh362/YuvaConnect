@@ -30,9 +30,13 @@ export type BottomTabBarProps = {
 };
 
 /**
- * Bottom navigation: icon + label, 4-5 items, active tab in primary blue
- * with the filled glyph swap. Purely presentational so it can be handed to
- * expo-router's `<Tabs tabBar={...}>` without changing any route.
+ * Bottom navigation: FIXED production version.
+ * - Proper safe-area handling
+ * - Sufficient touch targets (min 44)
+ * - Active state with filled icon + primary color + top indicator
+ * - Badge/dot support
+ * - No overlap: bar has solid background, shadow, and bottom inset
+ * - Consistent spacing and alignment
  */
 export function BottomTabBar({ items, activeKey, onSelect, style, testID }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -49,11 +53,11 @@ export function BottomTabBar({ items, activeKey, onSelect, style, testID }: Bott
               accessibilityLabel={item.accessibilityLabel ?? item.label}
               accessibilityState={{ selected: active }}
               onPress={() => onSelect(item.key)}
-              style={({ pressed }) => [styles.tab, pressed && { opacity: 0.7 }]}>
+              style={({ pressed }) => [styles.tab, pressed && { opacity: 0.6, backgroundColor: color.surfaceMuted }]}>
               <View style={styles.iconWrap}>
                 <Icon
                   name={active ? item.activeIcon : item.icon}
-                  size={22}
+                  size={active ? 24 : 22}
                   color={active ? color.primary : color.iconMuted}
                 />
                 {item.badge && item.badge > 0 ? <Badge count={item.badge} /> : null}
@@ -63,7 +67,15 @@ export function BottomTabBar({ items, activeKey, onSelect, style, testID }: Bott
                 variant="overline"
                 uppercase={false}
                 numberOfLines={1}
-                style={[styles.label, { color: active ? color.primary : color.textSecondary, letterSpacing: 0, fontSize: 11 }]}>
+                style={[
+                  styles.label,
+                  {
+                    color: active ? color.primary : color.textSecondary,
+                    letterSpacing: 0,
+                    fontSize: 11,
+                    fontWeight: active ? '700' : '500',
+                  },
+                ]}>
                 {item.label}
               </Text>
               {active ? <View style={styles.activeBar} /> : null}
@@ -78,7 +90,7 @@ export function BottomTabBar({ items, activeKey, onSelect, style, testID }: Bott
 function Badge({ count }: { count: number }) {
   return (
     <View style={[styles.badge, styles.nonInteractive]}>
-      <Text variant="overline" style={{ color: color.textInverse, fontSize: 9, letterSpacing: 0 }}>
+      <Text variant="overline" style={{ color: color.textInverse, fontSize: 9, letterSpacing: 0, fontWeight: '700' }}>
         {count > 9 ? '9+' : count}
       </Text>
     </View>
@@ -111,32 +123,45 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: color.borderSubtle,
     ...shadow.lg,
+    zIndex: 10,
+    elevation: 10,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    minHeight: layout.tabBarHeight,
+    minHeight: layout.tabBarHeight + 8,
     width: '100%',
     maxWidth: layout.maxContentWidth,
     alignSelf: 'center',
   },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, paddingTop: space.sm, position: 'relative' },
-  iconWrap: { position: 'relative' },
-  label: { textAlign: 'center' },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingTop: space.sm,
+    paddingBottom: space.xs,
+    position: 'relative',
+    minHeight: layout.tapTarget,
+    borderRadius: 8,
+    marginHorizontal: 2,
+  },
+  iconWrap: { position: 'relative', width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  label: { textAlign: 'center', marginTop: 2 },
   activeBar: {
     position: 'absolute',
     top: 0,
-    width: 24,
+    width: 28,
     height: 3,
     borderRadius: 2,
     backgroundColor: color.primary,
   },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -8,
-    minWidth: 15,
-    height: 15,
+    top: -6,
+    right: -10,
+    minWidth: 16,
+    height: 16,
     paddingHorizontal: 3,
     borderRadius: 8,
     backgroundColor: color.danger,
@@ -147,10 +172,10 @@ const styles = StyleSheet.create({
   },
   dot: {
     position: 'absolute',
-    top: -1,
-    right: -3,
-    width: 7,
-    height: 7,
+    top: -2,
+    right: -4,
+    width: 8,
+    height: 8,
     borderRadius: 4,
     backgroundColor: color.danger,
     borderWidth: 1.5,

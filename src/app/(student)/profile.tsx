@@ -53,7 +53,6 @@ import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
 import type { Availability, StudentProfile } from '@/types/api';
 
-const LOC_KEY = 'yuvaconnect:location-availability';
 const COMPLETED = ['APPROVED', 'PAID', 'CLOSED'];
 
 const availabilityLabels: Record<Availability, string> = {
@@ -99,8 +98,9 @@ export default function StudentProfileScreen() {
   const profile = profileQuery.data?.profile && 'skills' in profileQuery.data.profile ? (profileQuery.data.profile as StudentProfile) : null;
 
   useEffect(() => {
-    AsyncStorage.getItem(LOC_KEY)
-      .then((raw) => raw && setLocation((JSON.parse(raw) as { location?: string }).location ?? ''))
+    import('@/lib/location')
+      .then(({ getStoredLocation }) => getStoredLocation())
+      .then((stored) => setLocation(stored.location))
       .catch(() => undefined);
   }, []);
 
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: space['2xl'],
+    paddingBottom: 120,
   },
 
   headerCard: {

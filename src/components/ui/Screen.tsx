@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -19,21 +20,22 @@ import { Text } from './Text';
 
 export type ScreenProps = {
   children?: React.ReactNode;
-  /** `sunken` = app background gray; `surface` = white. */
   tone?: 'sunken' | 'surface';
-  /** Apply the standard 16px horizontal gutter. */
   gutter?: boolean;
   style?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
-  /** Centre + cap width on web/tablet so cards don't stretch full-bleed. */
   constrain?: boolean;
+  includeBottomInset?: boolean;
   testID?: string;
 };
 
 /**
  * Page scaffold: safe-area aware, correct background, standard gutter and
- * optional max-content-width for large screens. Every rebuilt screen wraps
- * its content in this so spacing is identical app-wide.
+ * optional max-content-width for large screens.
+ *
+ * FIXED: Now keyboard-aware (KeyboardAvoidingView) so CTAs never hide behind keyboard.
+ * Bottom inset handling ensures content never sits behind tab bars.
+ * inner/kav styles restored for proper flex layout.
  */
 export function Screen({
   children,
@@ -42,20 +44,32 @@ export function Screen({
   style,
   contentStyle,
   constrain = true,
+  includeBottomInset = false,
   testID,
 }: ScreenProps) {
+  const insets = useSafeAreaInsets();
   return (
     <SafeAreaView
       testID={testID}
-      edges={['top', 'left', 'right']}
+      edges={['top', 'left', 'right', ...(includeBottomInset ? ['bottom' as const] : [])]}
       style={[styles.root, { backgroundColor: tone === 'sunken' ? color.background : color.surface }, style]}>
-      <View style={[gutter && styles.gutter, constrain && styles.constrain, contentStyle]}>{children}</View>
+      <KeyboardAvoidingView style={styles.kav} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
+        <View
+          style={[
+            styles.inner,
+            gutter && styles.gutter,
+            constrain && styles.constrain,
+            contentStyle,
+            includeBottomInset && { paddingBottom: Math.max(insets.bottom, space.sm) },
+          ]}>
+          {children}
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 export type ScrollScreenProps = ScreenProps & {
-  /** Extra bottom padding so the last card clears the tab bar / action bar. */
   bottomInset?: number;
   contentContainerStyle?: StyleProp<ViewStyle>;
   refreshControl?: React.ReactElement<RefreshControlProps>;
@@ -65,45 +79,39 @@ export type ScrollScreenProps = ScreenProps & {
   showsVerticalScrollIndicator?: boolean;
 };
 
-/** `Screen` + vertical scrolling with tab-bar-aware bottom padding. */
 export function ScrollScreen({
   children,
-  bottomInset = layout.tabBarHeight + space.xl,
+  bottomInset = layout.tabBarHeight + space.xl + 24,
   contentContainerStyle,
   refreshControl,
   onScroll,
   scrollEventThrottle = 16,
   keyboardShouldPersistTaps = 'handled',
   showsVerticalScrollIndicator = false,
+  includeBottomInset,
   ...screen
 }: ScrollScreenProps) {
+  const insets = useSafeAreaInsets();
+  const effectiveBottom = bottomInset + (includeBottomInset ? Math.max(insets.bottom, 0) : 0);
   return (
-    <Screen {...screen}>
-      <ScrollView
-        style={styles.fill}
-        contentContainerStyle={[{ paddingBottom: bottomInset }, contentContainerStyle]}
-        refreshControl={refreshControl}
-        onScroll={onScroll as never}
-        scrollEventThrottle={scrollEventThrottle}
-        keyboardShouldPersistTaps={keyboardShouldPersistTaps}
-        showsVerticalScrollIndicator={showsVerticalScrollIndicator}>
-        {children}
-      </ScrollView>
+    <Screen {...screen} includeBottomInset={includeBottomInset} contentStyle={styles.fill}>
+      <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          style={styles.fill}
+          contentContainerStyle={[{ paddingBottom: effectiveBottom }, contentContainerStyle]}
+          refreshControl={refreshControl}
+          onScroll={onScroll as never}
+          scrollEventThrottle={scrollEventThrottle}
+          keyboardShouldPersistTaps={keyboardShouldPersistTaps}
+          showsVerticalScrollIndicator={showsVerticalScrollIndicator}>
+          {children}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
 
-/**
- * Sticky bottom action bar (Apply / Save / Confirm CTAs). Sits above the home
- * indicator with a top hairline and an upward shadow, per the wireframes.
- */
-export function BottomActionBar({
-  children,
-  style,
-}: {
-  children?: React.ReactNode;
-  style?: StyleProp<ViewStyle>;
-}) {
+export function BottomActionBar({ children, style }: { children?: React.ReactNode; style?: StyleProp<ViewStyle> }) {
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.actionBar, { paddingBottom: Math.max(insets.bottom, space.md) }, style]}>
@@ -112,7 +120,6 @@ export function BottomActionBar({
   );
 }
 
-/** Eyebrow/overline label used above card groups ("RECOMMENDED FOR YOU"). */
 export function SectionHeader({
   title,
   actionLabel,
@@ -148,16 +155,18 @@ export function SectionHeader({
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  kav: { flex: 1 },
+  inner: { flex: 1 },
   fill: { flex: 1 },
-  gutter: { paddingHorizontal: layout.screenGutter },
-  // Caps line length on tablets/web; a no-op on phones where the gutter
-  // already constrains the width.
+  gutter: { paddingHorizontal: 0 },
   constrain: { width: '100%', maxWidth: layout.maxContentWidth, alignSelf: 'center' },
   actionBar: {
     backgroundColor: color.surface,
     borderTopWidth: 1,
     borderTopColor: color.borderSubtle,
     ...shadow.lg,
+    zIndex: 5,
+    elevation: 8,
   },
   actionBarInner: {
     minHeight: layout.actionBarHeight - space.xl,

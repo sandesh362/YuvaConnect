@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: space['2xl'],
+    paddingBottom: 120,
   },
 
   hero: {
