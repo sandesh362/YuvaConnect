@@ -5,7 +5,10 @@
  *
  * Data honesty: everything here is the REAL notifications feed —
  * listNotifications (paged), mark-all-read and per-item read endpoints all
- * exist and are wired. Type→colour and the TODAY/YESTERDAY/OLDER grouping and
+ * exist and are wired. Wireframe 36 (business) shares this route: its own
+ * filter set (All/Applicants/Work/Payments), "New Activity" (unread) grouping
+ * with washed cards vs plain hairline rows for read items, a flagged gear
+ * (no settings target) and the per-export Alerts tab variant. Type→colour and the TODAY/YESTERDAY/OLDER grouping and
  * "2m ago" stamps are client presentation over real rows. Row titles are
  * composed from the real NotificationType; the body is the server message
  * verbatim. The export's plain 56dp circles (no glyphs) are kept literally.
@@ -21,11 +24,13 @@ import {
   ErrorState,
   Icon,
   IconButton,
+  InfoBanner,
   LoadingSkeleton,
   Screen,
   ScreenHeader,
   SelectableChip,
   Text,
+  TextLink,
 } from '@/components/ui';
 import { STUDENT_TABS, BUSINESS_TABS } from '@/components/ui/BottomTabBar';
 import { apiErrorMessage } from '@/config/api';
@@ -39,8 +44,15 @@ import type { NotificationItem, NotificationType } from '@/types/api';
 
 const PAGE_SIZE = 30;
 
-type FilterKey = 'All' | 'Application' | 'Work Update' | 'Messages';
+type FilterKey = 'All' | 'Application' | 'Work Update' | 'Messages' | 'Applicants' | 'Work' | 'Payments';
 const FILTERS: FilterKey[] = ['All', 'Application', 'Work Update', 'Messages'];
+/** Wireframe 36 business rail. */
+const BUSINESS_FILTERS: FilterKey[] = ['All', 'Applicants', 'Work', 'Payments'];
+
+/** Per-export tab variant (approved pattern): this screen owns the Alerts tab. */
+const BUSINESS_ALERT_TABS = BUSINESS_TABS.map((tab) =>
+  tab.key === 'messages' ? { key: 'alerts', label: 'Alerts', icon: 'bell' as const, activeIcon: 'bellFilled' as const } : tab,
+);
 
 const TYPE_COLOR: Record<NotificationType, string> = {
   APPLICATION_SELECTED: color.success,
@@ -98,6 +110,9 @@ function matches(item: NotificationItem, filter: FilterKey) {
   if (filter === 'All') return true;
   if (filter === 'Application') return item.type === 'APPLICATION_SELECTED' || item.type === 'APPLICATION_REJECTED' || item.type === 'NEW_APPLICANT';
   if (filter === 'Messages') return item.type === 'NEW_MESSAGE';
+  if (filter === 'Applicants') return item.type === 'NEW_APPLICANT';
+  if (filter === 'Work') return item.type === 'GIG_STATUS_CHANGED' || item.type === 'NEW_MESSAGE' || item.type === 'APPLICATION_SELECTED' || item.type === 'APPLICATION_REJECTED';
+  if (filter === 'Payments') return item.type === 'PAYMENT_RELEASED';
   return item.type === 'GIG_STATUS_CHANGED' || item.type === 'PAYMENT_RELEASED';
 }
 
@@ -106,6 +121,8 @@ export default function NotificationsScreen() {
   const client = useQueryClient();
   const [filter, setFilter] = useState<FilterKey>('All');
   const [page, setPage] = useState(1);
+  const [notice, setNotice] = useState<string | null>(null);
+  const isBusiness = user?.role === 'BUSINESS';
 
   const query = useQuery({
     queryKey: ['notifications', page],
@@ -124,7 +141,23 @@ export default function NotificationsScreen() {
 
   const groups = useMemo(() => {
     const filtered = notifications.filter((item) => matches(item, filter));
-    const buckets: { key: 'TODAY' | 'YESTERDAY' | 'OLDER'; items: NotificationItem[] }[] = [
+    if (isBusiness) {
+      // Wireframe 36: unread = "New Activity" washed cards; read rows bucket by day.
+      const buckets: { key: string; items: NotificationItem[] }[] = [
+        { key: 'New Activity', items: [] },
+        { key: 'Earlier Today', items: [] },
+        { key: 'Yesterday', items: [] },
+        { key: 'Older', items: [] },
+      ];
+      for (const item of filtered) {
+        if (!item.isRead) buckets[0].items.push(item);
+        else if (dayBucket(item.createdAt) === 'TODAY') buckets[1].items.push(item);
+        else if (dayBucket(item.createdAt) === 'YESTERDAY') buckets[2].items.push(item);
+        else buckets[3].items.push(item);
+      }
+      return buckets.filter((bucket) => bucket.items.length > 0);
+    }
+    const buckets: { key: string; items: NotificationItem[] }[] = [
       { key: 'TODAY', items: [] },
       { key: 'YESTERDAY', items: [] },
       { key: 'OLDER', items: [] },
@@ -133,7 +166,7 @@ export default function NotificationsScreen() {
       buckets.find((bucket) => bucket.key === dayBucket(item.createdAt))?.items.push(item);
     }
     return buckets.filter((bucket) => bucket.items.length > 0);
-  }, [notifications, filter]);
+  }, [notifications, filter, isBusiness]);
 
   const openItem = async (item: NotificationItem) => {
     if (token && !item.isRead) {
@@ -156,16 +189,24 @@ export default function NotificationsScreen() {
         title="Notifications"
         onBack={() => router.back()}
         trailing={
-          <IconButton
-            name="checkmarkDone"
-            accessibilityLabel="Mark all as read"
-            onPress={() => token && markAll.mutate()}
-            disabled={!token || markAll.isPending || notifications.every((item) => item.isRead)}
-          />
+          isBusiness ? (
+            <IconButton
+              name="settings"
+              accessibilityLabel="Notification settings (flagged)"
+              onPress={() => setNotice('Notification settings have no route or backend columns — the gear is kept per the wireframe and flagged, not faked. Mark-all-read stays available under the filter rail.')}
+            />
+          ) : (
+            <IconButton
+              name="checkmarkDone"
+              accessibilityLabel="Mark all as read"
+              onPress={() => token && markAll.mutate()}
+              disabled={!token || markAll.isPending || notifications.every((item) => item.isRead)}
+            />
+          )
         }
       />
 
-      {/* --- Check-mark filter rail (style 2) --- */}
+      {/* --- Check-mark filter rail (style 2; business set per wireframe 36) --- */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
         <Pressable
           accessibilityRole="radio"
@@ -176,10 +217,21 @@ export default function NotificationsScreen() {
           <Icon name="check" size={15} color={color.textPrimary} />
           <Text variant="calloutStrong">All</Text>
         </Pressable>
-        {FILTERS.slice(1).map((item) => (
+        {(isBusiness ? BUSINESS_FILTERS : FILTERS).slice(1).map((item) => (
           <SelectableChip key={item} label={item} selected={filter === item} indicator="none" onToggle={() => setFilter(filter === item ? 'All' : item)} />
         ))}
       </ScrollView>
+
+      {isBusiness && notice ? (
+        <View style={styles.noticeWrap}>
+          <InfoBanner tone="warning" icon="info" title="Flagged, not faked" description={notice} />
+        </View>
+      ) : null}
+      {isBusiness && token && notifications.some((item) => !item.isRead) ? (
+        <View style={styles.markAllRow}>
+          <TextLink label="Mark all read" iconRight={null} onPress={() => markAll.mutate()} />
+        </View>
+      ) : null}
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
         {!token ? (
@@ -197,34 +249,49 @@ export default function NotificationsScreen() {
         ) : (
           groups.map((group) => (
             <View key={group.key}>
-              <View style={styles.dayBar}>
-                <Text variant="overline" tone="secondary" uppercase>
+              {isBusiness ? (
+                <Text variant="overline" tone="secondary" style={styles.bizCaption}>
                   {group.key}
                 </Text>
-              </View>
-              {group.items.map((item, index) => (
-                <Pressable
-                  key={item.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${titleFor(item)}: ${item.message}`}
-                  onPress={() => openItem(item)}
-                  style={[styles.row, index > 0 && styles.rowDivider]}>
-                  <View style={[styles.dot, { backgroundColor: dotColorFor(item) }]} />
-                  <View style={styles.rowCopy}>
-                    <View style={styles.rowHead}>
-                      <Text variant="calloutStrong" numberOfLines={1} style={item.isRead ? styles.readTitle : styles.unreadTitle}>
-                        {titleFor(item)}
-                      </Text>
-                      <Text variant="captionStrong" tone="secondary">
-                        {timeAgo(item.createdAt)}
+              ) : (
+                <View style={styles.dayBar}>
+                  <Text variant="overline" tone="secondary" uppercase>
+                    {group.key}
+                  </Text>
+                </View>
+              )}
+              {group.items.map((item, index) => {
+                // Business: unread rows are washed cards; read rows are plain, hairline-separated.
+                const washedCard = isBusiness && !item.isRead;
+                const rowStyle = isBusiness
+                  ? washedCard
+                    ? styles.bizCardRow
+                    : [styles.bizPlainRow, index > 0 && styles.rowDivider]
+                  : [styles.row, index > 0 && styles.rowDivider];
+                return (
+                  <Pressable
+                    key={item.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${titleFor(item)}: ${item.message}`}
+                    onPress={() => openItem(item)}
+                    style={rowStyle}>
+                    <View style={[washedCard || !isBusiness ? styles.dot : styles.dotSmall, { backgroundColor: dotColorFor(item) }]} />
+                    <View style={styles.rowCopy}>
+                      <View style={styles.rowHead}>
+                        <Text variant="calloutStrong" numberOfLines={1} style={item.isRead ? styles.readTitle : styles.unreadTitle}>
+                          {titleFor(item)}
+                        </Text>
+                        <Text variant="captionStrong" tone="secondary">
+                          {timeAgo(item.createdAt)}
+                        </Text>
+                      </View>
+                      <Text variant="callout" tone="secondary" numberOfLines={2} style={styles.rowBody}>
+                        {item.message}
                       </Text>
                     </View>
-                    <Text variant="callout" tone="secondary" numberOfLines={2} style={styles.rowBody}>
-                      {item.message}
-                    </Text>
-                  </View>
-                </Pressable>
-              ))}
+                  </Pressable>
+                );
+              })}
             </View>
           ))
         )}
@@ -239,9 +306,9 @@ export default function NotificationsScreen() {
       </ScrollView>
 
       <BottomTabBar
-        items={user?.role === 'BUSINESS' ? BUSINESS_TABS : STUDENT_TABS}
-        activeKey={user?.role === 'BUSINESS' ? 'home' : 'messages'}
-        onSelect={user?.role === 'BUSINESS' ? goBusinessTab : goStudentTab}
+        items={isBusiness ? BUSINESS_ALERT_TABS : STUDENT_TABS}
+        activeKey={isBusiness ? 'alerts' : 'messages'}
+        onSelect={isBusiness ? (key: string) => key !== 'alerts' && goBusinessTab(key) : goStudentTab}
       />
     </Screen>
   );
@@ -275,4 +342,29 @@ const styles = StyleSheet.create({
   rowBody: { lineHeight: 20 },
 
   loadMore: { alignItems: 'center', paddingVertical: space.base },
+
+  /* --- Business (wireframe 36) --- */
+  noticeWrap: { paddingHorizontal: layout.screenGutter, paddingBottom: space.sm },
+  markAllRow: { alignItems: 'flex-end', paddingHorizontal: layout.screenGutter, paddingBottom: space.sm },
+  bizCaption: { paddingHorizontal: layout.screenGutter, paddingTop: space.md, paddingBottom: space.sm },
+  bizCardRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: space.md,
+    backgroundColor: color.primarySoft,
+    borderRadius: 12,
+    marginHorizontal: layout.screenGutter,
+    marginBottom: space.sm,
+    paddingHorizontal: space.base,
+    paddingVertical: space.base,
+  },
+  bizPlainRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: space.md,
+    backgroundColor: color.surface,
+    paddingHorizontal: layout.screenGutter,
+    paddingVertical: space.base,
+  },
+  dotSmall: { width: 40, height: 40, borderRadius: radius.full },
 });
