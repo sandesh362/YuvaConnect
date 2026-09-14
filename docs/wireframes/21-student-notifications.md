@@ -1,6 +1,7 @@
 # 21 · Student Notifications
 
-Route: `/(shared)/notifications` (rebuild in place; shared with 36).
+Route: `/(shared)/notifications` (rebuilt in place; shared with 36).
+Status: ✅ built — pending review.
 
 ## 1. What the wireframe shows
 
@@ -21,5 +22,24 @@ Route: `/(shared)/notifications` (rebuild in place; shared with 36).
 notifications + unreadCount ✅; mark-all-read endpoint? verify; type→colour map is local;
 time-ago = client format of createdAt; section grouping = client.
 
-## 3. Flags: mark-all-read endpoint; per-type icons absent (circles are plain).
-## 4–5. At build time.
+## 3. Flags (resolved at build)
+- mark-all-read endpoint EXISTS (`PATCH /api/notifications/read-all`) — wired for real, as
+  is per-item read-on-open.
+- Plain 56dp colour circles (no glyphs) kept literally, per the export.
+- Row titles are composed from the real NotificationType (+ keyword refinement for
+  revision/deadline/approved inside GIG_STATUS_CHANGED); bodies are the server message
+  verbatim.
+
+## 4. Build
+Rebuilt in place: header with blue double-check mark-all action (disabled when everything
+is read), check-mark filter rail (All / Application / Work Update / Messages mapped to the
+real NotificationType enum), TODAY/YESTERDAY/OLDER overline bars over washed rows with
+per-type colours (green accepted · red rejected/revisions · blue messages · teal payments ·
+amber status), relative "2m ago" stamps, unread vs read title emphasis, real deep-links on
+tap (messages → chat, everything else → gig details), 30s poll and a real "Load older
+notifications" pager. Business viewers get the business tab set.
+
+## 5. Deviations
+1. Tab labels use the canonical STUDENT_TABS (Home/Discover/My Gigs/Messages/Profile) with
+   Messages active, instead of the export's one-off "Apps/Inbox" labels — cross-screen
+   consistency rule beats per-export label drift (noted in README's design language).

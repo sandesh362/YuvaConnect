@@ -48,7 +48,7 @@ Build order and status live in `../DESIGN_SYSTEM.md` §9.
 | 18 | Deliverable Submission | [`18-deliverable-submission.md`](./18-deliverable-submission.md) | ✅ built (`/submit/[gigId]`) — pending review |
 | 19 | Revision Requested | [`19-revision-requested.md`](./19-revision-requested.md) | ✅ built (`/revision/[gigId]`) — pending review |
 | 20 | Student Earnings | [`20-student-earnings.md`](./20-student-earnings.md) | ✅ built (`/earnings`) — pending review |
-| 21 | Student Notifications | [`21-student-notifications.md`](./21-student-notifications.md) | 📝 spec extracted · ⬜ not built |
+| 21 | Student Notifications | [`21-student-notifications.md`](./21-student-notifications.md) | ✅ built (`/notifications`) — pending review |
 | 22 | Saved Gigs | [`22-saved-gigs.md`](./22-saved-gigs.md) | 📝 spec extracted · ⬜ not built · ❌ no backend |
 | 23 | Student Portfolio & Profile | [`23-student-profile.md`](./23-student-profile.md) | 📝 spec extracted · ⬜ not built |
 | 24 | Student Reviews | [`24-student-reviews.md`](./24-student-reviews.md) | 📝 spec extracted · ⬜ not built |
