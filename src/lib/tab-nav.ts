@@ -12,6 +12,7 @@ export const STUDENT_TAB_ROUTES: Record<string, string | null> = {
   home: '/(app)/home',
   discover: '/(student)/feed',
   mygigs: '/(student)/my-gigs',
+  earnings: '/(student)/earnings',
   /** Thread list arrives with screen 5 (Messages & Trust Center). */
   messages: null,
   profile: '/(student)/profile',

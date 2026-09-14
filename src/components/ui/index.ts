@@ -56,6 +56,7 @@ export { Sheet, type SheetProps } from './Sheet';
 export { RadioRow, type RadioRowProps } from './RadioRow';
 
 // --- Wizard & files ---
+export { LineChart, type LineChartProps } from './LineChart';
 export { StepProgress, type StepProgressProps } from './StepProgress';
 export { Slider, type SliderProps } from './Slider';
 export { FileRow, type FileRowProps } from './FileRow';
