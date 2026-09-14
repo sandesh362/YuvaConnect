@@ -36,6 +36,7 @@ export type ScreenProps = {
  * FIXED: Now keyboard-aware (KeyboardAvoidingView) so CTAs never hide behind keyboard.
  * Bottom inset handling ensures content never sits behind tab bars.
  * inner/kav styles restored for proper flex layout.
+ * Merged with main's navbar updates — keeps KAV fix.
  */
 export function Screen({
   children,
