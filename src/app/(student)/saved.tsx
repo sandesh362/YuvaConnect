@@ -82,7 +82,6 @@ export default function SavedGigsScreen() {
           onPrimary={() => router.push('/(student)/feed' as never)}
           secondaryLabel="Search instead"
           onSecondary={() => router.push('/search' as never)}
-          secondaryAsLink
         />
       </ScrollView>
 
