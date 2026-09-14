@@ -45,14 +45,13 @@ import {
   TextField,
 } from '@/components/ui';
 import { apiErrorMessage } from '@/config/api';
-import { applyToGig, getGig, startGig, submitGig } from '@/lib/gig-api';
+import { applyToGig, getGig, startGig } from '@/lib/gig-api';
 import { getUserRatings } from '@/lib/trust-api';
-import { getProfile, uploadImage } from '@/lib/profile-api';
+import { getProfile } from '@/lib/profile-api';
 import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
-import * as ImagePicker from 'expo-image-picker';
 
 const COMPLETED = ['APPROVED', 'PAID', 'CLOSED'];
 const REMOTE = /remote|work from home|anywhere/i;
@@ -75,14 +74,11 @@ export default function GigDetailsScreen() {
 
   const [notice, setNotice] = useState<string | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
-  const [submitOpen, setSubmitOpen] = useState(false);
   const [proposal, setProposal] = useState('');
   const [experience, setExperience] = useState('');
   const [availability, setAvailability] = useState('');
   const [estDays, setEstDays] = useState('');
   const [links, setLinks] = useState('');
-  const [deliverNote, setDeliverNote] = useState('');
-  const [deliverFile, setDeliverFile] = useState<string | null>(null);
 
   const gigQuery = useQuery({ queryKey: ['gig', id], queryFn: () => getGig(token!, id!), enabled: !!token && !!id });
   const profileQuery = useQuery({ queryKey: ['profile', token], queryFn: () => getProfile(token!), enabled: !!token });
@@ -135,23 +131,6 @@ export default function GigDetailsScreen() {
     mutationFn: () => startGig(token!, id!),
     onSuccess: () => {
       setNotice('Gig started — good luck!');
-      refresh();
-    },
-  });
-
-  const pickDeliverable = async () => {
-    if (!token) return;
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] as never, quality: 0.8 });
-    if (result.canceled) return;
-    const url = await uploadImage(token, result.assets[0] as ImagePicker.ImagePickerAsset);
-    setDeliverFile(url);
-  };
-
-  const submitMutation = useMutation({
-    mutationFn: () => submitGig(token!, id!, { fileUrl: deliverFile ?? '', note: deliverNote.trim() }),
-    onSuccess: () => {
-      setSubmitOpen(false);
-      setNotice('Deliverable submitted for review.');
       refresh();
     },
   });
@@ -291,7 +270,7 @@ export default function GigDetailsScreen() {
           ) : gig.status === 'IN_PROGRESS' || gig.status === 'REVISION_REQUESTED' ? (
             <PrimaryButton
               label={gig.status === 'REVISION_REQUESTED' ? 'Resubmit Deliverable' : 'Submit Deliverable'}
-              onPress={() => setSubmitOpen(true)}
+              onPress={() => router.push(`/(student)/submit/${gig.id}` as never)}
               testID="gig-submit-open"
             />
           ) : gig.status === 'SUBMITTED' ? (
@@ -438,18 +417,6 @@ export default function GigDetailsScreen() {
         ) : null}
       </Sheet>
 
-      {/* --- Submit deliverable sheet (functionality preserved until screen 18) --- */}
-      <Sheet visible={submitOpen} onClose={() => setSubmitOpen(false)} title="Submit Deliverable" testID="sheet-submit">
-        <TextField label="Note for the business" value={deliverNote} onChangeText={setDeliverNote} placeholder="What did you deliver?" type="textarea" />
-        <Button label={deliverFile ? 'Replace file' : 'Attach file'} variant="secondary" icon="cloudUpload" onPress={pickDeliverable} />
-        {deliverFile ? <Text variant="caption" tone="secondary" numberOfLines={1}>{deliverFile}</Text> : null}
-        {submitMutation.isError ? <InfoBanner tone="danger" icon="offline" title="Could not submit" description={apiErrorMessage(submitMutation.error)} /> : null}
-        <PrimaryButton
-          label={submitMutation.isPending ? 'Submitting…' : 'Submit for review'}
-          disabled={!deliverNote.trim()}
-          onPress={() => submitMutation.mutate()}
-        />
-      </Sheet>
     </Screen>
   );
 }

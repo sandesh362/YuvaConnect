@@ -1,6 +1,7 @@
 # 18 · Deliverable Submission ("Submit Work")
 
-Route: NEW additive (`/submit/[gigId]`).
+Route: NEW additive (`/submit/[gigId]`) — built as `src/app/(student)/submit/[gigId].tsx`.
+Status: ✅ built — pending review.
 
 ## 1. What the wireframe shows
 
@@ -27,5 +28,25 @@ submission create = check API (likely application status update or message; NO f
 endpoint → flag: upload tiles render but cannot persist); version history = no model →
 flag; feedback = revision message text ✅ maybe.
 
-## 3. Flags: file upload, version history model, status swatch semantics.
-## 4–5. At build time.
+## 3. Flags (resolved at build — better than feared)
+- File upload IS real: Upload Media tile → expo-image-picker → POST /api/upload →
+  submitGig({fileUrl}); Add Link tile puts a URL into the same real fileUrl field.
+- Version history IS real: Deliverable rows numbered by submission order; feedback cards
+  are the real RevisionRequest rows attached by timestamp (requestedAt ≥ submittedAt,
+  before the next version).
+- Status swatches are DERIVED (attached revision → red; latest while SUBMITTED → amber;
+  latest while APPROVED/PAID/CLOSED → green) — no per-version status column exists.
+- Required-task checklist still has no column → shows real submitted versions as checked
+  rows; honest flag when empty (screen-17 pattern).
+
+## 4. Build
+New route; entry points rewired: screen 14's Submit/Resubmit button and screen 17's
+"Submit Final Work" now route here (their interim sheets were REMOVED), and the chat's
+"View Deliverable" quick action gained its real destination. Sticky protection strip per
+the export (dark shield + caption-bold on slate wash).
+
+## 5. Deviations
+1. Washed tile labels render in primaryText / teal-700 (export's washed labels are the
+   known opacity artifact).
+2. Versions list newest-first as separate cards instead of the export's literal nesting;
+   same information, cleaner interaction.

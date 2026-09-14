@@ -133,7 +133,7 @@ export default function ChatScreen() {
       icon: 'image',
       onPress: () => router.push((isStudent ? '/(student)/profile' : '/(business)/profile') as never),
     },
-    { label: 'View Deliverable', icon: 'clipboard', onPress: () => undefined }, // screen 18
+    { label: 'View Deliverable', icon: 'clipboard', onPress: () => router.push(`/(student)/submit/${gigId}` as never) }, // screen 18 shipped
     { label: 'Request Payment', icon: 'wallet', onPress: () => setPaymentNotice(true) },
   ];
 

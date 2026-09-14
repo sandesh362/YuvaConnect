@@ -16,8 +16,7 @@
  *    restyle this flow to its own wireframe); "Message Business" deep-links to
  *    the real chat.
  */
-import * as ImagePicker from 'expo-image-picker';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
@@ -36,14 +35,11 @@ import {
   Screen,
   ScreenHeader,
   SectionHeader,
-  Sheet,
   Text,
-  TextField,
   TextLink,
 } from '@/components/ui';
 import { apiErrorMessage } from '@/config/api';
-import { getGig, submitGig } from '@/lib/gig-api';
-import { uploadImage } from '@/lib/profile-api';
+import { getGig } from '@/lib/gig-api';
 import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
@@ -71,30 +67,9 @@ function daysLeft(deadline: string) {
 export default function WorkTrackerScreen() {
   const { gigId } = useLocalSearchParams<{ gigId: string }>();
   const { token } = useAuth();
-  const client = useQueryClient();
-
-  const [submitOpen, setSubmitOpen] = useState(false);
-  const [note, setNote] = useState('');
-  const [fileUrl, setFileUrl] = useState<string | null>(null);
 
   const gigQuery = useQuery({ queryKey: ['gig', gigId], queryFn: () => getGig(token!, gigId!), enabled: !!token && !!gigId });
   const gig = gigQuery.data;
-
-  const submitMutation = useMutation({
-    mutationFn: () => submitGig(token!, gigId!, { fileUrl: fileUrl ?? '', note: note.trim() }),
-    onSuccess: () => {
-      setSubmitOpen(false);
-      client.invalidateQueries({ queryKey: ['gig', gigId] });
-      client.invalidateQueries({ queryKey: ['my-gigs'] });
-    },
-  });
-
-  const pickFile = async () => {
-    if (!token) return;
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] as never, quality: 0.8 });
-    if (result.canceled) return;
-    setFileUrl(await uploadImage(token, result.assets[0] as ImagePicker.ImagePickerAsset));
-  };
 
   const latestRevision = gig?.revisionRequests?.[0];
   const deliverables = gig?.deliverables ?? [];
@@ -217,7 +192,7 @@ export default function WorkTrackerScreen() {
             icon="cloudUpload"
             size="lg"
             disabled={!canSubmit}
-            onPress={() => setSubmitOpen(true)}
+            onPress={() => router.push(`/(student)/submit/${gigId}` as never)}
             testID="tracker-submit"
           />
           {!canSubmit ? (
@@ -235,24 +210,6 @@ export default function WorkTrackerScreen() {
         </View>
       ) : null}
 
-      {/* --- Real submitGig sheet; screen 18 restyles this flow --- */}
-      <Sheet visible={submitOpen} onClose={() => setSubmitOpen(false)} title="Submit Deliverable" testID="sheet-tracker-submit">
-        <TextField label="Note for the business" value={note} onChangeText={setNote} placeholder="What did you deliver?" type="textarea" />
-        <Button label={fileUrl ? 'Replace file' : 'Attach file'} variant="secondary" icon="cloudUpload" onPress={pickFile} />
-        {fileUrl ? (
-          <Text variant="caption" tone="secondary" numberOfLines={1}>
-            {fileUrl}
-          </Text>
-        ) : null}
-        {submitMutation.isError ? (
-          <InfoBanner tone="danger" icon="offline" title="Could not submit" description={apiErrorMessage(submitMutation.error)} />
-        ) : null}
-        <PrimaryButton
-          label={submitMutation.isPending ? 'Submitting…' : 'Submit for review'}
-          disabled={!note.trim()}
-          onPress={() => submitMutation.mutate()}
-        />
-      </Sheet>
     </Screen>
   );
 }
