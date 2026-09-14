@@ -344,6 +344,17 @@ export default function BusinessWorkTrackerScreen() {
           </View>
         ) : null}
 
+        {/* Payment row → real details screen (wireframe 35) */}
+        {gig.payment ? (
+          <Button
+            label={`View Payment Details · ${gig.payment.status === 'RELEASED' ? 'Released' : gig.payment.status === 'HELD' ? 'Held in escrow' : gig.payment.status}`}
+            variant="secondary"
+            icon="wallet"
+            onPress={() => router.push(`/payment/${gig.payment!.id}?gigId=${gig.id}` as never)}
+            testID="tracker-payment-details"
+          />
+        ) : null}
+
         {/* Completed → real rating flow */}
         {canRate ? (
           myRatingQuery.data === null ? (
