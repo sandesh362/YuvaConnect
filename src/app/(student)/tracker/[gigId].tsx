@@ -19,7 +19,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
   Button,
@@ -171,7 +171,7 @@ export default function WorkTrackerScreen() {
 
             {/* --- Revision notice: latest real revision --- */}
             {latestRevision ? (
-              <View style={styles.revisionRow}>
+              <Pressable style={styles.revisionRow} accessibilityRole="button" accessibilityLabel="Open revision details" onPress={() => router.push(`/(student)/revision/${gigId}` as never)}>
                 <View style={styles.infoWell}>
                   <Icon name="info" size={16} color={color.textInverse} />
                 </View>
@@ -179,7 +179,7 @@ export default function WorkTrackerScreen() {
                   {latestRevision.feedback}
                 </Text>
                 <TextLink label="Chat" iconRight={null} onPress={() => router.push(`/(shared)/chat/${gigId}` as never)} />
-              </View>
+              </Pressable>
             ) : null}
           </>
         )}

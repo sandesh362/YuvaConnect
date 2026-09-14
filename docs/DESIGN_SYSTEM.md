@@ -183,7 +183,7 @@ Constraint honoured: **no route is renamed or moved.** The bottom tab bar is ren
 | 16 | My Applications | `/(student)/my-gigs` ✅ | ✅ |
 | 17 | Active Work Tracker | `/tracker/[gigId]` ➕ built | ✅ **built** — pending review |
 | 18 | Deliverable Submission | `/submit/[gigId]` ➕ built | ✅ **built** — pending review |
-| 19 | Revision Requested | `➕ new` | ➕ |
+| 19 | Revision Requested | `/revision/[gigId]` ➕ built | ✅ **built** — pending review |
 | 20 | Student Earnings | `/(student)/earnings` ✅ | ✅ |
 | 21 | Student Notifications | `/(shared)/notifications` ✅ | ✅ |
 | 22 | Saved Gigs | `➕ new` **+ no backend** (§5) | ❌ |

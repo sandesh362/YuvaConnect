@@ -1,7 +1,8 @@
 # 19 · Revision Requested
 
-Route: NEW additive (`/revision/[gigId]`) or a state of 17 — decide at build (prefer state of
-tracker if data allows; wireframe is a distinct screen).
+Route: NEW additive (`/revision/[gigId]`) — built as `src/app/(student)/revision/[gigId].tsx`
+(the wireframe is a distinct screen, so it got its own route; the tracker's revision notice
+now deep-links here). Status: ✅ built — pending review.
 
 ## 1. What the wireframe shows
 
@@ -28,5 +29,22 @@ revision feedback text = message/revision endpoint? (verify); required-changes c
 no model → flag (parse from feedback? no — flag); revised deadline = no column → flag;
 previous file = no upload store → flag.
 
-## 3. Flags: revision checklist, revised deadline, file refs.
-## 4–5. At build time.
+## 3. Flags (resolved at build)
+- Feedback card = REAL latest RevisionRequest (text + requestedAt); amber "Pending" pill
+  derives from the real gig.status.
+- Previous Submission = REAL latest Deliverable (FileRow; tap opens the file). File size is
+  not stored → meta shows the real submitted timestamp instead of a fake "2.4 MB".
+- Required-changes task list: NO model → honest flag card pointing at the feedback text;
+  tasks never parsed or invented.
+- Revised deadline: NO column → row shows the REAL gig deadline + explainer caption.
+- "Owner, {business}" caption: business-title field doesn't exist → composed from the real
+  business name.
+
+## 4. Build
+New route; tracker revision row became a Pressable deep-linking here. Sticky bar:
+"Submit Revised Work" → /submit/[gigId] (screen 18) + "Message {first name}" TextLink →
+chat (both real destinations).
+
+## 5. Deviations
+1. Eye glyph on the file row → whole-row tap opens the file (FileRow's interaction model).
+2. Checklist card replaced by the flag card (see §3) — omission over invention.
