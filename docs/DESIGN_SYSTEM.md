@@ -6,7 +6,7 @@ Status: **STEP 1 signed off** (tokens + components + gallery, live at `/design-s
 ```
 src/theme/            ← tokens (single source of truth)
 src/components/ui/    ← base components (the only styled primitives screens may use)
-src/app/design-system.tsx  ← live gallery, delete after sign-off
+src/app/design-system.tsx  ← live gallery; KEPT — it hosts the approved screen 3 (System States & Feedback) reference set, so deleting it would remove a shipped screen
 ```
 
 ---
