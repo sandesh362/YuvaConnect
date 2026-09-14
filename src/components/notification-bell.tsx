@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors } from '@/components/ui';
+import { colors } from '@/components/legacy-ui';
 import { listNotifications } from '@/lib/trust-api';
 import { useAuth } from '@/providers/auth-provider';
 

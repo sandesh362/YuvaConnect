@@ -7,6 +7,7 @@ export async function listGigs(token: string, filters: Record<string, string> = 
 export async function getGig(token: string, id: string) { const { data } = await api.get<{ gig: Gig }>(`/api/gigs/${id}`, headers(token)); return data.gig; }
 export async function getMyGigs(token: string) { const { data } = await api.get<{ gigs: Gig[]; applications?: Application[] }>('/api/gigs/mine', headers(token)); return data; }
 export async function createGig(token: string, input: GigInput) { const { data } = await api.post<{ gig: Gig }>('/api/gigs', input, headers(token)); return data.gig; }
+export async function updateGig(token: string, id: string, input: Partial<GigInput>) { const { data } = await api.patch<{ gig: Gig }>(`/api/gigs/${id}`, input, headers(token)); return data.gig; }
 export async function applyToGig(token: string, id: string, input: { proposal: string; relevantExperience: string; availability: string }) { const { data } = await api.post<{ application: Application }>(`/api/gigs/${id}/apply`, input, headers(token)); return data.application; }
 export async function getApplicants(token: string, gigId: string) { const { data } = await api.get<{ applicants: (Application & { student: UserSummary; avgRating: number; totalRatings: number; pastGigCount: number })[] }>(`/api/gigs/${gigId}/applicants`, headers(token)); return data.applicants; }
 type UserSummary = { id: string; name: string; email: string; studentProfile?: { college: string; skills: string[]; bio: string; profileImageUrl: string | null; avgRating: number; totalRatings: number } | null };

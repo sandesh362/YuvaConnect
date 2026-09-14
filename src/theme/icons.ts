@@ -1,0 +1,201 @@
+// ============================================================
+// YuvaConnect Design System — Icon Registry
+// ------------------------------------------------------------
+// ONE icon family (Ionicons, bundled with @expo/vector-icons — no
+// extra native dependency) behind a semantic name map.
+//
+// Screens ask for `icon="mapPin"`, never `"location-outline"`. That
+// keeps iconography swappable and stops four different map pins
+// creeping into the app.
+//
+// `filled` variants exist for every tab-bar and toggleable icon so
+// the active state can swap weight, not just colour.
+// ============================================================
+
+export const icons = {
+  // --- Navigation & chrome ---
+  arrowBack: 'arrow-back',
+  arrowForward: 'arrow-forward',
+  chevronRight: 'chevron-forward',
+  chevronLeft: 'chevron-back',
+  chevronDown: 'chevron-down',
+  chevronUp: 'chevron-up',
+  close: 'close',
+  closeCircle: 'close-circle',
+  more: 'ellipsis-horizontal',
+  menu: 'menu-outline',
+  refresh: 'refresh',
+  external: 'open-outline',
+
+  // --- Tab bar (outline + filled pair) ---
+  home: 'home-outline',
+  homeFilled: 'home',
+  discover: 'compass-outline',
+  discoverFilled: 'compass',
+  briefcase: 'briefcase-outline',
+  briefcaseFilled: 'briefcase',
+  chat: 'chatbubble-outline',
+  chatFilled: 'chatbubble',
+  chats: 'chatbubbles-outline',
+  chatsFilled: 'chatbubbles',
+  person: 'person-outline',
+  personFilled: 'person',
+  grid: 'grid-outline',
+  gridFilled: 'grid',
+  add: 'add',
+  remove: 'remove',
+  addCircle: 'add-circle-outline',
+  addCircleFilled: 'add-circle',
+  wallet: 'wallet-outline',
+  walletFilled: 'wallet',
+  bell: 'notifications-outline',
+  bellFilled: 'notifications',
+
+  // --- Actions ---
+  bookmark: 'bookmark-outline',
+  bookmarkFilled: 'bookmark',
+  heart: 'heart-outline',
+  heartFilled: 'heart',
+  share: 'share-social-outline',
+  filter: 'funnel-outline',
+  filterFilled: 'funnel',
+  options: 'options-outline',
+  edit: 'create-outline',
+  archive: 'archive-outline',
+  pause: 'pause',
+  trash: 'trash-outline',
+  film: 'film-outline',
+  send: 'paper-plane-outline',
+  sendFilled: 'paper-plane',
+  upload: 'cloud-upload-outline',
+  download: 'download-outline',
+  camera: 'camera-outline',
+  image: 'images-outline',
+  check: 'checkmark',
+  checkCircle: 'checkmark-circle-outline',
+  checkCircleFilled: 'checkmark-circle',
+  plus: 'add',
+  minus: 'remove',
+  star: 'star-outline',
+  starFilled: 'star',
+  starHalf: 'star-half',
+  thumbsUp: 'thumbs-up-outline',
+  thumbsDown: 'thumbs-down-outline',
+  copy: 'copy-outline',
+  scan: 'scan-outline',
+  compare: 'swap-horizontal-outline',
+
+  // --- Domain: place & time ---
+  mapPin: 'location-outline',
+  mapPinFilled: 'location',
+  map: 'map-outline',
+  navigate: 'navigate-outline',
+  clock: 'time-outline',
+  calendar: 'calendar-outline',
+  hourglass: 'hourglass-outline',
+
+  // --- Domain: money ---
+  rupee: 'cash-outline',
+  rupeeFilled: 'cash',
+  card: 'card-outline',
+  receipt: 'receipt-outline',
+  trending: 'trending-up-outline',
+  analytics: 'analytics-outline',
+  gift: 'gift-outline',
+
+  // --- Domain: craft, tools & files (added for screens 2-37) ---
+  brush: 'brush-outline',
+  code: 'code-slash-outline',
+  bulb: 'bulb-outline',
+  laptop: 'laptop-outline',
+  storefront: 'storefront-outline',
+  stopwatch: 'stopwatch-outline',
+  link: 'link-outline',
+  rocket: 'rocket-outline',
+  cloudUpload: 'cloud-upload-outline',
+  idCard: 'id-card-outline',
+  shuffle: 'shuffle-outline',
+  megaphone: 'megaphone-outline',
+  palette: 'color-palette-outline',
+  pen: 'create-outline',
+  trendUp: 'trending-up-outline',
+  alarm: 'alarm-outline',
+  document: 'document-text-outline',
+  clipboardFilled: 'clipboard',
+  gauge: 'speedometer-outline',
+  checkmarkDone: 'checkmark-done-outline',
+  offline: 'cloud-offline-outline',
+  locate: 'locate-outline',
+  locateFilled: 'locate',
+  shareIos: 'share-outline',
+  moreVertical: 'ellipsis-vertical',
+  personRemove: 'person-remove-outline',
+  ban: 'ban-outline',
+
+  // --- Brand ---
+  /** The YuvaConnect hub mark. */
+  logo: 'git-network',
+  logoGoogle: 'logo-google',
+
+  // --- Domain: trust & identity ---
+  shield: 'shield-outline',
+  shieldCheck: 'shield-checkmark-outline',
+  shieldCheckFilled: 'shield-checkmark',
+  verified: 'checkmark-circle',
+  student: 'school-outline',
+  studentFilled: 'school',
+  business: 'storefront-outline',
+  building: 'business-outline',
+  fingerprint: 'finger-print-outline',
+  people: 'people-outline',
+  peopleFilled: 'people',
+  personAdd: 'person-add-outline',
+  lock: 'lock-closed-outline',
+  mail: 'mail-outline',
+  phone: 'call-outline',
+  eye: 'eye-outline',
+  eyeOff: 'eye-off-outline',
+  globe: 'globe-outline',
+  language: 'language-outline',
+
+  // --- Domain: work lifecycle ---
+  clipboard: 'clipboard-outline',
+  layers: 'layers-outline',
+  flag: 'flag-outline',
+  trophy: 'trophy-outline',
+  medal: 'medal-outline',
+  ribbon: 'ribbon-outline',
+  sparkles: 'sparkles-outline',
+  flash: 'flash-outline',
+  flashFilled: 'flash',
+  pulse: 'pulse-outline',
+  construct: 'construct-outline',
+  cube: 'cube-outline',
+  bag: 'bag-check-outline',
+  cart: 'cart-outline',
+  cafe: 'cafe-outline',
+  restaurant: 'restaurant-outline',
+  desktop: 'desktop-outline',
+  colorPalette: 'color-palette-outline',
+  cut: 'cut-outline',
+  fitness: 'fitness-outline',
+
+  // --- System states ---
+  info: 'information-circle-outline',
+  infoFilled: 'information-circle',
+  alert: 'alert-circle-outline',
+  alertFilled: 'alert-circle',
+  warning: 'warning-outline',
+  help: 'help-circle-outline',
+  searchEmpty: 'search-outline',
+  search: 'search',
+  inbox: 'file-tray-full-outline',
+  sync: 'sync-outline',
+  settings: 'settings-outline',
+  logout: 'log-out-outline',
+  moon: 'moon-outline',
+  sunny: 'sunny-outline',
+} as const;
+
+export type IconName = keyof typeof icons;
+export type IconGlyph = (typeof icons)[IconName];

@@ -5,5 +5,5 @@ import { useAuth } from '@/providers/auth-provider';
 export default function Index() {
   const { token, isLoading } = useAuth();
   if (isLoading) return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator /></View>;
-  return <Redirect href={(token ? '/home' : '/login') as never} />;
+  return <Redirect href={(token ? '/home' : '/role') as never} />;
 }

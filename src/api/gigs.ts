@@ -1,9 +1,0 @@
-import { api } from './client';
-import type { Gig } from '../types';
-
-const initials = (text: string) => text.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
-export function toGig(item: any): Gig { const business = item.businessId ?? {}; const locality = item.location?.locality; const city = item.location?.city; return { id: item._id, title: item.title, businessId: typeof item.businessId === 'string' ? item.businessId : business._id, businessName: business.businessName ?? business.name ?? 'Verified business', businessInitials: initials(business.businessName ?? business.name ?? 'YC'), businessAvatarColor: '#2563EB', isBusinessVerified: Boolean(business.isVerified), category: item.category, description: item.description, skills: item.requiredSkills ?? [], budget: item.budget, duration: item.duration ?? 'Flexible', deadline: item.deadline ? new Date(item.deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Flexible', location: [locality, city].filter(Boolean).join(', ') || 'Mumbai', distance: 'Nearby', workType: item.workType, status: item.status === 'active' ? 'open' : item.status, applicantCount: item.applicationCount ?? 0, rating: business.rating ?? 0, reviewCount: business.reviewCount ?? 0, deliverables: item.deliverables ?? [], postedDate: 'Recently', matchPercentage: item.matchScore }; }
-export async function fetchGigs() { const result = await api<{ data: any[]; pagination: any }>('/gigs'); return result.data.map(toGig); }
-export const applyToGig = (gigId: string, proposal: string) => api(`/gigs/${gigId}/apply`, { method: 'POST', body: JSON.stringify({ proposal }) });
-export const saveGig = (gigId: string) => api(`/gigs/${gigId}/save`, { method: 'POST' });
-export const unsaveGig = (gigId: string) => api(`/gigs/${gigId}/save`, { method: 'DELETE' });

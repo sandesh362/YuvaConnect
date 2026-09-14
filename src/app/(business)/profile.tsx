@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, colors, Field, ImagePreview, VerificationBadge } from '@/components/ui';
+import { Button, colors, Field, ImagePreview, VerificationBadge } from '@/components/legacy-ui';
 import { RatingStars } from '@/components/rating-stars';
 import { apiErrorMessage } from '@/config/api';
 import { getProfile, updateProfile, uploadImage } from '@/lib/profile-api';

@@ -1,150 +1,399 @@
+/**
+ * Messages & Trust Center — wireframe 5/37. Rebuild in place (route unchanged).
+ *
+ * Route: /(shared)/chat/[gigId]  ·  Spec: docs/wireframes/05-messages-trust.md
+ *
+ * Data honesty:
+ *  - Messages are REAL: listMessages / sendMessage, polled every 15s (the API
+ *    is REST — there is no socket; polling is flagged, not presented as realtime).
+ *  - Presence ("Online") and the verified tick in the header have NO backing
+ *    field, so the subtitle shows the counterparty's ROLE instead. Flagged.
+ *  - "View Tracker" and "View Deliverable" point at screens 17/18 which have
+ *    not shipped: visible per wireframe, quiet no-ops until then (same rule
+ *    as the tab bar). "Request Payment" has no endpoint at all → explainer
+ *    InfoBanner, the approved pattern for flag-without-faking.
+ *  - The kebab opens nothing in any wireframe; it routes to /support, which is
+ *    what a chat overflow is actually for (report / get help).
+ */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '@/components/ui';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+
+import {
+  Avatar,
+  EmptyState,
+  ErrorState,
+  Icon,
+  IconButton,
+  InfoBanner,
+  LoadingSkeleton,
+  Screen,
+  SecondaryButton,
+  Text,
+} from '@/components/ui';
 import { apiErrorMessage } from '@/config/api';
+import { getApplicants, getGig } from '@/lib/gig-api';
 import { listMessages, sendMessage } from '@/lib/trust-api';
 import { useAuth } from '@/providers/auth-provider';
-import { Message } from '@/types/api';
+import { color } from '@/theme/colors';
+import type { IconName } from '@/theme/icons';
+import { radius, shadow } from '@/theme/radius';
+import { layout, space } from '@/theme/spacing';
+import type { Message } from '@/types/api';
 
-/**
- * Gig chat between the assigned student and the business owner.
- * Polling-based (6s) while the screen is focused, paused when unfocused
- * to avoid wasted network use.
- */
-export default function ChatScreen() {
-  const { gigId } = useLocalSearchParams<{ gigId: string }>();
-  const { token, user } = useAuth();
-  const client = useQueryClient();
-  const [draft, setDraft] = useState('');
-  const [history, setHistory] = useState<Message[]>([]);
-  const [historyExhausted, setHistoryExhausted] = useState(false);
-  const [loadingOlder, setLoadingOlder] = useState(false);
-  const scrollRef = useRef<ScrollView>(null);
+const SEND = 48;
 
-  const [focused, setFocused] = useState(true);
-  useFocusEffect(useCallback(() => {
-    setFocused(true);
-    return () => setFocused(false);
-  }, []));
+function dayLabel(iso: string) {
+  const date = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(Date.now() - 86400000);
+  if (date.toDateString() === today.toDateString()) return 'Today';
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
 
-  const query = useQuery({
-    queryKey: ['messages', gigId],
-    queryFn: () => listMessages(token!, gigId, { limit: 50 }),
-    enabled: !!token && !!gigId,
-    refetchInterval: focused ? 6000 : false,
-  });
+function timeOf(iso: string) {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
 
-  // Older pages (prepended) + live page, deduped by id in case the live
-  // window shifts over already-loaded history.
-  const live = query.data?.messages ?? [];
-  const seen = new Set<string>();
-  const merged = [...history, ...live].filter((m) => (seen.has(m.id) ? false : (seen.add(m.id), true)));
-  const canLoadOlder = !historyExhausted && merged.length > 0 && (query.data?.nextCursor != null || history.length > 0);
-
-  async function loadOlder() {
-    const oldest = merged[0]?.id;
-    if (!oldest || loadingOlder) return;
-    setLoadingOlder(true);
-    try {
-      const page = await listMessages(token!, gigId, { before: oldest, limit: 50 });
-      if (page.messages.length === 0 || page.nextCursor == null) setHistoryExhausted(true);
-      setHistory((h) => [...page.messages, ...h]);
-    } catch (e) {
-      Alert.alert('Could not load older messages', apiErrorMessage(e));
-    } finally {
-      setLoadingOlder(false);
-    }
-  }
-
-  const send = useMutation({
-    mutationFn: () => sendMessage(token!, gigId, draft.trim()),
-    onSuccess: () => {
-      setDraft('');
-      client.invalidateQueries({ queryKey: ['messages', gigId] });
-    },
-    onError: (e) => Alert.alert('Could not send message', apiErrorMessage(e)),
-  });
-
+function Bubble({ mine, text, time }: { mine: boolean; text: string; time: string }) {
   return (
-    <SafeAreaView style={s.safe}>
-      <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View style={s.header}>
-          <Pressable onPress={() => router.back()}><Text style={s.back}>‹ Back</Text></Pressable>
-          <Text style={s.heading}>Messages</Text>
-        </View>
-        {query.isError ? (
-          <View style={s.center}><Text style={s.error}>{apiErrorMessage(query.error)}</Text></View>
-        ) : (
-          <ScrollView
-            ref={scrollRef}
-            contentContainerStyle={s.list}
-            onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
-          >
-            {canLoadOlder && (
-              <Pressable style={s.older} onPress={() => void loadOlder()} disabled={loadingOlder}>
-                <Text style={s.olderText}>{loadingOlder ? 'Loading…' : 'Load older messages'}</Text>
-              </Pressable>
-            )}
-            {merged.map((m) => {
-              const mine = m.senderId === user?.id;
-              return (
-                <View key={m.id} style={[s.bubble, mine ? s.mine : s.theirs]}>
-                  {!mine && <Text style={s.sender}>{m.sender?.name ?? 'Partner'}</Text>}
-                  <Text style={mine ? s.mineText : s.theirsText}>{m.content}</Text>
-                  <Text style={s.time}>{new Date(m.createdAt).toLocaleString()}</Text>
-                </View>
-              );
-            })}
-            {merged.length === 0 && !query.isPending && <Text style={s.empty}>No messages yet. Say hello!</Text>}
-          </ScrollView>
-        )}
-        <View style={s.composer}>
-          <TextInput
-            style={s.input}
-            value={draft}
-            onChangeText={setDraft}
-            placeholder="Write a message…"
-            placeholderTextColor="#84919b"
-            multiline
-          />
-          <Pressable
-            style={[s.send, (!draft.trim() || send.isPending) && s.disabled]}
-            disabled={!draft.trim() || send.isPending}
-            onPress={() => send.mutate()}
-          >
-            <Text style={s.sendText}>{send.isPending ? '…' : 'Send'}</Text>
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    <View style={[styles.bubbleRow, mine && styles.bubbleRowMine]}>
+      <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
+        <Text variant="body" style={[styles.bubbleText, mine && styles.bubbleTextMine]}>
+          {text}
+        </Text>
+        <Text variant="caption" style={[styles.bubbleTime, mine && styles.bubbleTimeMine]}>
+          {time}
+        </Text>
+      </View>
+    </View>
   );
 }
 
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.pale },
-  flex: { flex: 1 },
-  header: { padding: 16, paddingBottom: 8, gap: 4 },
-  back: { color: colors.blue, fontWeight: '700' },
-  heading: { color: colors.navy, fontSize: 26, fontWeight: '800' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  error: { color: colors.danger, textAlign: 'center' },
-  list: { padding: 16, gap: 10 },
-  older: { alignSelf: 'center', padding: 8 },
-  olderText: { color: colors.blue, fontWeight: '700' },
-  bubble: { maxWidth: '82%', borderRadius: 14, padding: 12, gap: 4 },
-  mine: { alignSelf: 'flex-end', backgroundColor: colors.blue },
-  theirs: { alignSelf: 'flex-start', backgroundColor: colors.white },
-  mineText: { color: colors.white, fontSize: 15, lineHeight: 21 },
-  theirsText: { color: colors.text, fontSize: 15, lineHeight: 21 },
-  sender: { color: colors.blue, fontWeight: '800', fontSize: 12 },
-  time: { fontSize: 11, color: colors.muted },
-  empty: { color: colors.muted, textAlign: 'center', marginTop: 24 },
-  composer: { flexDirection: 'row', gap: 8, padding: 12, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.border },
-  input: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: colors.text, fontSize: 15, maxHeight: 110 },
-  send: { backgroundColor: colors.blue, borderRadius: 12, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
-  sendText: { color: colors.white, fontWeight: '800' },
-  disabled: { opacity: 0.5 },
+export default function ChatScreen() {
+  const { gigId } = useLocalSearchParams<{ gigId: string }>();
+  const { token, user } = useAuth();
+  const queryClient = useQueryClient();
+  const [draft, setDraft] = useState('');
+  const [railOpen, setRailOpen] = useState(true);
+  const [paymentNotice, setPaymentNotice] = useState(false);
+
+  const gigQuery = useQuery({
+    queryKey: ['gig', gigId],
+    queryFn: () => getGig(token!, gigId!),
+    enabled: !!token && !!gigId,
+  });
+
+  const isStudent = user?.role === 'STUDENT';
+
+  const applicantsQuery = useQuery({
+    queryKey: ['applicants', gigId],
+    queryFn: () => getApplicants(token!, gigId!),
+    enabled: !!token && !!gigId && !isStudent,
+  });
+
+  const messagesQuery = useQuery({
+    queryKey: ['messages', gigId],
+    queryFn: () => listMessages(token!, gigId!, { limit: 50 }),
+    enabled: !!token && !!gigId,
+    refetchInterval: 15000, // REST API — flagged polling, not fake realtime
+  });
+
+  const sendMutation = useMutation({
+    mutationFn: () => sendMessage(token!, gigId!, draft.trim()),
+    onSuccess: () => {
+      setDraft('');
+      queryClient.invalidateQueries({ queryKey: ['messages', gigId] });
+    },
+  });
+
+  const counterparty = useMemo(() => {
+    if (isStudent) {
+      const name = gigQuery.data?.business?.businessProfile?.businessName ?? gigQuery.data?.business?.name;
+      return name ? { name, kind: 'Business' } : null;
+    }
+    const selected = applicantsQuery.data?.find((applicant) => applicant.status === 'SELECTED');
+    return selected ? { name: selected.student.name, kind: 'Student' } : null;
+  }, [isStudent, gigQuery.data, applicantsQuery.data]);
+
+  const thread = useMemo(() => {
+    const page = messagesQuery.data;
+    if (!page) return [] as Message[];
+    return [...page.messages].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  }, [messagesQuery.data]);
+
+  const gig = gigQuery.data;
+  const noticeIndex = thread.length ? Math.min(3, thread.length - 1) : -1;
+
+  const quickActions: { label: string; icon: IconName; onPress: () => void }[] = [
+    {
+      label: 'Share Portfolio',
+      icon: 'image',
+      onPress: () => router.push((isStudent ? '/(student)/profile' : '/(business)/profile') as never),
+    },
+    { label: 'View Deliverable', icon: 'clipboard', onPress: () => router.push(`/(student)/submit/${gigId}` as never) }, // screen 18 shipped
+    { label: 'Request Payment', icon: 'wallet', onPress: () => setPaymentNotice(true) },
+  ];
+
+  return (
+    <Screen testID="screen-chat">
+      {/* --- Header: counterparty, not presence (presence has no data) --- */}
+      <View style={styles.header}>
+        <IconButton name="arrowBack" accessibilityLabel="Back" onPress={() => router.back()} />
+        <Avatar name={counterparty?.name ?? '…'} size="md" tone={color.accent} />
+        <View style={styles.headerBody}>
+          <View style={styles.headerNameRow}>
+            <Text variant="heading" numberOfLines={1}>
+              {counterparty?.name ?? 'Loading…'}
+            </Text>
+          </View>
+          <Text variant="caption" tone="secondary">
+            {counterparty?.kind ?? '—'}
+          </Text>
+        </View>
+        <IconButton
+          name="moreVertical"
+          accessibilityLabel="Support and report options"
+          onPress={() => router.push('/support' as never)}
+        />
+      </View>
+
+      {/* --- Gig context bar --- */}
+      {gig ? (
+        <View style={styles.contextBar}>
+          <View style={styles.contextCopy}>
+            <Text variant="captionStrong" tone="secondary" numberOfLines={1}>
+              {gig.title}
+            </Text>
+            <Text variant="calloutStrong" numberOfLines={1}>
+              Budget: ₹{Number(gig.budget).toLocaleString()}
+            </Text>
+          </View>
+          <SecondaryButton
+            label="View Tracker"
+            size="sm"
+            fullWidth={false}
+            onPress={() => router.push(`/(student)/tracker/${gigId}` as never)}
+          />
+        </View>
+      ) : null}
+
+      {/* --- Thread --- */}
+      <ScrollView style={styles.scroller} contentContainerStyle={styles.thread} showsVerticalScrollIndicator={false}>
+        {!token ? (
+          <EmptyState
+            title="Login to view this conversation"
+            description="Messages are private to the gig's student and business."
+            icon="chat"
+            primaryLabel="Login"
+            onPrimary={() => router.push('/login' as never)}
+          />
+        ) : messagesQuery.isError ? (
+          <ErrorState
+            title="Could not load messages"
+            description={apiErrorMessage(messagesQuery.error)}
+            retryLabel="Retry"
+            onRetry={() => messagesQuery.refetch()}
+          />
+        ) : messagesQuery.isLoading ? (
+          <LoadingSkeleton count={3} variant="row" />
+        ) : thread.length === 0 ? (
+          <EmptyState
+            title="No messages yet"
+            description="Say hello — and keep payments and important communication within YuvaConnect to stay protected."
+            icon="chat"
+          />
+        ) : (
+          thread.map((message, index) => {
+            const mine = message.senderId === user?.id;
+            const label = dayLabel(message.createdAt);
+            const previous = index > 0 ? dayLabel(thread[index - 1].createdAt) : null;
+            return (
+              <View key={message.id}>
+                {label !== previous ? (
+                  <Text variant="captionStrong" tone="secondary" style={styles.dayLabel}>
+                    {label}
+                  </Text>
+                ) : null}
+                <Bubble mine={mine} text={message.content} time={timeOf(message.createdAt)} />
+                {index === noticeIndex ? (
+                  <View style={styles.trustNotice}>
+                    <Icon name="shieldCheckFilled" size={20} color={color.primary} />
+                    <Text variant="calloutStrong" style={styles.trustCopy}>
+                      Keep payments and important communication within YuvaConnect to stay protected.
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            );
+          })
+        )}
+        {paymentNotice ? (
+          <InfoBanner
+            tone="info"
+            icon="wallet"
+            title="Payment requests are flagged, not faked"
+            description="The live API has no payment-request endpoint yet — payments are released from the Work Tracker once work is approved."
+            style={styles.notice}
+          />
+        ) : null}
+      </ScrollView>
+
+      {/* --- Composer + quick actions --- */}
+      <View style={styles.composerWrap}>
+        <View style={styles.composer}>
+          <IconButton
+            name="addCircle"
+            size={26}
+            color={color.textSecondary}
+            accessibilityLabel="Toggle quick actions"
+            onPress={() => setRailOpen((open) => !open)}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Type your message..."
+            placeholderTextColor={color.textTertiary}
+            value={draft}
+            onChangeText={setDraft}
+            multiline
+            testID="chat-input"
+          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Send message"
+            disabled={!draft.trim() || sendMutation.isPending}
+            onPress={() => sendMutation.mutate()}
+            style={({ pressed }) => [styles.send, (!draft.trim() || sendMutation.isPending) && styles.sendDisabled, pressed && styles.pressed]}>
+            <Icon name="sendFilled" size={20} color={color.textInverse} />
+          </Pressable>
+        </View>
+        {railOpen ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
+            {quickActions.map((action) => (
+              <Pressable
+                key={action.label}
+                onPress={action.onPress}
+                accessibilityRole="button"
+                accessibilityLabel={action.label}
+                style={({ pressed }) => [styles.railChip, pressed && styles.pressed]}>
+                <Icon name={action.icon} size={16} color={color.textPrimary} />
+                <Text variant="callout" numberOfLines={1}>
+                  {action.label}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        ) : null}
+      </View>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    backgroundColor: color.surface,
+    paddingHorizontal: space.sm,
+    paddingVertical: space.sm,
+  },
+  headerBody: { flex: 1 },
+  headerNameRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
+
+  contextBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space.md,
+    backgroundColor: color.surfaceMuted,
+    marginHorizontal: space.base,
+    marginTop: space.xs,
+    marginBottom: space.md,
+    borderRadius: radius.md,
+    paddingHorizontal: space.base,
+    paddingVertical: space.md,
+  },
+  contextCopy: { flex: 1, gap: 2 },
+
+  scroller: { flex: 1 },
+  thread: { padding: layout.screenGutter, gap: space.md, maxWidth: layout.maxContentWidth, width: '100%', alignSelf: 'center' },
+  dayLabel: { textAlign: 'center', marginTop: space.md, marginBottom: space.xs },
+
+  bubbleRow: { alignItems: 'flex-start' },
+  bubbleRowMine: { alignItems: 'flex-end' },
+  bubble: {
+    maxWidth: '74%',
+    borderRadius: radius.md,
+    paddingHorizontal: space.base,
+    paddingVertical: space.md,
+    gap: space.sm,
+  },
+  bubbleTheirs: { backgroundColor: color.surfaceMuted, borderTopLeftRadius: radius.xs },
+  bubbleMine: { backgroundColor: color.primary, borderTopRightRadius: radius.xs, ...shadow.sm },
+  bubbleText: { color: color.textPrimary, lineHeight: 23 },
+  bubbleTextMine: { color: color.textInverse },
+  bubbleTime: { color: color.textSecondary, alignSelf: 'flex-start' },
+  bubbleTimeMine: { color: color.primaryBorder, alignSelf: 'flex-end' },
+
+  trustNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    backgroundColor: color.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: color.borderSubtle,
+    paddingHorizontal: space.base,
+    paddingVertical: space.md,
+    marginVertical: space.md,
+  },
+  trustCopy: { flex: 1, lineHeight: 20 },
+  notice: { marginTop: space.md },
+
+  composerWrap: {
+    backgroundColor: color.surface,
+    borderTopWidth: 1,
+    borderTopColor: color.borderSubtle,
+    paddingTop: space.md,
+    paddingBottom: space.sm,
+    gap: space.md,
+  },
+  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: space.md, paddingHorizontal: space.base },
+  input: {
+    flex: 1,
+    maxHeight: 96,
+    minHeight: 40,
+    color: color.textPrimary,
+    fontSize: 15,
+    lineHeight: 20,
+    paddingVertical: space.sm,
+  },
+  send: {
+    width: SEND,
+    height: SEND,
+    borderRadius: radius.full,
+    backgroundColor: color.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadow.primary,
+  },
+  sendDisabled: { opacity: 0.45 },
+  pressed: { opacity: 0.85 },
+
+  rail: { gap: space.md, paddingHorizontal: space.base, paddingBottom: space.xs },
+  railChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    borderWidth: 1,
+    borderColor: color.border,
+    borderRadius: radius.md,
+    backgroundColor: color.surface,
+    paddingHorizontal: space.base,
+    paddingVertical: space.md,
+    maxWidth: 220,
+  },
 });
