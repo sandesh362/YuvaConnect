@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.base,
-    paddingBottom: space['2xl'],
+    paddingBottom: 120,
     gap: space.base,
     maxWidth: layout.maxContentWidth,
     width: '100%',

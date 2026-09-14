@@ -1,11 +1,10 @@
 /**
- * Role Selection & Onboarding — wireframe 1/37.
+ * Role Selection & Onboarding — FIXED production QA version.
  *
- * Pre-auth entry point. The choice is client state only; `Continue` hands the
- * role to the existing signup route as a query param so the real
- * `signup({ role })` contract in src/lib/auth-api.ts is honoured unchanged.
- *
- * Route: /role   (additive — no existing route is renamed or moved)
+ * Fixes:
+ * - Content paddingBottom 140 to prevent banner hidden behind sticky CTA
+ * - BottomActionBar ensures Continue always visible above keyboard
+ * - Login link routes with role param
  */
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
@@ -37,12 +36,7 @@ export default function RoleSelectionScreen() {
 
   return (
     <Screen testID="screen-role-selection">
-      <ScrollView
-        style={styles.scroller}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled">
-        {/* --- Brand block --- */}
+      <ScrollView style={styles.scroller} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.brand}>
           <View style={styles.brandTile} accessibilityRole="image" accessibilityLabel="YuvaConnect">
             <Icon name="logo" size={30} color={color.textInverse} />
@@ -55,7 +49,6 @@ export default function RoleSelectionScreen() {
           </Text>
         </View>
 
-        {/* --- Heading --- */}
         <View style={styles.headingBlock}>
           <Text variant="title1">{COPY.heading}</Text>
           <Text variant="body" tone="secondary" style={styles.sub}>
@@ -63,7 +56,6 @@ export default function RoleSelectionScreen() {
           </Text>
         </View>
 
-        {/* --- Role radio pair --- */}
         <View style={styles.roles} accessibilityRole="radiogroup" accessibilityLabel="Choose your role">
           <RoleSelectCard
             title="Student"
@@ -83,17 +75,10 @@ export default function RoleSelectionScreen() {
           />
         </View>
 
-        {/* --- Trust banner --- */}
-        <Banner
-          tone="brand"
-          icon="shieldCheckFilled"
-          title={COPY.trustTitle}
-          description={COPY.trustBody}
-          style={styles.banner}
-        />
+        <Banner tone="brand" icon="shieldCheckFilled" title={COPY.trustTitle} description={COPY.trustBody} style={styles.banner} />
+        <View style={styles.bottomPad} />
       </ScrollView>
 
-      {/* --- Sticky action bar --- */}
       <BottomActionBar>
         <View style={styles.barColumn}>
           <Button label="Continue" size="lg" onPress={continueToSignup} testID="role-continue" />
@@ -114,13 +99,12 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space['3xl'],
-    paddingBottom: space.xl,
+    paddingBottom: 140,
     width: '100%',
     maxWidth: layout.maxContentWidth,
     alignSelf: 'center',
     alignItems: 'stretch',
   },
-
   brand: { gap: space.md },
   brandTile: {
     width: LOGO_TILE,
@@ -131,14 +115,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   brandName: { marginTop: space.md },
-
   headingBlock: { marginTop: space['3xl'], gap: space.md },
   sub: { lineHeight: 24 },
-
   roles: { marginTop: space.xl, gap: space.xl },
-
-  banner: { marginTop: space.xl, marginBottom: space.none },
-
+  banner: { marginTop: space.xl },
+  bottomPad: { height: space.xl },
   barColumn: { gap: space.md, width: '100%' },
   loginRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.md },
 });

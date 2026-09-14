@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
   rail: { gap: space.md, paddingHorizontal: layout.screenGutter, paddingVertical: space.md, alignItems: 'center' },
   allChip: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.sm },
 
-  list: { paddingBottom: space['2xl'] },
+  list: { paddingBottom: 120 },
 
   dayBar: {
     backgroundColor: color.skeletonBase,

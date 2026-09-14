@@ -314,6 +314,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.base,
+    paddingBottom: 120,
     gap: space.base,
     maxWidth: layout.maxContentWidth,
     width: '100%',

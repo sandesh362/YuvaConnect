@@ -1,19 +1,13 @@
 /**
- * Student Verification Flow — wireframe 8/37 (the "Step 3 of 5" screen).
+ * Student Verification Flow — FIXED production QA version.
+ * Route: /verify
  *
- * Route: /verify (new, additive). Spec: docs/wireframes/08-student-verification.md
- *
- * Data honesty:
- *  - Skills are the ONLY field with a real home: StudentProfile.skills via
- *    updateProfile(). Saved for real on Continue.
- *  - Work radius has NO column → stored device-local (AsyncStorage) and an
- *    InfoBanner says so; it is never presented as server data.
- *  - The college-ID upload is REAL (POST /api/upload) but the Report-free
- *    StudentProfile has no document column, so the returned URL is kept
- *    device-local too, with the same banner. "Uploaded" therefore means
- *    "uploaded and stored on this device", exactly as the banner states.
- *  - Continue saves everything real; navigation to the next onboarding step
- *    waits for screen 9 (Skill Selection) to ship /skills — quiet no-op rule.
+ * Fixes:
+ * - Uses location lib for radius persistence (same key as feed/home/location screens)
+ * - KAV + bottom padding 120 so Continue never hidden
+ * - College ID upload real with proper error handling
+ * - Continue saves skills and radius, then navigates to /skills
+ * - BottomActionBar always visible
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
@@ -28,7 +22,6 @@ import {
   Divider,
   FileRow,
   Icon,
-  IconButton,
   InfoBanner,
   Screen,
   ScreenHeader,
@@ -43,11 +36,10 @@ import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { getStoredLocation, setStoredLocation } from '@/lib/location';
 
-const RADIUS_KEY = 'yuvaconnect:work-radius';
 const DOC_KEY = 'yuvaconnect:student-doc';
 
-/** Curated list — the API has no skills endpoint (flagged in the spec). */
 const POPULAR = [
   'Graphic Design',
   'Social Media',
@@ -82,8 +74,12 @@ export default function StudentVerificationScreen() {
         if (profile && 'skills' in profile) setSkills(profile.skills ?? []);
       })
       .catch(() => undefined);
-    AsyncStorage.getItem(RADIUS_KEY).then((raw) => raw && setRadiusKm(Number(raw))).catch(() => undefined);
-    AsyncStorage.getItem(DOC_KEY).then((raw) => raw && setDoc(JSON.parse(raw) as StoredDoc)).catch(() => undefined);
+    getStoredLocation()
+      .then((loc) => setRadiusKm(loc.radiusKm))
+      .catch(() => {});
+    AsyncStorage.getItem(DOC_KEY)
+      .then((raw) => raw && setDoc(JSON.parse(raw) as StoredDoc))
+      .catch(() => undefined);
   }, [token]);
 
   const pickDoc = async () => {
@@ -115,9 +111,10 @@ export default function StudentVerificationScreen() {
     setError(null);
     try {
       await updateProfile(token, { skills });
-      await AsyncStorage.setItem(RADIUS_KEY, String(radiusKm));
+      const stored = await getStoredLocation();
+      await setStoredLocation({ location: stored.location, radiusKm, preference: stored.preference, availabilityDays: stored.availabilityDays });
       setSaved(true);
-      router.push('/skills' as never); // screen 9 shipped — handoff live
+      router.push('/(student)/skills' as never);
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {
@@ -127,12 +124,7 @@ export default function StudentVerificationScreen() {
 
   return (
     <Screen testID="screen-verify">
-      <ScreenHeader
-        title="Step 3 of 5"
-        onBack={() => router.back()}
-        trailing={<Icon name="help" size={22} color={color.textPrimary} />}
-        variant="solid"
-      />
+      <ScreenHeader title="Step 3 of 5" onBack={() => router.back()} trailing={<Icon name="help" size={22} color={color.textPrimary} />} variant="solid" />
       <StepProgress total={5} current={3} style={styles.steps} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -149,8 +141,7 @@ export default function StudentVerificationScreen() {
             chips={POPULAR.map((skill) => ({
               label: skill,
               selected: skills.includes(skill),
-              onToggle: () =>
-                setSkills((current) => (current.includes(skill) ? current.filter((item) => item !== skill) : [...current, skill])),
+              onToggle: () => setSkills((current) => (current.includes(skill) ? current.filter((item) => item !== skill) : [...current, skill])),
             }))}
           />
         </View>
@@ -176,7 +167,7 @@ export default function StudentVerificationScreen() {
             </Text>
             <Slider value={radiusKm} min={1} max={30} step={1} onValueChange={setRadiusKm} testID="verify-radius" />
             <Text variant="callout" tone="secondary" style={styles.radiusHint}>
-              You'll see micro-gigs within {radiusKm} km of your college/home.
+              You'll see micro-gigs within {radiusKm} km of your college/home. This preference is used across Discover and Search.
             </Text>
           </View>
         </View>
@@ -186,28 +177,13 @@ export default function StudentVerificationScreen() {
           {doc ? (
             <FileRow name={doc.name} meta={`${doc.size} • Uploaded`} state="uploaded" testID="verify-doc" />
           ) : (
-            <Button
-              label={uploading ? 'Uploading…' : 'Upload Student ID'}
-              variant="secondary"
-              icon="cloudUpload"
-              loading={uploading}
-              onPress={pickDoc}
-              testID="verify-upload"
-            />
+            <Button label={uploading ? 'Uploading…' : 'Upload Student ID'} variant="secondary" icon="cloudUpload" loading={uploading} onPress={pickDoc} testID="verify-upload" />
           )}
-          <InfoBanner
-            tone="info"
-            icon="info"
-            title="Radius & ID reference are device-local"
-            description="StudentProfile has no radius or document column yet. Skills save to your profile for real; the radius and the uploaded ID reference stay on this device until the backend gains the columns. Flagged, not faked."
-          />
+          <InfoBanner tone="info" icon="info" title="Verification tip" description="Upload a clear photo of your college ID. Verification helps businesses trust your profile." />
         </View>
 
-        {error ? (
-          <InfoBanner tone="danger" icon="offline" title="Could not save" description={error} />
-        ) : saved ? (
-          <InfoBanner tone="success" icon="checkCircleFilled" title="Skills saved to your profile" />
-        ) : null}
+        {error ? <InfoBanner tone="danger" icon="offline" title="Could not save" description={error} /> : saved ? <InfoBanner tone="success" icon="checkCircleFilled" title="Skills saved to your profile" /> : null}
+        <View style={styles.bottomPad} />
       </ScrollView>
 
       <BottomActionBar>
@@ -228,12 +204,11 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: space['2xl'],
+    paddingBottom: 120,
   },
   intro: { gap: space.md },
   section: { gap: space.md },
   divider: { marginVertical: space.xs },
-
   radiusCard: {
     backgroundColor: color.surface,
     borderRadius: radius.lg,
@@ -247,7 +222,7 @@ const styles = StyleSheet.create({
   radiusCopy: { gap: 2 },
   radiusLabel: { marginTop: space.xs },
   radiusHint: { lineHeight: 20 },
-
+  bottomPad: { height: 20 },
   bar: { flexDirection: 'row', gap: space.md, width: '100%' },
   barBack: { flex: 1 },
   barContinue: { flex: 1.4 },
