@@ -22,7 +22,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Image, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
   Avatar,
@@ -207,14 +207,15 @@ export default function StudentProfileScreen() {
             <View style={styles.statRow}>
               <StatBox variant="tinted" icon="wallet" tone="brand" label="Earnings" value={`₹${Number(earningsQuery.data?.total ?? 0).toLocaleString()}`} style={styles.statCell} />
               <StatBox variant="tinted" icon="checkCircleFilled" tone="success" label="Gigs" value={String(completedGigs)} style={styles.statCell} />
-              <StatBox
-                variant="tinted"
-                icon="starFilled"
-                tone="warning"
-                label="Rating"
-                value={profile && profile.totalRatings > 0 ? `${profile.avgRating.toFixed(1)}/5` : '—'}
-                style={styles.statCell}
-              />
+              <Pressable accessibilityRole="button" accessibilityLabel="View reviews and ratings" onPress={() => router.push('/reviews' as never)} style={styles.statCell}>
+                <StatBox
+                  variant="tinted"
+                  icon="starFilled"
+                  tone="warning"
+                  label="Rating"
+                  value={profile && profile.totalRatings > 0 ? `${profile.avgRating.toFixed(1)}/5` : '—'}
+                />
+              </Pressable>
             </View>
 
             <Button label="Edit Profile" variant="secondary" icon="pen" onPress={() => setEditOpen(true)} testID="profile-edit" />
