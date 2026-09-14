@@ -42,6 +42,11 @@ Application.status + gig lifecycle), applied-on + due + applicant-count caption,
 ProgressBar on Active cards (1.5px blue border), Budget-over-price footer and per-status
 actions (View Status → gig · Open Tracker · Rate Gig → /rate). Tab bar activeKey="mygigs".
 
+Route note: the bare URL `/my-gigs` is ambiguous between `(student)/my-gigs` and
+`(business)/my-gigs` (pre-existing group collision; SSR of the bare URL renders an empty
+shell). All in-app navigation uses the group-qualified `/(student)/my-gigs`, which renders
+correctly — same as before the rebuild.
+
 ## 5. Deviations
 1. Card subtitle "3 days duration" variants → honest composition: applied-ago label +
    real deadline + real applicant count (no duration column).
