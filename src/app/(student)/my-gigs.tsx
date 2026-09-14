@@ -205,7 +205,7 @@ export default function MyApplicationsScreen() {
                       <Pressable
                         accessibilityRole="button"
                         accessibilityLabel="Open tracker"
-                        onPress={() => undefined} // screen 17 ships /tracker/[gigId]
+                        onPress={() => router.push(`/(student)/tracker/${application.gigId}` as never)} // screen 17 shipped
                         style={({ pressed }) => [styles.pillSolid, pressed && styles.pressed]}>
                         <Text variant="captionStrong" style={styles.pillSolidText}>
                           Open Tracker

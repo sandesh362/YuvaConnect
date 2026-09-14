@@ -1,6 +1,7 @@
 # 17 · Active Work Tracker (student)
 
-Route: NEW additive (`/tracker/[gigId]`).
+Route: NEW additive (`/tracker/[gigId]`) — built as `src/app/(student)/tracker/[gigId].tsx`.
+Status: ✅ built — pending review.
 
 ## 1. What the wireframe shows
 
@@ -28,7 +29,25 @@ gig + application ✅; status → stepper position via GigStatus enum ✅; deliv
 = no column → flag (static per gig description? no → flag); revision notice = latest
 revision message/flag; "2/3 Done" = client count.
 
-## 3. Flags: deliverables model, revision notice source, chat deep-link exists ✅.
-## 4. Stepper variant: horizontal WITHOUT connectors (differs from MilestoneStepper w/
-   connectors) — add prop.
-## 5. At build time.
+## 3. Flags (resolved at build)
+- Deliverables: no required-tasks column → the checklist lists REAL submitted Deliverable
+  rows (tap opens the file via Linking); empty state is the honest flag, never an invented
+  task list. "2/3 Done" becomes "N submitted".
+- Revision notice = latest REAL RevisionRequest.feedback; Chat deep-links to the existing
+  chat route ✅.
+- Business verified tick omitted (field not in payload).
+- "Submit Final Work" opens the real submitGig sheet here; screen 18 restyles this flow to
+  its own wireframe. "Message Business" deep-links to the real chat.
+
+## 4. Build
+- Correction to the earlier note: `MilestoneStepper` + `ChecklistItem` ALREADY existed in
+  `ui/Progress.tsx` (the gallery renders them). They gained a `connectors` prop — the
+  student tracker export draws NO connector lines, so the screen passes
+  `orientation="horizontal" connectors={false}`. Duplicate standalone components created
+  mid-build were deleted; Progress.tsx remains the single source.
+- Summary card (indigo tile + storefront glyph, budget, red deadline with derived
+  "(N days left)"), OPEN-status explainer, sticky bar with the two wireframe buttons.
+- Screens 5 and 16 "View Tracker"/"Open Tracker" buttons are now wired to this route.
+
+## 5. Deviations
+1. Deadline countdown is derived client-side from the real deadline date.

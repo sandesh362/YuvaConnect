@@ -181,7 +181,7 @@ Constraint honoured: **no route is renamed or moved.** The bottom tab bar is ren
 | 14 | Gig Details View | `/(student)/gig/[id]` ✅ | ✅ |
 | 15 | Apply for Gigs | inline in `gig/[id]` today → `➕ new` | ⚠️ |
 | 16 | My Applications | `/(student)/my-gigs` ✅ | ✅ |
-| 17 | Active Work Tracker | `➕ new` | ➕ |
+| 17 | Active Work Tracker | `/tracker/[gigId]` ➕ built | ✅ **built** — pending review |
 | 18 | Deliverable Submission | `➕ new` | ➕ |
 | 19 | Revision Requested | `➕ new` | ➕ |
 | 20 | Student Earnings | `/(student)/earnings` ✅ | ✅ |

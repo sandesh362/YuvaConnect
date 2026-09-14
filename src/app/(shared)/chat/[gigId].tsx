@@ -171,7 +171,12 @@ export default function ChatScreen() {
               Budget: ₹{Number(gig.budget).toLocaleString()}
             </Text>
           </View>
-          <SecondaryButton label="View Tracker" size="sm" fullWidth={false} onPress={() => undefined} />
+          <SecondaryButton
+            label="View Tracker"
+            size="sm"
+            fullWidth={false}
+            onPress={() => router.push(`/(student)/tracker/${gigId}` as never)}
+          />
         </View>
       ) : null}
 

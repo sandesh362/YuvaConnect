@@ -86,10 +86,13 @@ export type Milestone = {
 export function MilestoneStepper({
   milestones,
   orientation = 'vertical',
+  connectors = true,
   style,
 }: {
   milestones: Milestone[];
   orientation?: 'vertical' | 'horizontal';
+  /** The student tracker export (wireframe 17) draws NO connector lines. */
+  connectors?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   if (orientation === 'horizontal') {
@@ -102,9 +105,9 @@ export function MilestoneStepper({
           return (
             <View key={step.key} style={styles.hCol}>
               <View style={styles.hNodeRow}>
-                <View style={[styles.hRail, isFirst && styles.hRailHidden, prevDone && styles.railDone]} />
+                {connectors ? <View style={[styles.hRail, isFirst && styles.hRailHidden, prevDone && styles.railDone]} /> : null}
                 <StepNode step={step} />
-                <View style={[styles.hRail, isLast && styles.hRailHidden, step.status === 'done' && styles.railDone]} />
+                {connectors ? <View style={[styles.hRail, isLast && styles.hRailHidden, step.status === 'done' && styles.railDone]} /> : null}
               </View>
               <Text
                 variant="caption"
