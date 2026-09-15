@@ -75,7 +75,8 @@ export default function ChatScreen() {
   const { token, user } = useAuth();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
-  const scrollRef = useRef<ScrollView style={{flex:1}} contentContainerStyle={{flexGrow:1, paddingBottom:120}}>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  // const scrollRef = useRef<ScrollView style={{flex:1}} contentContainerStyle={{flexGrow:1, paddingBottom:120}}>(null);
   const [draft, setDraft] = useState('');
   const [railOpen, setRailOpen] = useState(false);
   const [paymentNotice, setPaymentNotice] = useState(false);
