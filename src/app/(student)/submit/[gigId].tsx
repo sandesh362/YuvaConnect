@@ -123,7 +123,7 @@ export default function SubmitWorkScreen() {
     <Screen testID="screen-submit">
       <ScreenHeader title="Submit Work" subtitle={gig?.title ?? '…'} onBack={() => router.back()} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {gigQuery.isLoading ? (
           <LoadingSkeleton count={3} variant="card" />
         ) : gigQuery.isError || !gig ? (

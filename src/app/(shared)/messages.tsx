@@ -187,7 +187,7 @@ export default function MessagesListScreen() {
         <SearchBar value={query} onChangeText={setQuery} placeholder="Search conversations..." testID="messages-search" />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {!token ? (
           <EmptyState
             title="Login to see messages"

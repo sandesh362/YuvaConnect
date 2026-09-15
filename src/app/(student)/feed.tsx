@@ -201,7 +201,7 @@ export default function DiscoverFeedScreen() {
     <Screen testID="screen-feed">
       <ScreenHeader title="Find your next opportunity" onBack={() => router.back()} trailing={<Avatar name={user?.name ?? 'Student'} size="md" />} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Set your location"
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.xs },
   locationText: { color: color.successStrong },

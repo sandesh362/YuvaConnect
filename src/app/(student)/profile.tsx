@@ -168,7 +168,7 @@ export default function StudentProfileScreen() {
 
   return (
     <Screen testID="screen-profile">
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         {!token ? (
           <InfoBanner tone="info" icon="info" title="Login required" description="Login to view and edit your profile." />
         ) : profileQuery.isLoading ? (

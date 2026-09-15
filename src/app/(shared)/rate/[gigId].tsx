@@ -98,7 +98,7 @@ export default function RateExperienceScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {!token ? (
           <InfoBanner tone="info" icon="info" title="Login required" description="Login to rate a completed gig." />
         ) : gigQuery.isLoading ? (
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 120,
+    paddingBottom: 160,
   },
 
   card: { gap: space.md },

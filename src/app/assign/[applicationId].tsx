@@ -91,7 +91,7 @@ export default function ConfirmSelectionScreen() {
     <Screen testID="screen-confirm-selection">
       <ScreenHeader title="Confirm Selection" onBack={() => router.back()} variant="solid" />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         {isLoading ? <LoadingSkeleton count={2} /> : null}
         {loadError && !isLoading ? (
           <ErrorState title="Could not load this selection" description={apiErrorMessage(loadError)} onRetry={() => { gigQuery.refetch(); applicantsQuery.refetch(); }} />
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.base,
-    paddingBottom: 120,
+    paddingBottom: 160,
     gap: space.base,
     maxWidth: layout.maxContentWidth,
     width: '100%',

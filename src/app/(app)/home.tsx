@@ -208,7 +208,7 @@ export default function HomeScreen() {
 
     return (
       <Screen testID="screen-home-business">
-        <ScrollView contentContainerStyle={styles.bizBody} showsVerticalScrollIndicator={false}>
+        <ScrollView style={{flex:1}} contentContainerStyle={[styles.bizBody, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
           <View style={styles.bizHeaderRow}>
             <View style={styles.bizHeaderText}>
               <Text variant="title1">{`${greeting()}, ${businessName || 'there'} 👋`}</Text>
@@ -356,7 +356,7 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Search by skill, company or location"

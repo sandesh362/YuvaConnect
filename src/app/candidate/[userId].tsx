@@ -115,7 +115,7 @@ export default function CandidateProfileScreen() {
         ]}
       />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         {notice ? <InfoBanner tone="warning" icon="info" title="Flagged, not faked" description={notice} /> : null}
 
         {isLoading ? <LoadingSkeleton count={2} /> : null}
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.base,
-    paddingBottom: 120,
+    paddingBottom: 160,
     gap: space.base,
     maxWidth: layout.maxContentWidth,
     width: '100%',

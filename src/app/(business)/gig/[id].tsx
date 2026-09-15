@@ -219,7 +219,7 @@ export default function BusinessWorkTrackerScreen() {
     <Screen testID="screen-business-tracker">
       <ScreenHeader title="Work Tracker" subtitle={gig.title} onBack={() => router.back()} variant="solid" />
 
-      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.body, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         {error ? <InfoBanner tone="danger" icon="offline" title="Action failed" description={error} /> : null}
 
         {/* Assigned student */}

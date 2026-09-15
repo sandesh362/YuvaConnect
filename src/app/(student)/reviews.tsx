@@ -89,7 +89,7 @@ export default function ReviewsScreen() {
     <Screen testID="screen-reviews">
       <ScreenHeader title="Reviews & Ratings" onBack={() => router.back()} actions={[{ icon: 'shareIos', accessibilityLabel: 'Share reviews', onPress: share }]} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         {!token || !target ? (
           <EmptyState title="Login to see reviews" icon="star" primaryLabel="Login" onPrimary={() => router.replace('/login' as never)} />
         ) : query.isLoading ? (

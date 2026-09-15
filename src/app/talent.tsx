@@ -39,7 +39,7 @@ export default function TalentPoolScreen() {
     <Screen testID="screen-talent-pool">
       <ScreenHeader title="Talent Pool" subtitle="Verified students you've saved for future work" />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         {/* Search row — wireframe chrome; nothing exists to search yet */}
         <View style={styles.searchRow}>
           <Pressable

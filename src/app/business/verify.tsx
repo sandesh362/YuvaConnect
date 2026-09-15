@@ -146,8 +146,8 @@ export default function BusinessVerificationScreen() {
   return (
     <Screen testID="screen-business-verify">
       <ScreenHeader title="Business Verification" onBack={() => router.back()} variant="solid" />
-      <ScrollView
-        contentContainerStyle={styles.content}
+      <ScrollView style={{flex:1}}
+        contentContainerStyle={[styles.content, {flexGrow:1}]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
         <StepProgress total={5} current={2} style={styles.steps} />
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.base,
-    paddingBottom: 120,
+    paddingBottom: 160,
     gap: space.base,
     maxWidth: layout.maxContentWidth,
     width: '100%',

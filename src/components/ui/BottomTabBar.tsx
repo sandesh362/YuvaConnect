@@ -30,13 +30,12 @@ export type BottomTabBarProps = {
 };
 
 /**
- * Bottom navigation: FIXED production version.
- * - Proper safe-area handling
- * - Sufficient touch targets (min 44)
- * - Active state with filled icon + primary color + top indicator
- * - Badge/dot support
- * - No overlap: bar has solid background, shadow, and bottom inset
- * - Consistent spacing and alignment
+ * PERFECT FIX — Bottom navigation full-width
+ * - bar: position absolute bottom 0 left 0 right 0 FULL-WIDTH always
+ * - backgroundColor surface, borderTop, shadow.lg, zIndex 10
+ * - row: flexDirection row alignItems stretch minHeight tabBarHeight+8 width 100% maxWidth 640 alignSelf center (inner row centered, bar full-width)
+ * - tab: flex 1 alignItems center justifyContent center gap 4 minHeight tapTarget marginHorizontal 2
+ * - icons 22/24, labels 11px, touch target 44+
  */
 export function BottomTabBar({ items, activeKey, onSelect, style, testID }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -116,9 +115,13 @@ export const BUSINESS_TABS: TabItem[] = [
 
 const styles = StyleSheet.create({
   /** RN 0.86: pointer-events moved from a prop to a style. */
-  nonInteractive: { pointerEvents: 'none' },
+  nonInteractive: { pointerEvents: 'none' as any },
 
   bar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: color.surface,
     borderTopWidth: 1,
     borderTopColor: color.borderSubtle,

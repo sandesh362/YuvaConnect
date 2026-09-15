@@ -96,7 +96,7 @@ export default function CompareCandidatesScreen() {
         actions={[{ icon: 'options', accessibilityLabel: 'Filter options (flagged)', onPress: () => setNotice('Filtering options have no backend parameters on the applicants endpoint — the icon is kept per the wireframe and flagged.') }]}
       />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         <View style={styles.statRow}>
           <StatBox variant="plain" icon="people" value={String(applicants.length)} label="Total" hint="applicants" style={styles.stat} testID="compare-stat-total" />
           <StatBox variant="plain" icon="starFilled" value={avgMatch !== null ? `${avgMatch}%` : '—'} label="Avg. Match" hint="derived" style={styles.stat} testID="compare-stat-match" />
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.base,
-    paddingBottom: 120,
+    paddingBottom: 160,
     gap: space.base,
     maxWidth: layout.maxContentWidth,
     width: '100%',

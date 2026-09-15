@@ -122,7 +122,7 @@ export default function MyApplicationsScreen() {
         ))}
       </ScrollView>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         {notice ? <InfoBanner tone="info" icon="info" title="Flagged, not faked" description={notice} /> : null}
 
         {!token ? (

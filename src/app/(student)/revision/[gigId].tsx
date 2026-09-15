@@ -79,7 +79,7 @@ export default function RevisionRequestedScreen() {
     <Screen testID="screen-revision">
       <ScreenHeader title="Revision Requested" subtitle={`Gig #${gigId ?? '—'}`} onBack={() => router.back()} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         {gigQuery.isLoading ? (
           <LoadingSkeleton count={3} variant="card" />
         ) : gigQuery.isError || !gig ? (

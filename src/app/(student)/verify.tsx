@@ -127,7 +127,7 @@ export default function StudentVerificationScreen() {
       <ScreenHeader title="Step 3 of 5" onBack={() => router.back()} trailing={<Icon name="help" size={22} color={color.textPrimary} />} variant="solid" />
       <StepProgress total={5} current={3} style={styles.steps} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.intro}>
           <Text variant="title1">Select your skills</Text>
           <Text variant="body" tone="secondary">
@@ -188,8 +188,12 @@ export default function StudentVerificationScreen() {
 
       <BottomActionBar>
         <View style={styles.bar}>
-          <Button label="Back" variant="secondary" fullWidth={false} style={styles.barBack} onPress={() => router.back()} />
-          <Button label="Continue" loading={saving} onPress={save} style={styles.barContinue} testID="verify-continue" />
+          <View style={{ flex: 1, width: '100%' }}>
+            <Button label="Back" variant="secondary" style={{ width: '100%' }} onPress={() => router.back()} />
+          </View>
+          <View style={{ flex: 1.4, width: '100%' }}>
+            <Button label="Continue" loading={saving} onPress={save} style={{ width: '100%' }} testID="verify-continue" />
+          </View>
         </View>
       </BottomActionBar>
     </Screen>
@@ -204,7 +208,7 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 120,
+    paddingBottom: 160,
   },
   intro: { gap: space.md },
   section: { gap: space.md },

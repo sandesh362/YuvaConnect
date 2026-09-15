@@ -75,7 +75,7 @@ export default function ChatScreen() {
   const { token, user } = useAuth();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollView style={{flex:1}} contentContainerStyle={{flexGrow:1, paddingBottom:120}}>(null);
   const [draft, setDraft] = useState('');
   const [railOpen, setRailOpen] = useState(false);
   const [paymentNotice, setPaymentNotice] = useState(false);
@@ -190,8 +190,8 @@ export default function ChatScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
         <ScrollView
           ref={scrollRef}
-          style={styles.scroller}
-          contentContainerStyle={styles.thread}
+          style={[styles.scroller, {flex:1}]}
+          contentContainerStyle={[styles.thread, {flexGrow:1}]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}>

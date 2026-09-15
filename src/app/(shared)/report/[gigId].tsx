@@ -51,7 +51,7 @@ export default function ReportScreen() {
     <Screen testID="screen-report">
       <ScreenHeader title="Report this gig" onBack={() => router.back()} subtitle={`Gig #${gigId ?? '—'}`} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Text variant="body" tone="secondary">
           Tell us what's wrong — spam, fraud, inappropriate content, or anything else that concerns you. Reports are reviewed by our trust & safety team.
         </Text>

@@ -1,20 +1,15 @@
 /**
- * Login — FIXED production QA version.
- * Route: /(auth)/login
- *
- * Fixes:
- * - CTA always visible: KeyboardAvoidingView + ScrollView with large bottom padding
- * - Validation: required fields, email format, password length
- * - Error states visible
- * - Forgot password shows helpful banner
- * - Back navigation works
- * - Loading state prevents double submit
- * - Role persistence: ?role=BUSINESS shows business skin but same real login
+ * Login — PERFECT UI FIX version
+ * - Single KAV flex:1, keyboardVerticalOffset 20
+ * - ScrollView style flex:1, contentContainerStyle flexGrow:1, paddingBottom safeArea + 40
+ * - CTA always visible, width 100%
+ * - No double KAV (Screen has no KAV now)
  */
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Icon, InfoBanner, Screen, Text, TextField, TextLink } from '@/components/ui';
 import { BusinessHero, MintAuthSegments, OrContinueWith, SwitchStudentFooter, WhyHireCard } from '@/components/auth/business-skin';
@@ -30,6 +25,7 @@ export default function LoginScreen() {
   const params = useLocalSearchParams<{ role?: string }>();
   const isBusiness = params.role === 'BUSINESS';
   const { setSession } = useAuth();
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
@@ -41,7 +37,6 @@ export default function LoginScreen() {
     const errs: typeof fieldErrors = {};
     if (!email.trim()) errs.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(email.trim()) && !/^\+?91/.test(email.trim())) {
-      // Allow phone but basic check
       if (!email.includes('@')) errs.email = 'Enter a valid email';
     }
     if (!password) errs.password = 'Password is required';
@@ -66,10 +61,14 @@ export default function LoginScreen() {
   };
 
   return (
-    <Screen testID={isBusiness ? 'screen-login-business' : 'screen-login'} includeBottomInset>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav} keyboardVerticalOffset={0}>
+    <Screen testID={isBusiness ? 'screen-login-business' : 'screen-login'} tone="sunken">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.kav}
+        keyboardVerticalOffset={20}>
         <ScrollView
-          contentContainerStyle={styles.content}
+          style={styles.scroll}
+          contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, 20) + 40 }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           bounces={false}>
@@ -147,13 +146,16 @@ export default function LoginScreen() {
             {error ? <InfoBanner tone="danger" icon="offline" title="Could not log in" description={error} /> : null}
             {notice ? <InfoBanner tone="info" icon="info" title="Note" description={notice} /> : null}
 
-            <Button
-              label={isBusiness ? 'Login to Dashboard' : 'Login to YuvaConnect'}
-              size="lg"
-              loading={pending}
-              onPress={submit}
-              testID="login-submit"
-            />
+            <View style={styles.ctaWrap}>
+              <Button
+                label={isBusiness ? 'Login to Dashboard' : 'Login to YuvaConnect'}
+                size="lg"
+                loading={pending}
+                onPress={submit}
+                style={styles.cta}
+                testID="login-submit"
+              />
+            </View>
 
             {isBusiness ? (
               <OrContinueWith
@@ -169,19 +171,26 @@ export default function LoginScreen() {
                   </Text>
                   <View style={styles.orLine} />
                 </View>
-                <Button
-                  label="Continue with Google"
-                  variant="secondary"
-                  size="lg"
-                  icon="logoGoogle"
-                  onPress={() => setNotice('Google sign-in has no live backend endpoint yet — email login is the real path.')}
-                  testID="login-google"
-                />
+                <View style={styles.ctaWrap}>
+                  <Button
+                    label="Continue with Google"
+                    variant="secondary"
+                    size="lg"
+                    icon="logoGoogle"
+                    onPress={() => setNotice('Google sign-in has no live backend endpoint yet — email login is the real path.')}
+                    style={styles.cta}
+                    testID="login-google"
+                  />
+                </View>
               </>
             )}
           </View>
 
-          {isBusiness ? <WhyHireCard /> : null}
+          {isBusiness ? (
+            <View style={styles.whyWrap}>
+              <WhyHireCard />
+            </View>
+          ) : null}
 
           {isBusiness ? (
             <View style={styles.footerWrap}>
@@ -196,7 +205,9 @@ export default function LoginScreen() {
             </View>
           )}
 
-          <InfoBanner tone="success" icon="shieldCheckFilled" title="Your data is protected with bank-grade security" style={styles.security} />
+          <View style={styles.securityWrap}>
+            <InfoBanner tone="success" icon="shieldCheckFilled" title="Your data is protected with bank-grade security" />
+          </View>
 
           <View style={styles.demoBox}>
             <Text variant="captionStrong" tone="secondary">
@@ -209,8 +220,6 @@ export default function LoginScreen() {
               Business: business@yuvaconnect.demo / Demo@123
             </Text>
           </View>
-
-          <View style={styles.bottomSpacer} />
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -219,7 +228,8 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   kav: { flex: 1 },
-  content: { paddingBottom: 120, flexGrow: 1 },
+  scroll: { flex: 1 },
+  content: { flexGrow: 1, gap: space.base },
 
   hero: {
     alignItems: 'center',
@@ -230,6 +240,9 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: radius['2xl'],
     borderBottomRightRadius: radius['2xl'],
     paddingHorizontal: layout.screenGutter,
+    width: '100%',
+    maxWidth: layout.maxContentWidth,
+    alignSelf: 'center',
   },
   heroTile: {
     width: 96,
@@ -250,23 +263,34 @@ const styles = StyleSheet.create({
     marginTop: space.xl,
     padding: space.xl,
     gap: space.base,
-    maxWidth: layout.maxContentWidth,
-    alignSelf: 'stretch',
+    width: '100%',
+    maxWidth: layout.maxContentWidth - layout.screenGutter * 2,
+    alignSelf: 'center',
   },
   forgotRow: { alignItems: 'flex-end' },
+  ctaWrap: { width: '100%' },
+  cta: { width: '100%' },
 
   orRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.xs },
   orLine: { flex: 1, height: 1, backgroundColor: color.divider },
 
+  whyWrap: {
+    marginHorizontal: layout.screenGutter,
+    marginTop: space.xl,
+    width: '100%',
+    maxWidth: layout.maxContentWidth - layout.screenGutter * 2,
+    alignSelf: 'center',
+  },
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: space.md,
     marginTop: space.xl,
+    paddingHorizontal: layout.screenGutter,
   },
-  footerWrap: { marginTop: space.xl, marginHorizontal: layout.screenGutter },
-  security: { marginHorizontal: layout.screenGutter, marginTop: space.xl },
+  footerWrap: { marginTop: space.xl, marginHorizontal: layout.screenGutter, width: '100%', maxWidth: layout.maxContentWidth - layout.screenGutter * 2, alignSelf: 'center' },
+  securityWrap: { marginHorizontal: layout.screenGutter, marginTop: space.xl, width: '100%', maxWidth: layout.maxContentWidth - layout.screenGutter * 2, alignSelf: 'center' },
   demoBox: {
     marginHorizontal: layout.screenGutter,
     marginTop: space.lg,
@@ -274,6 +298,8 @@ const styles = StyleSheet.create({
     backgroundColor: color.surfaceMuted,
     borderRadius: radius.md,
     gap: 4,
+    width: '100%',
+    maxWidth: layout.maxContentWidth - layout.screenGutter * 2,
+    alignSelf: 'center',
   },
-  bottomSpacer: { height: 40 },
 });

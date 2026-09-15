@@ -30,21 +30,21 @@ export type ScreenProps = {
 };
 
 /**
- * Page scaffold: safe-area aware, correct background, standard gutter and
- * optional max-content-width for large screens.
- *
- * FIXED: Now keyboard-aware (KeyboardAvoidingView) so CTAs never hide behind keyboard.
- * Bottom inset handling ensures content never sits behind tab bars.
- * inner/kav styles restored for proper flex layout.
- * Merged with main's navbar updates — keeps KAV fix.
+ * PERFECT FIX — Screen scaffold
+ * - NO KeyboardAvoidingView (individual screens handle KAV)
+ * - inner: flex:1, flexDirection:'column'
+ * - gutter: paddingHorizontal = screenGutter (16) not 0
+ * - constrain: width 100%, maxWidth 640, alignSelf center
+ * - defaults: gutter=false, constrain=false — screens control own padding via contentContainerStyle
+ * - SafeAreaView edges top/left/right, bottom only if includeBottomInset
  */
 export function Screen({
   children,
   tone = 'sunken',
-  gutter = true,
+  gutter = false,
   style,
   contentStyle,
-  constrain = true,
+  constrain = false,
   includeBottomInset = false,
   testID,
 }: ScreenProps) {
@@ -52,20 +52,18 @@ export function Screen({
   return (
     <SafeAreaView
       testID={testID}
-      edges={['top', 'left', 'right', ...(includeBottomInset ? ['bottom' as const] : [])]}
+      edges={['top', 'left', 'right', ...(includeBottomInset ? (['bottom'] as const) : [])]}
       style={[styles.root, { backgroundColor: tone === 'sunken' ? color.background : color.surface }, style]}>
-      <KeyboardAvoidingView style={styles.kav} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
-        <View
-          style={[
-            styles.inner,
-            gutter && styles.gutter,
-            constrain && styles.constrain,
-            contentStyle,
-            includeBottomInset && { paddingBottom: Math.max(insets.bottom, space.sm) },
-          ]}>
-          {children}
-        </View>
-      </KeyboardAvoidingView>
+      <View
+        style={[
+          styles.inner,
+          gutter && styles.gutter,
+          constrain && styles.constrain,
+          contentStyle,
+          includeBottomInset && { paddingBottom: Math.max(insets.bottom, space.sm) },
+        ]}>
+        {children}
+      </View>
     </SafeAreaView>
   );
 }
@@ -78,6 +76,7 @@ export type ScrollScreenProps = ScreenProps & {
   scrollEventThrottle?: number;
   keyboardShouldPersistTaps?: 'never' | 'always' | 'handled';
   showsVerticalScrollIndicator?: boolean;
+  keyboardVerticalOffset?: number;
 };
 
 export function ScrollScreen({
@@ -90,16 +89,20 @@ export function ScrollScreen({
   keyboardShouldPersistTaps = 'handled',
   showsVerticalScrollIndicator = false,
   includeBottomInset,
+  keyboardVerticalOffset = 0,
   ...screen
 }: ScrollScreenProps) {
   const insets = useSafeAreaInsets();
   const effectiveBottom = bottomInset + (includeBottomInset ? Math.max(insets.bottom, 0) : 0);
   return (
     <Screen {...screen} includeBottomInset={includeBottomInset} contentStyle={styles.fill}>
-      <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <KeyboardAvoidingView
+        style={styles.fill}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={keyboardVerticalOffset}>
         <ScrollView
           style={styles.fill}
-          contentContainerStyle={[{ paddingBottom: effectiveBottom }, contentContainerStyle]}
+          contentContainerStyle={[{ flexGrow: 1, paddingBottom: effectiveBottom }, contentContainerStyle]}
           refreshControl={refreshControl}
           onScroll={onScroll as never}
           scrollEventThrottle={scrollEventThrottle}
@@ -156,18 +159,21 @@ export function SectionHeader({
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  kav: { flex: 1 },
-  inner: { flex: 1 },
+  inner: { flex: 1, flexDirection: 'column' },
   fill: { flex: 1 },
-  gutter: { paddingHorizontal: 0 },
+  gutter: { paddingHorizontal: layout.screenGutter },
   constrain: { width: '100%', maxWidth: layout.maxContentWidth, alignSelf: 'center' },
   actionBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: color.surface,
     borderTopWidth: 1,
     borderTopColor: color.borderSubtle,
     ...shadow.lg,
-    zIndex: 5,
-    elevation: 8,
+    zIndex: 9,
+    elevation: 9,
   },
   actionBarInner: {
     minHeight: layout.actionBarHeight - space.xl,
