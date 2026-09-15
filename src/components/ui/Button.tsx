@@ -1,4 +1,3 @@
-import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { color } from '@/theme/colors';
@@ -107,34 +106,38 @@ export function Button({
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.base,
-        {
-          minHeight: HEIGHTS[size],
-          paddingHorizontal: PADDING[size],
-          borderRadius: size === 'sm' ? radius.md : radius.full,
-          backgroundColor: skin.background,
-          borderColor: skin.borderColor ?? 'transparent',
-          borderWidth: skin.borderWidth ?? 0,
-        },
-        pressed && { backgroundColor: skin.pressed },
-        variant === 'primary' && !pressed && skin.shadow,
-        fullWidth && styles.fullWidth,
-        isDisabled && styles.disabled,
-        style,
-      ]}>
-      {loading ? (
-        <ActivityIndicator size="small" color={skin.foreground} />
-      ) : (
-        <View style={styles.content}>
-          {icon ? <Icon name={icon} size={iconSize} color={skin.foreground} /> : null}
-          <Text
-            variant={size === 'sm' ? 'buttonSm' : 'button'}
-            style={{ color: skin.foreground, fontSize }}
-            numberOfLines={1}>
-            {label}
-          </Text>
-          {iconRight ? <Icon name={iconRight} size={iconSize} color={skin.foreground} /> : null}
+      style={[styles.touch, fullWidth && styles.fullWidth, style]}>
+      {({ pressed }) => (
+        <View
+          style={[
+            styles.base,
+            {
+              minHeight: HEIGHTS[size],
+              paddingHorizontal: PADDING[size],
+              borderRadius: size === 'sm' ? radius.md : radius.full,
+              backgroundColor: skin.background,
+              borderColor: skin.borderColor ?? 'transparent',
+              borderWidth: skin.borderWidth ?? 0,
+            },
+            pressed && { backgroundColor: skin.pressed },
+            variant === 'primary' && !pressed && skin.shadow,
+            isDisabled && styles.disabled,
+            styles.fullWidth,
+          ]}>
+          {loading ? (
+            <ActivityIndicator size="small" color={skin.foreground} />
+          ) : (
+            <View style={styles.content}>
+              {icon ? <Icon name={icon} size={iconSize} color={skin.foreground} /> : null}
+              <Text
+                variant={size === 'sm' ? 'buttonSm' : 'button'}
+                style={{ color: skin.foreground, fontSize }}
+                numberOfLines={1}>
+                {label}
+              </Text>
+              {iconRight ? <Icon name={iconRight} size={iconSize} color={skin.foreground} /> : null}
+            </View>
+          )}
         </View>
       )}
     </Pressable>
@@ -205,6 +208,9 @@ export function TextLink({
 }
 
 const styles = StyleSheet.create({
+  /* Transparent tap box: always at least a 44pt target, whatever the pill's own
+     visual height is (the `sm` pill is 36pt tall). */
+  touch: { minHeight: layout.tapTarget, justifyContent: 'center', alignItems: 'center' },
   base: {
     flexDirection: 'row',
     alignItems: 'center',

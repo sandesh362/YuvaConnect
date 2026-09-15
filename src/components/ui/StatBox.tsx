@@ -1,4 +1,3 @@
-import React from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { color } from '@/theme/colors';
@@ -57,7 +56,7 @@ export function StatBox({ label, value, icon, variant = 'plain', tone = 'brand',
           {value}
         </Text>
         {hint ? (
-          <Text variant="caption" tone="secondary" numberOfLines={1}>
+          <Text variant="caption" tone="secondary" numberOfLines={2}>
             {hint}
           </Text>
         ) : null}

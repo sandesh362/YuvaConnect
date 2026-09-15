@@ -246,17 +246,30 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: 'row', alignItems: 'center' },
   name: { flexShrink: 1 },
   title: { marginTop: 1 },
-  bookmark: { padding: space.xs, marginLeft: space.xs },
+  bookmark: { minWidth: layout.tapTarget, minHeight: layout.tapTarget, alignItems: 'center', justifyContent: 'center', marginLeft: space.xs },
 
   skills: { marginTop: space.md },
 
   divider: { marginVertical: space.md },
 
-  footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
-  footerLeft: { flexDirection: 'row', alignItems: 'center', flexShrink: 1 },
-  footerRight: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
-  action: { flexDirection: 'row', alignItems: 'center', gap: 1 },
+  /**
+   * The footer wraps rather than shrinks: `flexShrink: 0` on both groups keeps
+   * every meta item at its natural width, so on a narrow rail card (or with a
+   * long budget/distance string) the trailing group drops to its own line
+   * instead of the labels collapsing on top of each other.
+   */
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    columnGap: space.sm,
+    rowGap: space.sm,
+  },
+  footerLeft: { flexDirection: 'row', alignItems: 'center', gap: space.md, flexShrink: 0, flexWrap: 'wrap' },
+  footerRight: { flexDirection: 'row', alignItems: 'center', gap: space.md, flexShrink: 0, marginLeft: 'auto' },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: space.xs, flexShrink: 0 },
+  action: { flexDirection: 'row', alignItems: 'center', gap: 1, flexShrink: 0 },
 
   flags: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginBottom: space.md },
 });

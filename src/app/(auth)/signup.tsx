@@ -6,7 +6,7 @@
  */
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -100,7 +100,7 @@ export default function SignupScreen() {
               <MintAuthSegments
                 active="signup"
                 onNavigate={(key) => router.replace((key === 'login' ? '/login?role=BUSINESS' : '/signup?role=BUSINESS') as never)}
-                onReports={() => setNotice('Reports has no route or backend yet — it is kept visible per the wireframe and flagged, not faked.')}
+                onReports={() => setNotice('Reports aren’t available yet — your dashboard shows the same figures once you sign in.')}
               />
             ) : null}
             <Text variant="title1">Create Account</Text>
@@ -170,8 +170,8 @@ export default function SignupScreen() {
 
             {businessSkin ? (
               <OrContinueWith
-                onGoogle={() => setNotice('Google sign-in has no live backend endpoint yet — email signup is the real path.')}
-                onPhone={() => setNotice('Phone OTP has no live backend endpoint yet — email signup is the real path.')}
+                onGoogle={() => setNotice('Google sign-up isn’t available yet — create your account with your email address instead.')}
+                onPhone={() => setNotice('Phone sign-up isn’t available yet — create your account with your email address instead.')}
               />
             ) : (
               <>
@@ -188,7 +188,7 @@ export default function SignupScreen() {
                     variant="secondary"
                     size="lg"
                     icon="logoGoogle"
-                    onPress={() => setNotice('Google sign-in has no live backend endpoint yet — email signup is the real path.')}
+                    onPress={() => setNotice('Google sign-up isn’t available yet — create your account with your email address instead.')}
                     style={styles.cta}
                     testID="signup-google"
                   />

@@ -18,7 +18,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 
 import {
@@ -43,13 +43,16 @@ import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 
 type SortKey = 'newest' | 'oldest' | 'highest';
 const SORT_LABEL: Record<SortKey, string> = { newest: 'Newest', oldest: 'Oldest', highest: 'Highest' };
 
 export default function ReviewsScreen() {
+  const { contentBottom } = useLayoutMetrics('tabbar');
+
   const { userId } = useLocalSearchParams<{ userId?: string }>();
-  const { token, user } = useAuth();
+  const { token, user, refresh } = useAuth();
   const [sort, setSort] = useState<SortKey>('newest');
 
   const target = userId || user?.id;
@@ -87,11 +90,23 @@ export default function ReviewsScreen() {
 
   return (
     <Screen testID="screen-reviews">
-      <ScreenHeader title="Reviews & Ratings" onBack={() => router.back()} actions={[{ icon: 'shareIos', accessibilityLabel: 'Share reviews', onPress: share }]} />
+      <ScreenHeader title="Reviews & Ratings" actions={[{ icon: 'shareIos', accessibilityLabel: 'Share reviews', onPress: share }]} />
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
-        {!token || !target ? (
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false}>
+        {!token ? (
           <EmptyState title="Login to see reviews" icon="star" primaryLabel="Login" onPrimary={() => router.replace('/login' as never)} />
+        ) : !target ? (
+          /*
+            Signed in, but the session's identity could not be resolved (e.g.
+            `/api/auth/me` failed). Saying "Login" to an already signed-in user
+            is wrong — offer a retry that re-resolves the session instead.
+          */
+          <ErrorState
+            title="Could not load your profile"
+            description="We could not confirm your account details. Check your connection and try again."
+            retryLabel="Retry"
+            onRetry={() => void refresh()}
+          />
         ) : query.isLoading ? (
           <LoadingSkeleton count={3} variant="card" />
         ) : query.isError ? (
@@ -132,7 +147,7 @@ export default function ReviewsScreen() {
               <View style={styles.flagRow}>
                 <Icon name="info" size={14} color={color.textSecondary} />
                 <Text variant="caption" tone="tertiary" style={styles.flagCopy}>
-                  Skill tags (On Time, Pro Communication…) have no backend column yet — shown nowhere rather than invented.
+                  Skill tags like “On time” and “Pro communication” aren’t collected yet — only the comments and ratings people actually left.
                 </Text>
               </View>
             </View>
@@ -196,7 +211,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 120,
   },
 
   summaryCard: {
@@ -218,7 +232,14 @@ const styles = StyleSheet.create({
   flagRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   flagCopy: { flex: 1, lineHeight: 17 },
 
-  sortRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, alignSelf: 'flex-end' },
+  sortRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.sm,
+    minHeight: layout.tapTarget,
+    alignSelf: 'flex-end',
+  },
 
   reviewCard: {
     backgroundColor: color.surface,

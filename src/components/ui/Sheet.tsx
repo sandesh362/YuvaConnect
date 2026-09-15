@@ -4,7 +4,6 @@ import { Modal, Pressable, ScrollView, StyleSheet, View, type StyleProp, type Vi
 import { color } from '@/theme/colors';
 import { radius } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
-import { Icon } from './Icon';
 import { IconButton } from './Icon';
 import { Text } from './Text';
 

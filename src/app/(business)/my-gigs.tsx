@@ -21,12 +21,13 @@
  *  - "2 weeks left" captions are client-side date maths over the real
  *    deadline, labelled derived.
  */
-import { useQueries, useQuery } from '@tanstack/react-query';
-import { router } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { router } from "expo-router";
+import { useMemo, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import {
+  BottomActionBar,
   BottomTabBar,
   Button,
   EmptyState,
@@ -38,22 +39,32 @@ import {
   Screen,
   StatBox,
   Text,
-} from '@/components/ui';
-import { BUSINESS_TABS } from '@/components/ui/BottomTabBar';
-import { Applicant, initialsOf } from '@/components/business/candidate-card';
-import { apiErrorMessage } from '@/config/api';
-import { getApplicants, getMyGigs } from '@/lib/gig-api';
-import { listNotifications } from '@/lib/trust-api';
-import { goBusinessTab } from '@/lib/tab-nav';
-import { useAuth } from '@/providers/auth-provider';
-import { color } from '@/theme/colors';
-import { radius, shadow } from '@/theme/radius';
-import { layout, space } from '@/theme/spacing';
-import type { Gig } from '@/types/api';
+} from "@/components/ui";
+import { BUSINESS_TABS } from "@/components/ui/BottomTabBar";
+import { Applicant, initialsOf } from "@/components/business/candidate-card";
+import { apiErrorMessage } from "@/config/api";
+import { getApplicants, getMyGigs } from "@/lib/gig-api";
+import { listNotifications } from "@/lib/trust-api";
+import { goBusinessTab } from "@/lib/tab-nav";
+import { useAuth } from "@/providers/auth-provider";
+import { color } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { layout, space } from "@/theme/spacing";
+import { useLayoutMetrics } from "@/hooks/use-layout-metrics";
+import type { Gig } from "@/types/api";
 
-type TabKey = 'active' | 'drafts' | 'completed';
+/** Stable fallback: a fresh `[]` each render would invalidate memos keyed on it. */
+const EMPTY_GIGS: Gig[] = [];
 
-const WORKING_STATUSES = ['ASSIGNED', 'IN_PROGRESS', 'REVISION_REQUESTED', 'SUBMITTED', 'APPROVED'];
+type TabKey = "active" | "drafts" | "completed";
+
+const WORKING_STATUSES = [
+  "ASSIGNED",
+  "IN_PROGRESS",
+  "REVISION_REQUESTED",
+  "SUBMITTED",
+  "APPROVED",
+];
 
 function parseCategory(description: string): string | null {
   const match = description.match(/^Category:\s*(.+)$/m);
@@ -61,13 +72,15 @@ function parseCategory(description: string): string | null {
 }
 
 function timeLeft(deadline: string): string {
-  const days = Math.ceil((new Date(deadline).getTime() - Date.now()) / 86400000);
-  if (Number.isNaN(days)) return 'deadline —';
-  if (days < 0) return 'overdue';
-  if (days === 0) return 'due today';
-  if (days < 14) return `${days} day${days === 1 ? '' : 's'} left`;
+  const days = Math.ceil(
+    (new Date(deadline).getTime() - Date.now()) / 86400000,
+  );
+  if (Number.isNaN(days)) return "deadline —";
+  if (days < 0) return "overdue";
+  if (days === 0) return "due today";
+  if (days < 14) return `${days} day${days === 1 ? "" : "s"} left`;
   const weeks = Math.round(days / 7);
-  return `${weeks} week${weeks === 1 ? '' : 's'} left`;
+  return `${weeks} week${weeks === 1 ? "" : "s"} left`;
 }
 
 function formatCompact(n: number): string {
@@ -78,35 +91,46 @@ function formatCompact(n: number): string {
 }
 
 function statusPill(gig: Gig): { label: string; bg: string; fg: string } {
-  if (gig.status === 'OPEN') return { label: 'ACTIVE', bg: color.successSoft, fg: color.successStrong };
-  if (WORKING_STATUSES.includes(gig.status)) return { label: 'IN PROGRESS', bg: color.primarySoft, fg: color.primary };
-  return { label: gig.status.replaceAll('_', ' '), bg: color.surfaceMuted, fg: color.textSecondary };
+  if (gig.status === "OPEN")
+    return { label: "ACTIVE", bg: color.successSoft, fg: color.successStrong };
+  if (WORKING_STATUSES.includes(gig.status))
+    return { label: "IN PROGRESS", bg: color.primarySoft, fg: color.primary };
+  return {
+    label: gig.status.replaceAll("_", " "),
+    bg: color.surfaceMuted,
+    fg: color.textSecondary,
+  };
 }
 
 export default function BusinessMyGigs() {
+  const { contentBottom } = useLayoutMetrics("both");
+
   const { token } = useAuth();
-  const [tab, setTab] = useState<TabKey>('active');
+  const [tab, setTab] = useState<TabKey>("active");
   const [notice, setNotice] = useState<string | null>(null);
 
   const gigsQuery = useQuery({
-    queryKey: ['my-gigs', 'business', token],
+    queryKey: ["my-gigs", "business", token],
     queryFn: () => getMyGigs(token!),
     enabled: !!token,
   });
   const unreadQuery = useQuery({
-    queryKey: ['notifications', 'home-badge'],
+    queryKey: ["notifications", "home-badge"],
     queryFn: () => listNotifications(token!, { limit: 1 }),
     enabled: !!token,
     refetchInterval: 30000,
   });
 
-  const gigs = gigsQuery.data?.gigs ?? [];
-  const workingGigs = useMemo(() => gigs.filter((gig) => WORKING_STATUSES.includes(gig.status)), [gigs]);
+  const gigs = gigsQuery.data?.gigs ?? EMPTY_GIGS;
+  const workingGigs = useMemo(
+    () => gigs.filter((gig) => WORKING_STATUSES.includes(gig.status)),
+    [gigs],
+  );
 
   // Assigned student per working gig — one real applicants call each.
   const applicantQueries = useQueries({
     queries: workingGigs.map((gig) => ({
-      queryKey: ['applicants', gig.id, token],
+      queryKey: ["applicants", gig.id, token],
       queryFn: () => getApplicants(token!, gig.id) as Promise<Applicant[]>,
       enabled: !!token,
       staleTime: 60000,
@@ -114,19 +138,43 @@ export default function BusinessMyGigs() {
   });
 
   const visible = useMemo(() => {
-    if (tab === 'drafts') return [];
-    if (tab === 'completed') return gigs.filter((gig) => gig.status === 'PAID' || gig.status === 'CLOSED');
-    return gigs.filter((gig) => gig.status !== 'PAID' && gig.status !== 'CLOSED');
+    if (tab === "drafts") return [];
+    if (tab === "completed")
+      return gigs.filter(
+        (gig) => gig.status === "PAID" || gig.status === "CLOSED",
+      );
+    return gigs.filter(
+      (gig) => gig.status !== "PAID" && gig.status !== "CLOSED",
+    );
   }, [gigs, tab]);
 
-  const activeCount = gigs.filter((gig) => gig.status !== 'PAID' && gig.status !== 'CLOSED').length;
-  const applicantCount = gigs.reduce((sum, gig) => sum + (gig.applications?.length ?? 0), 0);
-  const spent = gigs.reduce((sum, gig) => sum + (gig.payment?.status === 'RELEASED' ? Number(gig.payment.amount) || 0 : 0), 0);
+  const activeCount = gigs.filter(
+    (gig) => gig.status !== "PAID" && gig.status !== "CLOSED",
+  ).length;
+  const applicantCount = gigs.reduce(
+    (sum, gig) => sum + (gig.applications?.length ?? 0),
+    0,
+  );
+  const spent = gigs.reduce(
+    (sum, gig) =>
+      sum +
+      (gig.payment?.status === "RELEASED"
+        ? Number(gig.payment.amount) || 0
+        : 0),
+    0,
+  );
   const unread = unreadQuery.data?.unreadCount ?? 0;
 
   return (
     <Screen testID="screen-manage-gigs">
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[
+          styles.content,
+          { flexGrow: 1, paddingBottom: contentBottom },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <View style={styles.headerRow}>
           <View style={styles.headerText}>
@@ -138,9 +186,13 @@ export default function BusinessMyGigs() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Notifications, ${unread} unread`}
-            onPress={() => router.push('/notifications' as never)}
-            style={({ pressed }) => [styles.bellCircle, pressed && styles.pressed]}
-            testID="manage-gigs-bell">
+            onPress={() => router.push("/notifications" as never)}
+            style={({ pressed }) => [
+              styles.bellCircle,
+              pressed && styles.pressed,
+            ]}
+            testID="manage-gigs-bell"
+          >
             <Icon name="bell" size={20} color={color.textPrimary} />
             {unread > 0 ? <View style={styles.bellDot} /> : null}
           </Pressable>
@@ -148,18 +200,43 @@ export default function BusinessMyGigs() {
 
         {/* Stat tiles */}
         <View style={styles.statRow}>
-          <StatBox variant="tinted" tone="brand" icon="briefcase" value={String(activeCount)} label="Active" style={styles.stat} testID="gigs-stat-active" />
-          <StatBox variant="tinted" tone="brand" icon="people" value={String(applicantCount)} label="Applicants" style={styles.stat} testID="gigs-stat-applicants" />
-          <StatBox variant="tinted" tone="success" icon="wallet" value={`₹${formatCompact(spent)}`} label="Spent" hint="released · derived" style={styles.stat} testID="gigs-stat-spent" />
+          <StatBox
+            variant="tinted"
+            tone="brand"
+            icon="briefcase"
+            value={String(activeCount)}
+            label="Active"
+            style={styles.stat}
+            testID="gigs-stat-active"
+          />
+          <StatBox
+            variant="tinted"
+            tone="brand"
+            icon="people"
+            value={String(applicantCount)}
+            label="Applicants"
+            style={styles.stat}
+            testID="gigs-stat-applicants"
+          />
+          <StatBox
+            variant="tinted"
+            tone="success"
+            icon="wallet"
+            value={`₹${formatCompact(spent)}`}
+            label="Spent"
+            hint="released payments"
+            style={styles.stat}
+            testID="gigs-stat-spent"
+          />
         </View>
 
         {/* Mint segments */}
         <View style={styles.segmentTrack} accessibilityRole="tablist">
-          {([
-            { key: 'active' as TabKey, label: 'Active' },
-            { key: 'drafts' as TabKey, label: 'Drafts' },
-            { key: 'completed' as TabKey, label: 'Completed' },
-          ]).map((segment) => {
+          {[
+            { key: "active" as TabKey, label: "Active" },
+            { key: "drafts" as TabKey, label: "Drafts" },
+            { key: "completed" as TabKey, label: "Completed" },
+          ].map((segment) => {
             const isActive = segment.key === tab;
             return (
               <Pressable
@@ -168,8 +245,14 @@ export default function BusinessMyGigs() {
                 accessibilityLabel={segment.label}
                 accessibilityState={{ selected: isActive }}
                 onPress={() => setTab(segment.key)}
-                style={[styles.segment, isActive && styles.segmentActive]}>
-                <Text variant="callout" style={isActive ? styles.segmentLabelActive : styles.segmentLabel}>
+                style={[styles.segment, isActive && styles.segmentActive]}
+              >
+                <Text
+                  variant="callout"
+                  style={
+                    isActive ? styles.segmentLabelActive : styles.segmentLabel
+                  }
+                >
                   {segment.label}
                 </Text>
               </Pressable>
@@ -177,30 +260,47 @@ export default function BusinessMyGigs() {
           })}
         </View>
 
-        {notice ? <InfoBanner tone="warning" icon="info" title="Flagged, not faked" description={notice} /> : null}
+        {notice ? (
+          <InfoBanner
+            tone="warning"
+            icon="info"
+            title="Not available yet"
+            description={notice}
+          />
+        ) : null}
 
         {gigsQuery.isLoading ? <LoadingSkeleton count={3} /> : null}
         {gigsQuery.isError ? (
-          <ErrorState title="Could not load your gigs" description={apiErrorMessage(gigsQuery.error)} onRetry={() => gigsQuery.refetch()} />
+          <ErrorState
+            title="Could not load your gigs"
+            description={apiErrorMessage(gigsQuery.error)}
+            onRetry={() => gigsQuery.refetch()}
+          />
         ) : null}
 
-        {!gigsQuery.isLoading && tab === 'drafts' ? (
+        {!gigsQuery.isLoading && tab === "drafts" ? (
           <EmptyState
             title="No drafts"
-            description="GigStatus has no DRAFT value — a gig is published or it does not exist, so this tab can never hold rows. Flagged, not faked."
+            description="Drafts aren’t available yet — a gig goes live as soon as you post it."
             icon="clipboard"
             wellSize="lg"
           />
         ) : null}
 
-        {!gigsQuery.isLoading && tab !== 'drafts' && visible.length === 0 ? (
+        {!gigsQuery.isLoading && tab !== "drafts" && visible.length === 0 ? (
           <EmptyState
-            title={tab === 'completed' ? 'No completed gigs yet' : 'No active gigs'}
-            description={tab === 'completed' ? 'Paid and closed gigs will collect here.' : 'Post a gig and it will appear here with live applicant counts.'}
+            title={
+              tab === "completed" ? "No completed gigs yet" : "No active gigs"
+            }
+            description={
+              tab === "completed"
+                ? "Paid and closed gigs will collect here."
+                : "Post a gig and it will appear here with live applicant counts."
+            }
             icon="briefcase"
             wellSize="lg"
             primaryLabel="Post New Gig"
-            onPrimary={() => router.push('/(business)/post-gig' as never)}
+            onPrimary={() => router.push("/(business)/post-gig" as never)}
           />
         ) : null}
 
@@ -208,13 +308,27 @@ export default function BusinessMyGigs() {
           const pill = statusPill(gig);
           const isWorking = WORKING_STATUSES.includes(gig.status);
           const category = parseCategory(gig.description);
-          const caption = category ?? gig.skillsRequired.slice(0, 2).join(' • ') ?? 'Gig';
-          const workingIndex = workingGigs.findIndex((item) => item.id === gig.id);
-          const selected = workingIndex >= 0 ? applicantQueries[workingIndex]?.data?.find((applicant) => applicant.status === 'SELECTED') : undefined;
+          const caption =
+            category ?? gig.skillsRequired.slice(0, 2).join(" • ") ?? "Gig";
+          const workingIndex = workingGigs.findIndex(
+            (item) => item.id === gig.id,
+          );
+          const applicantsQuery =
+            workingIndex >= 0 ? applicantQueries[workingIndex] : undefined;
+          const selected = applicantsQuery?.data?.find(
+            (applicant) => applicant.status === "SELECTED",
+          );
+          const workerPending =
+            !!applicantsQuery &&
+            (applicantsQuery.isLoading || applicantsQuery.isPending);
           return (
             <View key={gig.id} style={styles.gigCard}>
               <View style={styles.gigTop}>
-                <Text variant="title2" numberOfLines={2} style={styles.gigTitle}>
+                <Text
+                  variant="title2"
+                  numberOfLines={2}
+                  style={styles.gigTitle}
+                >
                   {gig.title}
                 </Text>
                 <View style={[styles.statusPill, { backgroundColor: pill.bg }]}>
@@ -226,8 +340,14 @@ export default function BusinessMyGigs() {
 
               <View style={styles.captionRow}>
                 <Icon name="archive" size={14} color={color.textTertiary} />
-                <Text variant="captionStrong" tone="secondary" numberOfLines={1}>
-                  {isWorking ? `${caption} • ${timeLeft(gig.deadline)}` : caption}
+                <Text
+                  variant="captionStrong"
+                  tone="secondary"
+                  numberOfLines={1}
+                >
+                  {isWorking
+                    ? `${caption} • ${timeLeft(gig.deadline)}`
+                    : caption}
                 </Text>
               </View>
 
@@ -247,7 +367,7 @@ export default function BusinessMyGigs() {
                   <Text variant="captionStrong" tone="tertiary">
                     BUDGET
                   </Text>
-                  <Text variant="title3">{`₹${Number(gig.budget).toLocaleString('en-IN')}`}</Text>
+                  <Text variant="title3">{`₹${Number(gig.budget).toLocaleString("en-IN")}`}</Text>
                 </View>
               </View>
 
@@ -256,8 +376,14 @@ export default function BusinessMyGigs() {
                 <View style={styles.workerCard}>
                   {selected ? (
                     <>
-                      <View style={styles.workerInitials} accessibilityLabel={selected.student.name}>
-                        <Text variant="callout" style={styles.workerInitialsText}>
+                      <View
+                        style={styles.workerInitials}
+                        accessibilityLabel={selected.student.name}
+                      >
+                        <Text
+                          variant="callout"
+                          style={styles.workerInitialsText}
+                        >
                           {initialsOf(selected.student.name)}
                         </Text>
                       </View>
@@ -265,33 +391,79 @@ export default function BusinessMyGigs() {
                         <Text variant="bodyStrong" numberOfLines={1}>
                           {selected.student.name}
                         </Text>
-                        <Text variant="caption" tone="tertiary" numberOfLines={1}>
-                          {selected.student.studentProfile?.college || 'College not listed'}
+                        <Text
+                          variant="caption"
+                          tone="tertiary"
+                          numberOfLines={1}
+                        >
+                          {selected.student.studentProfile?.college ||
+                            "College not listed"}
                         </Text>
                       </View>
                       <Pressable
                         accessibilityRole="button"
                         accessibilityLabel={`Message about ${gig.title}`}
-                        onPress={() => router.push(`/(shared)/chat/${gig.id}` as never)}
-                        style={({ pressed }) => [styles.workerChat, pressed && styles.pressed]}
-                        testID={`worker-chat-${gig.id}`}>
-                        <Icon name="chatFilled" size={20} color={color.primary} />
+                        onPress={() =>
+                          router.push(`/(shared)/chat/${gig.id}` as never)
+                        }
+                        style={({ pressed }) => [
+                          styles.workerChat,
+                          pressed && styles.pressed,
+                        ]}
+                        testID={`worker-chat-${gig.id}`}
+                      >
+                        <Icon
+                          name="chatFilled"
+                          size={20}
+                          color={color.primary}
+                        />
                       </Pressable>
                     </>
+                  ) : workerPending ? (
+                    <View style={styles.workerSkeleton}>
+                      <View style={styles.workerSkeletonAvatar} />
+                      <View style={styles.workerSkeletonLines}>
+                        <View style={styles.workerSkeletonLine} />
+                        <View
+                          style={[
+                            styles.workerSkeletonLine,
+                            styles.workerSkeletonLineShort,
+                          ]}
+                        />
+                      </View>
+                    </View>
                   ) : (
                     <Text variant="caption" tone="tertiary">
-                      Loading assigned student…
+                      No student assigned yet
                     </Text>
                   )}
                 </View>
               ) : null}
 
               {/* Actions */}
-              {gig.status === 'OPEN' ? (
+              {gig.status === "OPEN" ? (
                 <View style={styles.actionRow}>
-                  <Button label="View Applicants" size="sm" style={styles.actionMain} onPress={() => router.push(`/(business)/applicants/${gig.id}` as never)} testID={`view-applicants-${gig.id}`} />
+                  <Button
+                    label="View Applicants"
+                    size="sm"
+                    style={styles.actionMain}
+                    onPress={() =>
+                      router.push(`/(business)/applicants/${gig.id}` as never)
+                    }
+                    testID={`view-applicants-${gig.id}`}
+                  />
                   <View style={styles.squareSlate}>
-                    <IconButton name="pen" variant="plain" accessibilityLabel={`Edit ${gig.title}`} onPress={() => router.push(`/(business)/post-gig?gigId=${gig.id}` as never)} testID={`edit-${gig.id}`} />
+                    <IconButton
+                      name="pen"
+                      variant="plain"
+                      accessibilityLabel={`Edit ${gig.title}`}
+                      onPress={() =>
+                        router.push(
+                          `/(business)/post-gig?gigId=${gig.id}` as never,
+                        )
+                      }
+                      testID={`edit-${gig.id}`}
+                    />
                   </View>
                   <View style={styles.squareAmber}>
                     <IconButton
@@ -299,19 +471,49 @@ export default function BusinessMyGigs() {
                       variant="plain"
                       color={color.surface}
                       accessibilityLabel="Pause gig (flagged)"
-                      onPress={() => setNotice('There is no pause or close endpoint — gig.routes only exposes create, update (OPEN gigs), select/reject, start, submit, revision, approve. The button is kept per the wireframe and flagged, not faked.')}
+                      onPress={() =>
+                        setNotice(
+                          "Pausing or closing a gig isn’t available yet — you can edit an open gig, or let it run to completion.",
+                        )
+                      }
                       testID={`pause-${gig.id}`}
                     />
                   </View>
                 </View>
               ) : isWorking ? (
                 <View style={styles.actionRow}>
-                  <Button label="Track Progress" variant="secondary" size="sm" style={styles.actionMain} onPress={() => router.push(`/(business)/gig/${gig.id}` as never)} testID={`track-${gig.id}`} />
-                  <Button label="Message" size="sm" style={[styles.actionMain, styles.messageGreen]} onPress={() => router.push(`/(shared)/chat/${gig.id}` as never)} testID={`message-${gig.id}`} />
+                  <Button
+                    label="Track Progress"
+                    variant="secondary"
+                    size="sm"
+                    style={styles.actionMain}
+                    onPress={() =>
+                      router.push(`/(business)/gig/${gig.id}` as never)
+                    }
+                    testID={`track-${gig.id}`}
+                  />
+                  <Button
+                    label="Message"
+                    size="sm"
+                    style={styles.actionMain}
+                    onPress={() =>
+                      router.push(`/(shared)/chat/${gig.id}` as never)
+                    }
+                    testID={`message-${gig.id}`}
+                  />
                 </View>
               ) : (
                 <View style={styles.actionRow}>
-                  <Button label="View Details" variant="secondary" size="sm" style={styles.actionMain} onPress={() => router.push(`/(business)/gig/${gig.id}` as never)} testID={`details-${gig.id}`} />
+                  <Button
+                    label="View Details"
+                    variant="secondary"
+                    size="sm"
+                    style={styles.actionMain}
+                    onPress={() =>
+                      router.push(`/(business)/gig/${gig.id}` as never)
+                    }
+                    testID={`details-${gig.id}`}
+                  />
                 </View>
               )}
             </View>
@@ -321,26 +523,28 @@ export default function BusinessMyGigs() {
         <InfoBanner
           tone="info"
           icon="info"
-          title="How this screen is computed"
-          description="Counts, budgets and deadlines are real columns from GET /api/gigs/mine. Spent sums RELEASED payments (derived). Category captions and 'time left' are parsed/derived from the labelled description block and the real deadline."
+          title="About these numbers"
+          description="Applicant counts, budgets and deadlines come straight from your gigs. “Spent” counts payments already released, and the time left is read from your deadline."
         />
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      {/* Edge-to-edge post bar */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Post New Gig"
-        onPress={() => router.push('/(business)/post-gig' as never)}
-        style={({ pressed }) => [styles.postBar, pressed && styles.pressed]}
-        testID="post-new-gig-bar">
-        <Icon name="add" size={18} color={color.surface} />
-        <Text variant="callout" style={styles.postBarLabel}>
-          Post New Gig
-        </Text>
-      </Pressable>
+      {/* Primary CTA — pinned above the tab bar so it is always reachable. */}
+      <BottomActionBar aboveTabBar>
+        <Button
+          label="Post New Gig"
+          icon="add"
+          size="md"
+          onPress={() => router.push("/(business)/post-gig" as never)}
+          testID="post-new-gig-bar"
+        />
+      </BottomActionBar>
 
-      <BottomTabBar items={BUSINESS_TABS} activeKey="gigs" onSelect={goBusinessTab} />
+      <BottomTabBar
+        items={BUSINESS_TABS}
+        activeKey="gigs"
+        onSelect={goBusinessTab}
+      />
     </Screen>
   );
 }
@@ -349,14 +553,13 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.base,
-    paddingBottom: 160,
     gap: space.base,
     maxWidth: layout.maxContentWidth,
-    width: '100%',
-    alignSelf: 'center',
+    width: "100%",
+    alignSelf: "center",
   },
 
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: space.base },
+  headerRow: { flexDirection: "row", alignItems: "center", gap: space.base },
   headerText: { flex: 1, gap: space.xs },
   bellCircle: {
     width: 48,
@@ -365,19 +568,40 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface,
     borderWidth: 1,
     borderColor: color.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  bellDot: { position: 'absolute', top: 10, right: 11, width: 8, height: 8, borderRadius: 4, backgroundColor: color.danger },
+  bellDot: {
+    position: "absolute",
+    top: 10,
+    right: 11,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: color.danger,
+  },
 
-  statRow: { flexDirection: 'row', gap: space.md },
+  statRow: { flexDirection: "row", gap: space.md },
   stat: { flex: 1 },
 
-  segmentTrack: { flexDirection: 'row', backgroundColor: color.surfaceMuted, borderRadius: radius.full, padding: 4, gap: 4 },
-  segment: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: space.sm, borderRadius: radius.full },
+  segmentTrack: {
+    flexDirection: "row",
+    backgroundColor: color.surfaceMuted,
+    borderRadius: radius.full,
+    padding: 4,
+    gap: 4,
+  },
+  segment: {
+    flex: 1,
+    minHeight: layout.tapTarget,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: space.sm,
+    borderRadius: radius.full,
+  },
   segmentActive: { backgroundColor: color.successSoft },
   segmentLabel: { color: color.textSecondary },
-  segmentLabelActive: { color: color.textPrimary, fontWeight: '700' },
+  segmentLabelActive: { color: color.textPrimary, fontWeight: "700" },
 
   gigCard: {
     backgroundColor: color.surface,
@@ -387,19 +611,23 @@ const styles = StyleSheet.create({
     padding: space.base,
     gap: space.md,
   },
-  gigTop: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
+  gigTop: { flexDirection: "row", alignItems: "flex-start", gap: space.md },
   gigTitle: { flex: 1 },
-  statusPill: { borderRadius: radius.full, paddingHorizontal: space.sm, paddingVertical: 4 },
-  captionRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  statusPill: {
+    borderRadius: radius.full,
+    paddingHorizontal: space.sm,
+    paddingVertical: 4,
+  },
+  captionRow: { flexDirection: "row", alignItems: "center", gap: space.sm },
   divider: { height: 1, backgroundColor: color.divider },
 
-  metricsRow: { flexDirection: 'row', gap: space.md },
+  metricsRow: { flexDirection: "row", gap: space.md },
   metricCol: { flex: 1, gap: space.xs },
-  metricValue: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  metricValue: { flexDirection: "row", alignItems: "center", gap: space.sm },
 
   workerCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: space.md,
     backgroundColor: color.surfaceMuted,
     borderRadius: radius.md,
@@ -410,42 +638,48 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: radius.full,
     backgroundColor: color.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  workerInitialsText: { color: color.surface, fontWeight: '700' },
+  workerInitialsText: { color: color.surface, fontWeight: "700" },
   workerText: { flex: 1, gap: 2 },
   workerChat: { padding: space.xs },
 
-  actionRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  actionRow: { flexDirection: "row", alignItems: "center", gap: space.sm },
   actionMain: { flex: 1 },
-  messageGreen: { backgroundColor: color.successStrong },
+  workerSkeleton: { flexDirection: "row", alignItems: "center", gap: space.md },
+  workerSkeletonAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: color.surfaceMuted,
+  },
+  workerSkeletonLines: { flex: 1, gap: space.sm },
+  workerSkeletonLine: {
+    height: 12,
+    borderRadius: radius.sm,
+    backgroundColor: color.surfaceMuted,
+    width: "70%",
+  },
+  workerSkeletonLineShort: { width: "45%" },
   squareSlate: {
     width: 48,
     height: 48,
     borderRadius: radius.md,
     backgroundColor: color.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   squareAmber: {
     width: 48,
     height: 48,
     borderRadius: radius.md,
     backgroundColor: color.warningStrong,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   bottomSpacer: { height: space.sm },
-  postBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: space.sm,
-    backgroundColor: color.primary,
-    paddingVertical: space.lg,
-  },
-  postBarLabel: { color: color.surface, fontWeight: '700' },
+
   pressed: { opacity: 0.85 },
 });

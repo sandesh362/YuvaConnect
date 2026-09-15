@@ -26,16 +26,15 @@
  *  - Select Student: deep-links Confirm Selection (screen 32) when the
  *    application is resolvable via the ?gigId= applicants payload.
  */
-import { useQuery } from '@tanstack/react-query';
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useQuery } from "@tanstack/react-query";
+import { router, useLocalSearchParams } from "expo-router";
+import { useState } from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import {
   Button,
   ErrorState,
   Icon,
-  IconButton,
   InfoBanner,
   LoadingSkeleton,
   RatingStars,
@@ -43,23 +42,34 @@ import {
   ScreenHeader,
   StatBox,
   Text,
-} from '@/components/ui';
-import { apiErrorMessage } from '@/config/api';
-import { getApplicants } from '@/lib/gig-api';
-import { getUserRatings } from '@/lib/trust-api';
-import { useAuth } from '@/providers/auth-provider';
-import { color } from '@/theme/colors';
-import { radius } from '@/theme/radius';
-import { layout, space } from '@/theme/spacing';
-import type { Application, Rating } from '@/types/api';
+} from "@/components/ui";
+import { apiErrorMessage } from "@/config/api";
+import { getApplicants } from "@/lib/gig-api";
+import { getUserRatings } from "@/lib/trust-api";
+import { useAuth } from "@/providers/auth-provider";
+import { color } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { layout, space } from "@/theme/spacing";
+import { useLayoutMetrics } from "@/hooks/use-layout-metrics";
+import type { Application, Rating } from "@/types/api";
 
 type ApplicantStudent = {
   id: string;
   name: string;
   email: string;
-  studentProfile?: { college: string; skills: string[]; bio: string; profileImageUrl: string | null } | null;
+  studentProfile?: {
+    college: string;
+    skills: string[];
+    bio: string;
+    profileImageUrl: string | null;
+  } | null;
 };
-type Applicant = Application & { student: ApplicantStudent; avgRating: number; totalRatings: number; pastGigCount: number };
+type Applicant = Application & {
+  student: ApplicantStudent;
+  avgRating: number;
+  totalRatings: number;
+  pastGigCount: number;
+};
 
 function initialsOf(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -68,31 +78,39 @@ function initialsOf(name: string): string {
 }
 
 export default function CandidateProfileScreen() {
-  const { userId, gigId } = useLocalSearchParams<{ userId: string; gigId?: string }>();
+  const { contentBottom } = useLayoutMetrics("actionbar");
+
+  const { userId, gigId } = useLocalSearchParams<{
+    userId: string;
+    gigId?: string;
+  }>();
   const { token } = useAuth();
   const [notice, setNotice] = useState<string | null>(null);
 
   const applicantsQuery = useQuery({
-    queryKey: ['applicants', gigId, token],
+    queryKey: ["applicants", gigId, token],
     queryFn: () => getApplicants(token!, gigId!) as Promise<Applicant[]>,
     enabled: !!token && !!gigId,
   });
   const ratingsQuery = useQuery({
-    queryKey: ['user-ratings', userId, token],
+    queryKey: ["user-ratings", userId, token],
     queryFn: () => getUserRatings(token!, userId),
     enabled: !!token && !!userId,
   });
 
-  const applicant = applicantsQuery.data?.find((item) => item.student.id === userId);
+  const applicant = applicantsQuery.data?.find(
+    (item) => item.student.id === userId,
+  );
   const student = applicant?.student;
   const summary = ratingsQuery.data?.summary;
   const ratings: Rating[] = ratingsQuery.data?.ratings ?? [];
   const rating = summary?.avgRating ?? applicant?.avgRating ?? 0;
   const totalRatings = summary?.totalRatings ?? applicant?.totalRatings ?? 0;
   const skills = student?.studentProfile?.skills ?? [];
-  const college = student?.studentProfile?.college ?? '';
+  const college = student?.studentProfile?.college ?? "";
 
-  const isLoading = (!!gigId && applicantsQuery.isLoading) || ratingsQuery.isLoading;
+  const isLoading =
+    (!!gigId && applicantsQuery.isLoading) || ratingsQuery.isLoading;
   const loadError = applicantsQuery.error ?? ratingsQuery.error;
 
   return (
@@ -103,20 +121,37 @@ export default function CandidateProfileScreen() {
         variant="solid"
         actions={[
           {
-            icon: 'share',
-            accessibilityLabel: 'Share profile',
-            onPress: () => setNotice('Profile sharing has no backend link or endpoint yet — flagged, not faked.'),
+            icon: "share",
+            accessibilityLabel: "Share profile",
+            onPress: () => setNotice("Sharing profiles isn’t available yet."),
           },
           {
-            icon: 'heart',
-            accessibilityLabel: 'Save to Saved Talent',
-            onPress: () => setNotice('Saved Talent has no backend (decision: ship-empty + flagged, screen 37). The heart is kept per the wireframe and raises this notice.'),
+            icon: "heart",
+            accessibilityLabel: "Save to Saved Talent",
+            onPress: () =>
+              setNotice(
+                "Saving candidates isn’t available yet — shortlist them from Manage Applicants instead.",
+              ),
           },
         ]}
       />
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
-        {notice ? <InfoBanner tone="warning" icon="info" title="Flagged, not faked" description={notice} /> : null}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[
+          styles.content,
+          { flexGrow: 1, paddingBottom: contentBottom },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {notice ? (
+          <InfoBanner
+            tone="warning"
+            icon="info"
+            title="Not available yet"
+            description={notice}
+          />
+        ) : null}
 
         {isLoading ? <LoadingSkeleton count={2} /> : null}
         {loadError && !isLoading ? (
@@ -137,33 +172,61 @@ export default function CandidateProfileScreen() {
                 tone="info"
                 icon="info"
                 title="Limited profile"
-                description="The live API has no public GET /users/:id. Identity and skills load when this screen is opened from Manage Applicants (which passes the gig). Ratings below are fetched by user id and are real either way."
+                description="Open this candidate from Manage Applicants to load their name, college and skills. The ratings below are always real."
               />
             ) : null}
 
             {/* Avatar + identity */}
             <View style={styles.identityBlock}>
-              <View style={styles.avatarCircle} accessibilityLabel={student?.name ?? 'Candidate'}>
+              <View
+                style={styles.avatarCircle}
+                accessibilityLabel={student?.name ?? "Candidate"}
+              >
                 <Text variant="title1" style={styles.avatarText}>
-                  {initialsOf(student?.name ?? 'Candidate')}
+                  {initialsOf(student?.name ?? "Candidate")}
                 </Text>
               </View>
-              <Text variant="title1">{student?.name ?? 'Candidate'}</Text>
+              <Text variant="title1">{student?.name ?? "Candidate"}</Text>
               {college ? (
                 <Text variant="bodyStrong" style={styles.collegeLink}>
                   {college}
                 </Text>
               ) : null}
               <Text variant="caption" tone="tertiary">
-                Degree and year are not stored on StudentProfile — the real college line is all the schema holds.
+                Degree and year aren’t captured yet — the college
+                line is what we have.
               </Text>
             </View>
 
             {/* Stats */}
             <View style={styles.statRow}>
-              <StatBox variant="plain" icon="starFilled" value={rating > 0 ? rating.toFixed(1) : '—'} label="Rating" hint={`${totalRatings} reviews`} style={styles.stat} testID="candidate-stat-rating" />
-              <StatBox variant="plain" icon="briefcase" value={String(applicant?.pastGigCount ?? '—')} label="Gigs" hint="completed" style={styles.stat} testID="candidate-stat-gigs" />
-              <StatBox variant="plain" icon="mapPin" value="—" label="Distance" hint="no geo backend" style={styles.stat} testID="candidate-stat-distance" />
+              <StatBox
+                variant="plain"
+                icon="starFilled"
+                value={rating > 0 ? rating.toFixed(1) : "—"}
+                label="Rating"
+                hint={`${totalRatings} reviews`}
+                style={styles.stat}
+                testID="candidate-stat-rating"
+              />
+              <StatBox
+                variant="plain"
+                icon="briefcase"
+                value={String(applicant?.pastGigCount ?? "—")}
+                label="Gigs"
+                hint="completed"
+                style={styles.stat}
+                testID="candidate-stat-gigs"
+              />
+              <StatBox
+                variant="plain"
+                icon="mapPin"
+                value="—"
+                label="Distance"
+                hint="not tracked yet"
+                style={styles.stat}
+                testID="candidate-stat-distance"
+              />
             </View>
 
             {/* Expertise */}
@@ -183,7 +246,8 @@ export default function CandidateProfileScreen() {
               </View>
             ) : (
               <Text variant="body" tone="tertiary">
-                No skills listed{student ? '' : ' — open from Manage Applicants to load them'}.
+                No skills listed
+                {student ? "" : " — open from Manage Applicants to load them"}.
               </Text>
             )}
 
@@ -195,8 +259,8 @@ export default function CandidateProfileScreen() {
             <InfoBanner
               tone="info"
               icon="image"
-              title="Portfolio is not public yet"
-              description="Portfolio items belong to the student's own profile — the live API exposes no endpoint to read another user's items, and PortfolioItem has no category/business/amount columns the wireframe draws. Flagged, not faked."
+              title="Portfolio isn’t available here yet"
+              description="Portfolio items live on the student’s own profile screen and aren’t readable from here yet."
             />
 
             {/* Business reviews — real */}
@@ -212,10 +276,19 @@ export default function CandidateProfileScreen() {
               ratings.map((review) => (
                 <View key={review.id} style={styles.reviewCard}>
                   <View style={styles.reviewTop}>
-                    <Text variant="bodyStrong" numberOfLines={1} style={styles.reviewName}>
-                      {review.fromUser?.name ?? 'Business'}
+                    <Text
+                      variant="bodyStrong"
+                      numberOfLines={1}
+                      style={styles.reviewName}
+                    >
+                      {review.fromUser?.name ?? "Business"}
                     </Text>
-                    <RatingStars value={review.score} size={14} showValue={false} starColor={color.textPrimary} />
+                    <RatingStars
+                      value={review.score}
+                      size={14}
+                      showValue={false}
+                      starColor={color.textPrimary}
+                    />
                   </View>
                   {review.gig?.title ? (
                     <Text variant="caption" tone="tertiary" numberOfLines={1}>
@@ -223,7 +296,12 @@ export default function CandidateProfileScreen() {
                     </Text>
                   ) : null}
                   {review.comment ? (
-                    <Text variant="body" tone="secondary" numberOfLines={3} style={styles.reviewBody}>
+                    <Text
+                      variant="body"
+                      tone="secondary"
+                      numberOfLines={3}
+                      style={styles.reviewBody}
+                    >
                       {review.comment}
                     </Text>
                   ) : null}
@@ -244,10 +322,16 @@ export default function CandidateProfileScreen() {
           onPress={() =>
             gigId
               ? router.push(`/(shared)/chat/${gigId}` as never)
-              : setNotice('Chat is per-gig on the live backend. Open this profile from Manage Applicants to message with gig context.')
+              : setNotice(
+                  "Chat is tied to a gig — open this candidate from Manage Applicants to message them about that gig.",
+                )
           }
-          style={({ pressed }) => [styles.chatButton, pressed && styles.pressed]}
-          testID="candidate-chat">
+          style={({ pressed }) => [
+            styles.chatButton,
+            pressed && styles.pressed,
+          ]}
+          testID="candidate-chat"
+        >
           <Icon name="chat" size={22} color={color.primary} />
         </Pressable>
         <Button
@@ -255,7 +339,11 @@ export default function CandidateProfileScreen() {
           size="lg"
           style={styles.selectButton}
           disabled={!applicant || !gigId}
-          onPress={() => applicant && gigId && router.push(`/assign/${applicant.id}?gigId=${gigId}` as never)}
+          onPress={() =>
+            applicant &&
+            gigId &&
+            router.push(`/assign/${applicant.id}?gigId=${gigId}` as never)
+          }
           testID="candidate-select"
         />
       </View>
@@ -267,30 +355,33 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.base,
-    paddingBottom: 160,
     gap: space.base,
     maxWidth: layout.maxContentWidth,
-    width: '100%',
-    alignSelf: 'center',
+    width: "100%",
+    alignSelf: "center",
   },
 
-  identityBlock: { alignItems: 'center', gap: space.sm, paddingVertical: space.md },
+  identityBlock: {
+    alignItems: "center",
+    gap: space.sm,
+    paddingVertical: space.md,
+  },
   avatarCircle: {
     width: 96,
     height: 96,
     borderRadius: radius.full,
     backgroundColor: color.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: space.sm,
   },
   avatarText: { color: color.primary },
-  collegeLink: { color: color.primary, fontWeight: '700' },
+  collegeLink: { color: color.primary, fontWeight: "700" },
 
-  statRow: { flexDirection: 'row', gap: space.md },
+  statRow: { flexDirection: "row", gap: space.md },
   stat: { flex: 1 },
 
-  skillWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  skillWrap: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   skillPill: {
     backgroundColor: color.successSoft,
     borderRadius: radius.full,
@@ -307,14 +398,14 @@ const styles = StyleSheet.create({
     padding: space.base,
     gap: space.sm,
   },
-  reviewTop: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  reviewTop: { flexDirection: "row", alignItems: "center", gap: space.md },
   reviewName: { flex: 1 },
   reviewBody: { lineHeight: 20 },
 
   bottomSpacer: { height: space.lg },
   stickyBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: space.md,
     backgroundColor: color.surface,
     borderTopWidth: 1,
@@ -328,8 +419,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: color.borderStrong,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: color.surface,
   },
   selectButton: { flex: 1 },

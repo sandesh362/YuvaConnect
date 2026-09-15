@@ -8,14 +8,13 @@
  * DERIVED skills-overlap figure; Shortlist raises the no-endpoint notice;
  * Select stays a quiet no-op until Confirm Selection (screen 32) ships.
  */
-import React from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { router } from 'expo-router';
 
 import { Button, Icon, Text } from '@/components/ui';
 import { color } from '@/theme/colors';
 import { radius } from '@/theme/radius';
-import { space } from '@/theme/spacing';
+import { layout, space } from '@/theme/spacing';
 import type { Application } from '@/types/api';
 
 export type ApplicantStudent = {
@@ -183,7 +182,7 @@ const styles = StyleSheet.create({
 
   actionRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   actionBtn: { flex: 1 },
-  messageBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xs, flex: 1, paddingVertical: space.sm },
+  messageBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xs, flex: 1, minHeight: layout.tapTarget, paddingVertical: space.sm },
   messageLabel: { color: color.primary, fontWeight: '600' },
   pressed: { opacity: 0.7 },
 });

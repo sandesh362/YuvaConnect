@@ -9,7 +9,7 @@
  * - BottomActionBar always visible
  */
 import { router } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { BottomActionBar, Button, ChipGroup, Icon, InfoBanner, Screen, SearchBar, StepProgress, Text, TextLink } from '@/components/ui';
@@ -19,6 +19,7 @@ import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 
 const GROUPS: { title: string; skills: string[] }[] = [
   { title: 'Design & Creative', skills: ['Graphic Design', 'UI/UX Design', 'Logo Design', 'Illustration', 'Motion Graphics', 'Product Photography'] },
@@ -29,6 +30,8 @@ const GROUPS: { title: string; skills: string[] }[] = [
 const MIN_SKILLS = 3;
 
 export default function SkillSelectionScreen() {
+  const { contentBottom } = useLayoutMetrics('actionbar');
+
   const { token } = useAuth();
   const [skills, setSkills] = useState<string[]>([]);
   const [query, setQuery] = useState('');
@@ -80,7 +83,7 @@ export default function SkillSelectionScreen() {
     <Screen testID="screen-skills">
       <StepProgress total={5} current={3} style={styles.steps} />
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.intro}>
           <Text variant="title1">What are your skills?</Text>
           <Text variant="body" tone="secondary">
@@ -160,7 +163,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 160,
   },
   intro: { gap: space.md },
   searchBlock: { gap: space.sm },
@@ -181,5 +183,4 @@ const styles = StyleSheet.create({
   bottomPad: { height: 20 },
   bar: { flexDirection: 'row', alignItems: 'center', gap: space.md, width: '100%' },
   barBack: { paddingHorizontal: space.md },
-  barContinue: { flex: 3 },
 });

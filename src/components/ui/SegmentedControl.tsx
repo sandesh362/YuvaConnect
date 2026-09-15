@@ -1,9 +1,8 @@
-import React from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { color } from '@/theme/colors';
 import { radius } from '@/theme/radius';
-import { space } from '@/theme/spacing';
+import { layout, space } from '@/theme/spacing';
 import { Text } from './Text';
 
 export type Segment<T extends string = string> = {
@@ -118,6 +117,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
+    minHeight: layout.tapTarget,
     paddingVertical: 8,
     paddingHorizontal: space.md,
     borderRadius: radius.full,

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useState } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { color } from '@/theme/colors';
@@ -13,6 +14,8 @@ export type LineChartProps = {
   labels?: string[];
   height?: number;
   lineColor?: string;
+  /** Soft tint used for the gradient fill under the line. */
+  areaColor?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -23,7 +26,15 @@ export type LineChartProps = {
  * fill, rotated 2dp segments as the line, 8dp dots at each sample, caption
  * labels below. No axes, no gridlines — exactly the export.
  */
-export function LineChart({ data, labels, height = 180, lineColor = color.primary, style, testID }: LineChartProps) {
+export function LineChart({
+  data,
+  labels,
+  height = 160,
+  lineColor = color.primary,
+  areaColor = color.primarySoft,
+  style,
+  testID,
+}: LineChartProps) {
   const [width, setWidth] = useState(0);
   const n = data.length;
   const max = Math.max(...data, 1);
@@ -47,30 +58,38 @@ export function LineChart({ data, labels, height = 180, lineColor = color.primar
       })
     : [];
 
-  const colWidth = n > 1 ? width / (n - 1) : width;
+  const areaTop = areaColor;
 
   return (
     <View testID={testID} style={[styles.wrap, style]}>
       <View style={{ height }} onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
-        {width > 0
-          ? data.map((_, index) => {
-              const { x, y } = point(index);
-              return (
-                <View
-                  key={`area-${index}`}
-                  style={[
-                    styles.areaCol,
-                    {
-                      left: x - colWidth / 2,
-                      width: colWidth,
-                      top: y,
-                      height: Math.max(0, height - y),
-                    },
-                  ]}
-                />
-              );
-            })
-          : null}
+        {/*
+          Area fill: a single soft gradient band under the polyline rather than
+          one solid rectangle per sample. With a solid per-sample rectangle a
+          2-point series (e.g. Aug → Sep) painted two full-width blocks and the
+          chart read as a blue slab; the gradient keeps the same "area under the
+          line" meaning at every data density.
+        */}
+        {width > 0 && n > 1 ? (
+          <LinearGradient
+            colors={[areaTop, 'transparent']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={[styles.areaFill, { top: Math.min(...data.map((_, i) => point(i).y)), height: height }]}
+            pointerEvents="none"
+          />
+        ) : null}
+        {/*
+          Single data point: there is no trend to draw, but a lone dot floating in
+          an empty frame reads as broken. Show a flat reference line at that value
+          so the chart still communicates "this is the level".
+        */}
+        {width > 0 && n === 1 ? (
+          <View
+            style={[styles.segment, { left: 0, width, top: point(0).y - 1, backgroundColor: lineColor }]}
+            pointerEvents="none"
+          />
+        ) : null}
         {segments.map((segment) => (
           <View
             key={segment.key}
@@ -108,7 +127,7 @@ export function LineChart({ data, labels, height = 180, lineColor = color.primar
 
 const styles = StyleSheet.create({
   wrap: { gap: space.sm },
-  areaCol: { position: 'absolute', backgroundColor: color.primarySoft },
+  areaFill: { position: 'absolute', left: 0, right: 0, opacity: 0.75 },
   segment: { position: 'absolute', height: 2, borderRadius: radius.full },
   dot: { position: 'absolute', width: 8, height: 8, borderRadius: radius.full },
   labels: { flexDirection: 'row', justifyContent: 'space-between' },

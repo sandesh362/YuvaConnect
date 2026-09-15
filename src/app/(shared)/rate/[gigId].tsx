@@ -17,7 +17,7 @@
  */
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import {
@@ -28,7 +28,9 @@ import {
   Divider,
   Icon,
   IconButton,
+  ErrorState,
   InfoBanner,
+  LoadingSkeleton,
   PrimaryButton,
   RatingInput,
   Screen,
@@ -44,12 +46,15 @@ import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 
 const RATABLE = ['APPROVED', 'PAID', 'CLOSED'] as const;
 
 const TAGS = ['Reliable', 'High Quality', 'On Time', 'Good Communication', 'Professional'];
 
 export default function RateExperienceScreen() {
+  const { contentBottom } = useLayoutMetrics('actionbar');
+
   const { gigId } = useLocalSearchParams<{ gigId: string }>();
   const { token } = useAuth();
 
@@ -98,11 +103,20 @@ export default function RateExperienceScreen() {
         </View>
       </View>
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {!token ? (
           <InfoBanner tone="info" icon="info" title="Login required" description="Login to rate a completed gig." />
         ) : gigQuery.isLoading ? (
-          <InfoBanner tone="neutral" icon="info" title="Loading gig…" />
+          <LoadingSkeleton count={2} variant="card" />
+        ) : gigQuery.isError ? (
+          /* A failed request is not the same as a missing gig — say so, and
+             let the user retry instead of implying the gig does not exist. */
+          <ErrorState
+            title="Could not load this gig"
+            description={apiErrorMessage(gigQuery.error)}
+            retryLabel="Retry"
+            onRetry={() => gigQuery.refetch()}
+          />
         ) : !gig ? (
           <InfoBanner tone="danger" icon="offline" title="Gig not found" description="This gig does not exist or you are not a participant." />
         ) : (
@@ -244,7 +258,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 160,
   },
 
   card: { gap: space.md },

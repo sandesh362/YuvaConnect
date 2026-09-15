@@ -14,10 +14,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
+  FilterRail,
   Avatar,
   BottomTabBar,
   ChipGroup,
@@ -32,10 +33,8 @@ import {
   Screen,
   SearchBar,
   SectionHeader,
-  SelectableChip,
   STUDENT_TABS,
   Text,
-  type GigCardData,
   type SelectableChipProps,
 } from '@/components/ui';
 import { apiErrorMessage } from '@/config/api';
@@ -47,8 +46,7 @@ import { color } from '@/theme/colors';
 import type { IconName } from '@/theme/icons';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
-import type { Gig } from '@/types/api';
-import { mockDistanceKm, getStoredLocation, isWithinRadius } from '@/lib/location';
+import { getStoredLocation, isWithinRadius } from '@/lib/location';
 
 const RECENT_KEY = 'yuvaconnect:recent-searches';
 const SAVED_KEY = 'yuvaconnect:saved-gigs';
@@ -212,7 +210,7 @@ export default function GlobalSearchScreen() {
                           accessibilityLabel={`Search ${tile.label}`}
                           style={({ pressed }) => [styles.tile, { backgroundColor: tile.tint }, pressed && styles.pressed]}>
                           <Icon name={tile.icon} size={20} color={tile.fg} />
-                          <Text variant="heading" numberOfLines={1}>
+                          <Text variant="heading" numberOfLines={2} style={styles.tileLabel}>
                             {tile.label}
                           </Text>
                         </Pressable>
@@ -225,7 +223,7 @@ export default function GlobalSearchScreen() {
               {businesses.length ? (
                 <View style={styles.section}>
                   <SectionHeader title="Top Businesses" actionLabel={showAllBusinesses ? 'Show Less' : 'View All'} onAction={() => setShowAllBusinesses((v) => !v)} />
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bizRow}>
+                  <FilterRail>
                     {(showAllBusinesses ? businesses : businesses.slice(0, 3)).map((business) => (
                       <Pressable
                         key={business.name}
@@ -234,7 +232,7 @@ export default function GlobalSearchScreen() {
                         accessibilityLabel={`Search gigs by ${business.name}`}
                         style={({ pressed }) => [styles.bizCard, pressed && styles.pressed]}>
                         <Avatar name={business.name} size="lg" style={styles.bizAvatar} />
-                        <Text variant="heading" numberOfLines={1} style={styles.bizName}>
+                        <Text variant="heading" numberOfLines={2} style={styles.bizName}>
                           {business.name}
                         </Text>
                         <View style={styles.bizMeta}>
@@ -245,7 +243,7 @@ export default function GlobalSearchScreen() {
                         </View>
                       </Pressable>
                     ))}
-                  </ScrollView>
+                  </FilterRail>
                 </View>
               ) : null}
 
@@ -320,6 +318,7 @@ const styles = StyleSheet.create({
 
   tileGrid: { gap: space.md },
   tileRow: { flexDirection: 'row', gap: space.md },
+  tileLabel: { flex: 1 },
   tile: {
     flex: 1,
     height: 88,
@@ -331,8 +330,6 @@ const styles = StyleSheet.create({
     gap: space.md,
     paddingHorizontal: space.base,
   },
-
-  bizRow: { gap: space.md, paddingRight: space.base },
   bizCard: {
     width: 200,
     backgroundColor: color.surface,

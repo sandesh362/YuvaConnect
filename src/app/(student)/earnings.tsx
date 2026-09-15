@@ -18,8 +18,8 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import {
   BottomTabBar,
@@ -38,11 +38,16 @@ import {
 import { STUDENT_TABS, type TabItem } from '@/components/ui/BottomTabBar';
 import { apiErrorMessage } from '@/config/api';
 import { getEarnings } from '@/lib/gig-api';
+import type { EarningsPayment } from '@/lib/gig-api';
 import { goStudentTab } from '@/lib/tab-nav';
 import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
+
+/** Stable fallback: a fresh `[]` each render would invalidate memos keyed on it. */
+const EMPTY_PAYMENTS: EarningsPayment[] = [];
 
 /** Earnings export swaps Messages for Earnings in the tab bar (per-export variant). */
 const EARNINGS_TABS: TabItem[] = STUDENT_TABS.filter((tab) => tab.key !== 'messages').flatMap((tab) =>
@@ -54,18 +59,28 @@ const EARNINGS_TABS: TabItem[] = STUDENT_TABS.filter((tab) => tab.key !== 'messa
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function EarningsScreen() {
+  const { contentBottom } = useLayoutMetrics('tabbar');
+
   const { token } = useAuth();
   const [showAll, setShowAll] = useState(false);
 
   const query = useQuery({ queryKey: ['earnings'], queryFn: () => getEarnings(token!), enabled: !!token });
-  const payments = query.data?.payments ?? [];
+  const payments = query.data?.payments ?? EMPTY_PAYMENTS;
   const total = Number(query.data?.total ?? 0);
 
+  /*
+   * Read the clock once per mount instead of on every render. Calling
+   * `Date.now()` during render is impure — two renders of the same data could
+   * disagree, and React 19 flags it. A single capture per session also keeps
+   * the "this month"/trend boundaries stable while the user is on the screen.
+   */
+  const [now] = useState(() => Date.now());
+
   const stats = useMemo(() => {
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    const thirtyDaysAgo = Date.now() - 30 * 86400000;
-    const sixtyDaysAgo = Date.now() - 60 * 86400000;
+    const at = new Date(now);
+    const monthStart = new Date(at.getFullYear(), at.getMonth(), 1).getTime();
+    const thirtyDaysAgo = now - 30 * 86400000;
+    const sixtyDaysAgo = now - 60 * 86400000;
 
     let thisMonth = 0;
     let last30 = 0;
@@ -75,7 +90,11 @@ export default function EarningsScreen() {
 
     for (const payment of payments) {
       const amount = Number(payment.amount);
-      const time = new Date(payment.date).getTime();
+      // Defensive: a payment with a missing/invalid date used to throw
+      // `undefined.slice` and blank the whole screen. Skip it and keep the
+      // rest of the report intact.
+      const time = payment?.date ? new Date(payment.date).getTime() : Number.NaN;
+      if (!Number.isFinite(time)) continue;
       if (time >= monthStart) thisMonth += amount;
       if (time >= thirtyDaysAgo) last30 += amount;
       else if (time >= sixtyDaysAgo) prev30 += amount;
@@ -91,7 +110,7 @@ export default function EarningsScreen() {
     const joinedMonth = firstDate ? MONTHS[new Date(firstDate).getMonth()] : null;
 
     return { thisMonth, series, trendPct, joinedMonth };
-  }, [payments]);
+  }, [payments, now]);
 
   const visible = showAll ? payments : payments.slice(0, 3);
 
@@ -99,7 +118,7 @@ export default function EarningsScreen() {
     <Screen testID="screen-earnings">
       <ScreenHeader title="Earnings" subtitle="Track your income & growth" />
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false}>
         {!token ? (
           <EmptyState title="Login to see your earnings" icon="wallet" primaryLabel="Login" onPrimary={() => router.replace('/login' as never)} />
         ) : query.isLoading ? (
@@ -122,9 +141,13 @@ export default function EarningsScreen() {
               {stats.trendPct !== null ? (
                 <View style={styles.heroRow}>
                   <View style={styles.heroPill}>
-                    <Icon name="trendUp" size={13} color={color.textInverse} />
+                    <Icon
+                      name={stats.trendPct > 0 ? 'trendUp' : stats.trendPct < 0 ? 'trendDown' : 'trendFlat'}
+                      size={13}
+                      color={color.textInverse}
+                    />
                     <Text variant="captionStrong" style={styles.heroPillText}>
-                      {stats.trendPct >= 0 ? '+' : ''}
+                      {stats.trendPct > 0 ? '+' : ''}
                       {stats.trendPct.toFixed(1)}%
                     </Text>
                   </View>
@@ -146,7 +169,7 @@ export default function EarningsScreen() {
                 variant="plain"
                 label="Pending"
                 value="—"
-                hint="not exposed by the earnings API"
+                hint="nothing pending yet"
                 style={styles.statCell}
               />
             </View>
@@ -196,7 +219,7 @@ export default function EarningsScreen() {
                 ))
               )}
               <Text variant="caption" tone="tertiary">
-                Released payments only — pending/in-review amounts and business names are not exposed by /api/earnings yet (flagged).
+                Released payments only — pending amounts and business names aren’t available yet.
               </Text>
             </View>
           </>
@@ -215,7 +238,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 120,
   },
 
   hero: {

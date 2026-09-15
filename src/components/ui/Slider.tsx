@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { PanResponder, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { useRef, useState } from 'react';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { color } from '@/theme/colors';
 import { radius } from '@/theme/radius';
@@ -34,20 +34,6 @@ export function Slider({ value, min = 0, max = 100, step = 1, onValueChange, sty
     onValueChange(Math.min(max, Math.max(min, snapped)));
   };
 
-  const pan = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (event) => {
-        startX.current = event.nativeEvent.locationX;
-        apply(event.nativeEvent.locationX);
-      },
-      onPanResponderMove: (_event, gesture) => {
-        apply(startX.current + (gesture.moveX - gesture.x0));
-      },
-    }),
-  ).current;
-
   const ratio = max === min ? 0 : (value - min) / (max - min);
 
   return (
@@ -57,8 +43,21 @@ export function Slider({ value, min = 0, max = 100, step = 1, onValueChange, sty
       accessibilityLabel={`Value ${value}`}
       accessibilityValue={{ min, max, now: value }}
       onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
-      style={[styles.hit, style]}
-      {...pan.panHandlers}>
+      /*
+       * Low-level responder props instead of PanResponder: the handlers are only
+       * ever invoked by the platform (never during render), and they close over
+       * the current width/value. `locationX` is relative to this view, and
+       * `apply` clamps the ratio, so a drag past either end still resolves to
+       * min/max.
+       */
+      onStartShouldSetResponder={() => true}
+      onMoveShouldSetResponder={() => true}
+      onResponderGrant={(event) => {
+        startX.current = event.nativeEvent.locationX;
+        apply(event.nativeEvent.locationX);
+      }}
+      onResponderMove={(event) => apply(event.nativeEvent.locationX)}
+      style={[styles.hit, style]}>
       <View style={styles.track}>
         <View style={[styles.fill, { width: `${ratio * 100}%` }]} />
       </View>

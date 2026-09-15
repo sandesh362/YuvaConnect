@@ -7,7 +7,7 @@
  */
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -97,7 +97,7 @@ export default function LoginScreen() {
               <MintAuthSegments
                 active="login"
                 onNavigate={(key) => router.replace((key === 'signup' ? '/signup?role=BUSINESS' : '/login?role=BUSINESS') as never)}
-                onReports={() => setNotice('Reports has no route or backend yet — it is kept visible per the wireframe and flagged, not faked.')}
+                onReports={() => setNotice('Reports aren’t available yet — sign in and your dashboard shows the same figures.')}
               />
             ) : null}
 
@@ -139,7 +139,7 @@ export default function LoginScreen() {
               <TextLink
                 label="Forgot Password?"
                 iconRight={null}
-                onPress={() => setNotice('Password reset is not wired to the live API yet — contact support from the Help centre. You can use demo accounts: student@yuvaconnect.demo / Demo@123 or business@yuvaconnect.demo / Demo@123')}
+                onPress={() => setNotice('Password reset isn’t available yet — reach us through the Help centre. To explore right away, sign in with student@yuvaconnect.demo or business@yuvaconnect.demo (password Demo@123).')}
               />
             </View>
 
@@ -159,8 +159,8 @@ export default function LoginScreen() {
 
             {isBusiness ? (
               <OrContinueWith
-                onGoogle={() => setNotice('Google sign-in has no live backend endpoint yet — email login is the real path.')}
-                onPhone={() => setNotice('Phone OTP has no live backend endpoint yet — email login is the real path.')}
+                onGoogle={() => setNotice('Google sign-in isn’t available yet — sign in with your email address instead.')}
+                onPhone={() => setNotice('Phone sign-in isn’t available yet — sign in with your email address instead.')}
               />
             ) : (
               <>
@@ -177,7 +177,7 @@ export default function LoginScreen() {
                     variant="secondary"
                     size="lg"
                     icon="logoGoogle"
-                    onPress={() => setNotice('Google sign-in has no live backend endpoint yet — email login is the real path.')}
+                    onPress={() => setNotice('Google sign-in isn’t available yet — sign in with your email address instead.')}
                     style={styles.cta}
                     testID="login-google"
                   />
@@ -199,7 +199,7 @@ export default function LoginScreen() {
           ) : (
             <View style={styles.footerRow}>
               <Text variant="body" tone="secondary">
-                Don't have an account?
+                Don’t have an account?
               </Text>
               <TextLink label="Create Account" iconRight={null} onPress={() => router.push('/signup' as never)} />
             </View>

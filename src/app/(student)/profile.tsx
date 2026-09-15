@@ -17,17 +17,17 @@
  *    all go through PUT /api/profile (+ /api/upload). Legacy functionality
  *    preserved: portfolio add/remove and sign-out remain.
  */
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as ImagePicker from 'expo-image-picker';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import * as ImagePicker from "expo-image-picker";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { router } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
+import { Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import {
   Avatar,
   BottomTabBar,
   Button,
+  ErrorState,
   Icon,
   IconButton,
   InfoBanner,
@@ -40,103 +40,149 @@ import {
   StatBox,
   Text,
   TextField,
-} from '@/components/ui';
-import { STUDENT_TABS } from '@/components/ui/BottomTabBar';
-import { apiErrorMessage } from '@/config/api';
-import { getEarnings, getMyGigs } from '@/lib/gig-api';
-import { addPortfolioItem, getProfile, removePortfolioItem, updateProfile, uploadImage } from '@/lib/profile-api';
-import { goStudentTab } from '@/lib/tab-nav';
-import { useAuth } from '@/providers/auth-provider';
-import { color } from '@/theme/colors';
-import type { IconName } from '@/theme/icons';
-import { radius, shadow } from '@/theme/radius';
-import { layout, space } from '@/theme/spacing';
-import type { Availability, StudentProfile } from '@/types/api';
+} from "@/components/ui";
+import { STUDENT_TABS } from "@/components/ui/BottomTabBar";
+import { apiErrorMessage } from "@/config/api";
+import { getEarnings, getMyGigs } from "@/lib/gig-api";
+import {
+  addPortfolioItem,
+  getProfile,
+  removePortfolioItem,
+  updateProfile,
+  uploadImage,
+} from "@/lib/profile-api";
+import { goStudentTab } from "@/lib/tab-nav";
+import { useAuth } from "@/providers/auth-provider";
+import { color } from "@/theme/colors";
+import type { IconName } from "@/theme/icons";
+import { radius, shadow } from "@/theme/radius";
+import { layout, space } from "@/theme/spacing";
+import { useLayoutMetrics } from "@/hooks/use-layout-metrics";
+import type { Availability, StudentProfile } from "@/types/api";
 
-const COMPLETED = ['APPROVED', 'PAID', 'CLOSED'];
+const COMPLETED = ["APPROVED", "PAID", "CLOSED"];
 
 const availabilityLabels: Record<Availability, string> = {
-  FULL_TIME_AVAILABLE: 'Full-time',
-  PART_TIME: 'Part-time',
-  WEEKENDS_ONLY: 'Weekends only',
+  FULL_TIME_AVAILABLE: "Full-time",
+  PART_TIME: "Part-time",
+  WEEKENDS_ONLY: "Weekends only",
 };
 
 function skillIcon(skill: string): IconName {
   const text = skill.toLowerCase();
-  if (/(design|graphic|canva)/.test(text)) return 'brush';
-  if (/(social|influencer)/.test(text)) return 'megaphone';
-  if (/(ui|ux)/.test(text)) return 'palette';
-  if (/(writ|content|seo)/.test(text)) return 'pen';
-  if (/(photo|camera)/.test(text)) return 'camera';
-  if (/(video|motion|edit)/.test(text)) return 'film';
-  if (/(web|app|code|develop|python|shopify|flutter|data)/.test(text)) return 'code';
-  if (/(market|sales|ad)/.test(text)) return 'trendUp';
-  return 'sparkles';
+  if (/(design|graphic|canva)/.test(text)) return "brush";
+  if (/(social|influencer)/.test(text)) return "megaphone";
+  if (/(ui|ux)/.test(text)) return "palette";
+  if (/(writ|content|seo)/.test(text)) return "pen";
+  if (/(photo|camera)/.test(text)) return "camera";
+  if (/(video|motion|edit)/.test(text)) return "film";
+  if (/(web|app|code|develop|python|shopify|flutter|data)/.test(text))
+    return "code";
+  if (/(market|sales|ad)/.test(text)) return "trendUp";
+  return "sparkles";
 }
 
 export default function StudentProfileScreen() {
+  const { contentBottom } = useLayoutMetrics("tabbar");
+
   const { token, user, signOut } = useAuth();
   const client = useQueryClient();
-  const [location, setLocation] = useState('');
+  const [location, setLocation] = useState("");
 
   const [editOpen, setEditOpen] = useState(false);
-  const [college, setCollege] = useState('');
-  const [bio, setBio] = useState('');
-  const [availability, setAvailability] = useState<Availability>('PART_TIME');
+  const [college, setCollege] = useState("");
+  const [bio, setBio] = useState("");
+  const [availability, setAvailability] = useState<Availability>("PART_TIME");
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
 
   const [addOpen, setAddOpen] = useState(false);
-  const [itemTitle, setItemTitle] = useState('');
-  const [itemDescription, setItemDescription] = useState('');
+  const [itemTitle, setItemTitle] = useState("");
+  const [itemDescription, setItemDescription] = useState("");
   const [itemImage, setItemImage] = useState<string | null>(null);
 
-  const profileQuery = useQuery({ queryKey: ['profile'], queryFn: () => getProfile(token!), enabled: !!token });
-  const earningsQuery = useQuery({ queryKey: ['earnings'], queryFn: () => getEarnings(token!), enabled: !!token });
-  const myGigsQuery = useQuery({ queryKey: ['my-gigs'], queryFn: () => getMyGigs(token!), enabled: !!token });
+  const profileQuery = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => getProfile(token!),
+    enabled: !!token,
+  });
+  const earningsQuery = useQuery({
+    queryKey: ["earnings"],
+    queryFn: () => getEarnings(token!),
+    enabled: !!token,
+  });
+  const myGigsQuery = useQuery({
+    queryKey: ["my-gigs"],
+    queryFn: () => getMyGigs(token!),
+    enabled: !!token,
+  });
 
-  const profile = profileQuery.data?.profile && 'skills' in profileQuery.data.profile ? (profileQuery.data.profile as StudentProfile) : null;
+  const profile =
+    profileQuery.data?.profile && "skills" in profileQuery.data.profile
+      ? (profileQuery.data.profile as StudentProfile)
+      : null;
 
   useEffect(() => {
-    import('@/lib/location')
+    import("@/lib/location")
       .then(({ getStoredLocation }) => getStoredLocation())
       .then((stored) => setLocation(stored.location))
       .catch(() => undefined);
   }, []);
 
-  useEffect(() => {
-    if (profile) {
-      setCollege(profile.college ?? '');
-      setBio(profile.bio ?? '');
-      setAvailability(profile.availability ?? 'PART_TIME');
-      setPhotoUrl(profile.profileImageUrl);
-    }
-  }, [profile]);
+  /* See business profile: hydrate edit fields during render, not in an effect. */
+  const [hydratedProfile, setHydratedProfile] = useState<
+    StudentProfile | null | undefined
+  >(undefined);
+  if (profile && hydratedProfile !== profile) {
+    setHydratedProfile(profile);
+    setCollege(profile.college ?? "");
+    setBio(profile.bio ?? "");
+    setAvailability(profile.availability ?? "PART_TIME");
+    setPhotoUrl(profile.profileImageUrl);
+  }
 
   const completedGigs = useMemo(
-    () => (myGigsQuery.data?.applications ?? []).filter((application) => application.gig && COMPLETED.includes(application.gig.status)).length,
+    () =>
+      (myGigsQuery.data?.applications ?? []).filter(
+        (application) =>
+          application.gig && COMPLETED.includes(application.gig.status),
+      ).length,
     [myGigsQuery.data],
   );
 
   const refreshProfile = () => {
-    client.invalidateQueries({ queryKey: ['profile'] });
-    client.invalidateQueries({ queryKey: ['me'] });
+    client.invalidateQueries({ queryKey: ["profile"] });
+    client.invalidateQueries({ queryKey: ["me"] });
   };
 
   const pickPhoto = async () => {
     if (!token) return;
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] as never, quality: 0.7 });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"] as never,
+      quality: 0.7,
+    });
     if (result.canceled) return;
     setPhotoUploading(true);
     try {
-      setPhotoUrl(await uploadImage(token, result.assets[0] as ImagePicker.ImagePickerAsset));
+      setPhotoUrl(
+        await uploadImage(
+          token,
+          result.assets[0] as ImagePicker.ImagePickerAsset,
+        ),
+      );
     } finally {
       setPhotoUploading(false);
     }
   };
 
   const saveProfile = useMutation({
-    mutationFn: () => updateProfile(token!, { college: college.trim(), bio: bio.trim(), availability, ...(photoUrl ? { profileImageUrl: photoUrl } : {}) }),
+    mutationFn: () =>
+      updateProfile(token!, {
+        college: college.trim(),
+        bio: bio.trim(),
+        availability,
+        ...(photoUrl ? { profileImageUrl: photoUrl } : {}),
+      }),
     onSuccess: () => {
       setEditOpen(false);
       refreshProfile();
@@ -144,11 +190,16 @@ export default function StudentProfileScreen() {
   });
 
   const addItem = useMutation({
-    mutationFn: () => addPortfolioItem(token!, { title: itemTitle.trim(), description: itemDescription.trim() || undefined, imageUrl: itemImage }),
+    mutationFn: () =>
+      addPortfolioItem(token!, {
+        title: itemTitle.trim(),
+        description: itemDescription.trim() || undefined,
+        imageUrl: itemImage,
+      }),
     onSuccess: () => {
       setAddOpen(false);
-      setItemTitle('');
-      setItemDescription('');
+      setItemTitle("");
+      setItemDescription("");
       setItemImage(null);
       refreshProfile();
     },
@@ -161,24 +212,76 @@ export default function StudentProfileScreen() {
 
   const pickItemImage = async () => {
     if (!token) return;
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] as never, quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"] as never,
+      quality: 0.8,
+    });
     if (result.canceled) return;
-    setItemImage(await uploadImage(token, result.assets[0] as ImagePicker.ImagePickerAsset));
+    setItemImage(
+      await uploadImage(
+        token,
+        result.assets[0] as ImagePicker.ImagePickerAsset,
+      ),
+    );
   };
 
   return (
     <Screen testID="screen-profile">
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[
+          styles.content,
+          { flexGrow: 1, paddingBottom: contentBottom },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {!token ? (
-          <InfoBanner tone="info" icon="info" title="Login required" description="Login to view and edit your profile." />
+          <InfoBanner
+            tone="info"
+            icon="info"
+            title="Login required"
+            description="Login to view and edit your profile."
+          />
         ) : profileQuery.isLoading ? (
-          <LoadingSkeleton count={3} variant="card" />
+          /* Mirror the loaded layout (avatar + name lines + cards) so the screen
+             does not jump when the profile arrives. */
+          <View style={styles.profileSkeleton}>
+            <View style={styles.profileSkeletonAvatar} />
+            <View style={styles.profileSkeletonLine} />
+            <View
+              style={[
+                styles.profileSkeletonLine,
+                styles.profileSkeletonLineShort,
+              ]}
+            />
+            <LoadingSkeleton count={3} variant="card" />
+          </View>
+        ) : profileQuery.isError ? (
+          /* Without this branch the screen rendered a half-empty shell (name
+             "—", no college, no stats) that looked like a broken profile. */
+          <ErrorState
+            title="Could not load your profile"
+            description={apiErrorMessage(profileQuery.error)}
+            retryLabel="Retry"
+            onRetry={() => profileQuery.refetch()}
+          />
         ) : (
           <>
             {/* --- Header card --- */}
             <View style={styles.headerCard}>
               <View style={styles.avatarWrap}>
-                {photoUrl ? <Image source={{ uri: photoUrl }} style={styles.avatarPhoto} /> : <Avatar name={user?.name ?? 'Student'} size="xl" tone={color.primarySoft} />}
+                {photoUrl ? (
+                  <Image
+                    source={{ uri: photoUrl }}
+                    style={styles.avatarPhoto}
+                  />
+                ) : (
+                  <Avatar
+                    name={user?.name ?? "Student"}
+                    size="xl"
+                    tone={color.primarySoft}
+                  />
+                )}
                 {profile?.isVerified ? (
                   <View style={styles.verifiedBadge}>
                     <Icon name="check" size={13} color={color.textInverse} />
@@ -186,7 +289,7 @@ export default function StudentProfileScreen() {
                 ) : null}
               </View>
               <Text variant="title1" style={styles.name}>
-                {user?.name ?? '—'}
+                {user?.name ?? "—"}
               </Text>
               {profile?.college ? (
                 <Text variant="caption" tone="secondary">
@@ -195,7 +298,11 @@ export default function StudentProfileScreen() {
               ) : null}
               {location ? (
                 <View style={styles.pinRow}>
-                  <Icon name="mapPinFilled" size={13} color={color.textSecondary} />
+                  <Icon
+                    name="mapPinFilled"
+                    size={13}
+                    color={color.textSecondary}
+                  />
                   <Text variant="caption" tone="secondary">
                     {location}
                   </Text>
@@ -205,20 +312,49 @@ export default function StudentProfileScreen() {
 
             {/* --- Stats --- */}
             <View style={styles.statRow}>
-              <StatBox variant="tinted" icon="wallet" tone="brand" label="Earnings" value={`₹${Number(earningsQuery.data?.total ?? 0).toLocaleString()}`} style={styles.statCell} />
-              <StatBox variant="tinted" icon="checkCircleFilled" tone="success" label="Gigs" value={String(completedGigs)} style={styles.statCell} />
-              <Pressable accessibilityRole="button" accessibilityLabel="View reviews and ratings" onPress={() => router.push('/reviews' as never)} style={styles.statCell}>
+              <StatBox
+                variant="tinted"
+                icon="wallet"
+                tone="brand"
+                label="Earnings"
+                value={`₹${Number(earningsQuery.data?.total ?? 0).toLocaleString()}`}
+                style={styles.statCell}
+              />
+              <StatBox
+                variant="tinted"
+                icon="checkCircleFilled"
+                tone="success"
+                label="Gigs"
+                value={String(completedGigs)}
+                style={styles.statCell}
+              />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="View reviews and ratings"
+                onPress={() => router.push("/reviews" as never)}
+                style={styles.statCell}
+              >
                 <StatBox
                   variant="tinted"
                   icon="starFilled"
                   tone="warning"
                   label="Rating"
-                  value={profile && profile.totalRatings > 0 ? `${profile.avgRating.toFixed(1)}/5` : '—'}
+                  value={
+                    profile && profile.totalRatings > 0
+                      ? `${profile.avgRating.toFixed(1)}/5`
+                      : "—"
+                  }
                 />
               </Pressable>
             </View>
 
-            <Button label="Edit Profile" variant="secondary" icon="pen" onPress={() => setEditOpen(true)} testID="profile-edit" />
+            <Button
+              label="Edit Profile"
+              variant="secondary"
+              icon="pen"
+              onPress={() => setEditOpen(true)}
+              testID="profile-edit"
+            />
 
             {/* --- Verified skills --- */}
             <View style={styles.section}>
@@ -228,7 +364,11 @@ export default function StudentProfileScreen() {
                   {profile.skills.map((skill) => (
                     <View key={skill} style={styles.skillPill}>
                       <View style={styles.skillIcon}>
-                        <Icon name={skillIcon(skill)} size={13} color={color.textInverse} />
+                        <Icon
+                          name={skillIcon(skill)}
+                          size={13}
+                          color={color.textInverse}
+                        />
                       </View>
                       <Text variant="captionStrong" style={styles.skillLabel}>
                         {skill}
@@ -245,22 +385,37 @@ export default function StudentProfileScreen() {
 
             {/* --- Portfolio --- */}
             <View style={styles.section}>
-              <SectionHeader title="Work Portfolio" actionLabel={`${profile?.portfolioItems.length ?? 0} Items`} />
+              <SectionHeader
+                title="Work Portfolio"
+                actionLabel={`${profile?.portfolioItems.length ?? 0} Items`}
+              />
               {profile?.portfolioItems.length ? (
                 profile.portfolioItems.map((item) => (
                   <View key={item.id} style={styles.portfolioCard}>
-                    {item.imageUrl ? <Image source={{ uri: item.imageUrl }} style={styles.portfolioImage} /> : null}
+                    {item.imageUrl ? (
+                      <Image
+                        source={{ uri: item.imageUrl }}
+                        style={styles.portfolioImage}
+                      />
+                    ) : null}
                     <View style={styles.portfolioCopy}>
                       <Text variant="title3" numberOfLines={1}>
                         {item.title}
                       </Text>
                       {item.description ? (
-                        <Text variant="caption" tone="secondary" numberOfLines={2}>
+                        <Text
+                          variant="caption"
+                          tone="secondary"
+                          numberOfLines={2}
+                        >
                           {item.description}
                         </Text>
                       ) : null}
                       <Text variant="caption" tone="tertiary">
-                        {new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                        {new Date(item.createdAt).toLocaleDateString(
+                          undefined,
+                          { month: "short", year: "numeric" },
+                        )}
                       </Text>
                     </View>
                     <IconButton
@@ -275,23 +430,35 @@ export default function StudentProfileScreen() {
                   No portfolio items yet — add your best work below.
                 </Text>
               )}
-              <Button label="Add portfolio item" variant="secondary" icon="addCircle" onPress={() => setAddOpen(true)} />
+              <Button
+                label="Add portfolio item"
+                variant="secondary"
+                icon="addCircle"
+                onPress={() => setAddOpen(true)}
+              />
               <InfoBanner
                 tone="info"
                 icon="info"
-                title="Portfolio cards show real fields only"
-                description="PortfolioItem stores title, description, image and date — the category, business, amount and star pill in the wireframe have no columns, so they are omitted rather than invented."
+                title="What your portfolio shows"
+                description="Each card shows the title, description, image and date you add. Project category, business and amount aren’t collected yet, so we leave them out rather than guess."
               />
             </View>
 
-            {saveProfile.isError ? <InfoBanner tone="danger" icon="offline" title="Could not save profile" description={apiErrorMessage(saveProfile.error)} /> : null}
+            {saveProfile.isError ? (
+              <InfoBanner
+                tone="danger"
+                icon="offline"
+                title="Could not save profile"
+                description={apiErrorMessage(saveProfile.error)}
+              />
+            ) : null}
 
             <Button
               label="Sign out"
               variant="secondary"
               onPress={async () => {
                 await signOut();
-                router.replace('/login' as never);
+                router.replace("/login" as never);
               }}
             />
           </>
@@ -305,24 +472,53 @@ export default function StudentProfileScreen() {
         title="Edit Profile"
         footer={
           <PrimaryButton
-            label={saveProfile.isPending ? 'Saving…' : 'Save Changes'}
+            label={saveProfile.isPending ? "Saving…" : "Save Changes"}
             onPress={() => saveProfile.mutate()}
             testID="profile-save"
           />
         }
-        testID="sheet-edit-profile">
+        testID="sheet-edit-profile"
+      >
         <View style={styles.photoRow}>
-          {photoUrl ? <Image source={{ uri: photoUrl }} style={styles.photoPreview} /> : <Avatar name={user?.name ?? 'S'} size="lg" />}
-          <Button label={photoUploading ? 'Uploading…' : 'Change photo'} variant="secondary" fullWidth={false} icon="camera" onPress={pickPhoto} />
+          {photoUrl ? (
+            <Image source={{ uri: photoUrl }} style={styles.photoPreview} />
+          ) : (
+            <Avatar name={user?.name ?? "S"} size="lg" />
+          )}
+          <Button
+            label={photoUploading ? "Uploading…" : "Change photo"}
+            variant="secondary"
+            fullWidth={false}
+            icon="camera"
+            onPress={pickPhoto}
+          />
         </View>
-        <TextField label="College" icon="bookmark" value={college} onChangeText={setCollege} placeholder="Your college" />
-        <TextField label="Bio" value={bio} onChangeText={setBio} placeholder="A line about you" type="textarea" />
+        <TextField
+          label="College"
+          icon="bookmark"
+          value={college}
+          onChangeText={setCollege}
+          placeholder="Your college"
+        />
+        <TextField
+          label="Bio"
+          value={bio}
+          onChangeText={setBio}
+          placeholder="A line about you"
+          type="textarea"
+        />
         <Text variant="label" tone="secondary">
           Availability
         </Text>
         <View style={styles.availabilityRow}>
           {(Object.keys(availabilityLabels) as Availability[]).map((option) => (
-            <SelectableChip key={option} label={availabilityLabels[option]} selected={availability === option} indicator="none" onToggle={() => setAvailability(option)} />
+            <SelectableChip
+              key={option}
+              label={availabilityLabels[option]}
+              selected={availability === option}
+              indicator="none"
+              onToggle={() => setAvailability(option)}
+            />
           ))}
         </View>
       </Sheet>
@@ -334,24 +530,52 @@ export default function StudentProfileScreen() {
         title="Add Portfolio Item"
         footer={
           <PrimaryButton
-            label={addItem.isPending ? 'Adding…' : 'Add Item'}
+            label={addItem.isPending ? "Adding…" : "Add Item"}
             disabled={!itemTitle.trim()}
             onPress={() => addItem.mutate()}
           />
         }
-        testID="sheet-add-portfolio">
-        <TextField label="Title" value={itemTitle} onChangeText={setItemTitle} placeholder="e.g. Festival poster series" />
-        <TextField label="Description" value={itemDescription} onChangeText={setItemDescription} placeholder="What was the work about?" type="textarea" />
-        <Button label={itemImage ? 'Replace image' : 'Attach image'} variant="secondary" icon="image" onPress={pickItemImage} />
+        testID="sheet-add-portfolio"
+      >
+        <TextField
+          label="Title"
+          value={itemTitle}
+          onChangeText={setItemTitle}
+          placeholder="e.g. Festival poster series"
+        />
+        <TextField
+          label="Description"
+          value={itemDescription}
+          onChangeText={setItemDescription}
+          placeholder="What was the work about?"
+          type="textarea"
+        />
+        <Button
+          label={itemImage ? "Replace image" : "Attach image"}
+          variant="secondary"
+          icon="image"
+          onPress={pickItemImage}
+        />
         {itemImage ? (
           <Text variant="caption" tone="secondary" numberOfLines={1}>
             {itemImage}
           </Text>
         ) : null}
-        {addItem.isError ? <InfoBanner tone="danger" icon="offline" title="Could not add item" description={apiErrorMessage(addItem.error)} /> : null}
+        {addItem.isError ? (
+          <InfoBanner
+            tone="danger"
+            icon="offline"
+            title="Could not add item"
+            description={apiErrorMessage(addItem.error)}
+          />
+        ) : null}
       </Sheet>
 
-      <BottomTabBar items={STUDENT_TABS} activeKey="profile" onSelect={goStudentTab} />
+      <BottomTabBar
+        items={STUDENT_TABS}
+        activeKey="profile"
+        onSelect={goStudentTab}
+      />
     </Screen>
   );
 }
@@ -361,13 +585,12 @@ const styles = StyleSheet.create({
     padding: layout.screenGutter,
     gap: space.base,
     maxWidth: layout.maxContentWidth,
-    width: '100%',
-    alignSelf: 'center',
-    paddingBottom: 120,
+    width: "100%",
+    alignSelf: "center",
   },
 
   headerCard: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: space.sm,
     backgroundColor: color.surface,
     borderRadius: radius.lg,
@@ -376,10 +599,24 @@ const styles = StyleSheet.create({
     ...shadow.sm,
     padding: space.xl,
   },
-  avatarWrap: { position: 'relative' },
+  profileSkeleton: { alignItems: "center", gap: space.sm },
+  profileSkeletonAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: radius.full,
+    backgroundColor: color.surfaceMuted,
+  },
+  profileSkeletonLine: {
+    height: 14,
+    width: "45%",
+    borderRadius: radius.sm,
+    backgroundColor: color.surfaceMuted,
+  },
+  profileSkeletonLineShort: { height: 12, width: "30%" },
+  avatarWrap: { position: "relative" },
   avatarPhoto: { width: 80, height: 80, borderRadius: radius.full },
   verifiedBadge: {
-    position: 'absolute',
+    position: "absolute",
     right: -2,
     bottom: -2,
     width: 24,
@@ -388,20 +625,20 @@ const styles = StyleSheet.create({
     backgroundColor: color.success,
     borderWidth: 2,
     borderColor: color.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  name: { textAlign: 'center' },
-  pinRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
+  name: { textAlign: "center" },
+  pinRow: { flexDirection: "row", alignItems: "center", gap: space.xs },
 
-  statRow: { flexDirection: 'row', gap: space.md },
+  statRow: { flexDirection: "row", gap: space.md },
   statCell: { flex: 1 },
 
   section: { gap: space.md, marginTop: space.md },
-  skillWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
+  skillWrap: { flexDirection: "row", flexWrap: "wrap", gap: space.md },
   skillPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: space.sm,
     backgroundColor: color.surface,
     borderWidth: 1,
@@ -416,14 +653,14 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: radius.full,
     backgroundColor: color.textPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   skillLabel: { color: color.textPrimary },
 
   portfolioCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: space.md,
     backgroundColor: color.surface,
     borderRadius: radius.lg,
@@ -435,7 +672,7 @@ const styles = StyleSheet.create({
   portfolioImage: { width: 56, height: 56, borderRadius: radius.md },
   portfolioCopy: { flex: 1, gap: 2 },
 
-  photoRow: { flexDirection: 'row', alignItems: 'center', gap: space.base },
+  photoRow: { flexDirection: "row", alignItems: "center", gap: space.base },
   photoPreview: { width: 64, height: 64, borderRadius: radius.full },
-  availabilityRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
+  availabilityRow: { flexDirection: "row", flexWrap: "wrap", gap: space.md },
 });

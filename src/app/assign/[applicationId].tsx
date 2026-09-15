@@ -26,7 +26,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Banner, Button, ErrorState, Icon, InfoBanner, LoadingSkeleton, Screen, ScreenHeader, Text, TextLink } from '@/components/ui';
@@ -37,6 +37,7 @@ import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 
 function parseDeliverables(description: string): string[] {
   const marker = description.indexOf('Deliverables:');
@@ -50,6 +51,8 @@ function parseDeliverables(description: string): string[] {
 }
 
 export default function ConfirmSelectionScreen() {
+  const { contentBottom } = useLayoutMetrics('actionbar');
+
   const { applicationId, gigId } = useLocalSearchParams<{ applicationId: string; gigId?: string }>();
   const { token } = useAuth();
   const client = useQueryClient();
@@ -91,7 +94,7 @@ export default function ConfirmSelectionScreen() {
     <Screen testID="screen-confirm-selection">
       <ScreenHeader title="Confirm Selection" onBack={() => router.back()} variant="solid" />
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false}>
         {isLoading ? <LoadingSkeleton count={2} /> : null}
         {loadError && !isLoading ? (
           <ErrorState title="Could not load this selection" description={apiErrorMessage(loadError)} onRetry={() => { gigQuery.refetch(); applicantsQuery.refetch(); }} />
@@ -104,7 +107,7 @@ export default function ConfirmSelectionScreen() {
                 tone="info"
                 icon="info"
                 title="Missing gig context"
-                description="This screen is opened from Manage Applicants / Comparison, which pass the gig. Without it the live API cannot resolve the application — there is no public GET /applications/:id."
+                description="Open this screen from Manage Applicants or Compare Finalists — that is how we know which gig the application belongs to."
               />
             ) : null}
 
@@ -146,7 +149,7 @@ export default function ConfirmSelectionScreen() {
                 <SummaryCell label="BUDGET" value={gig ? `₹${Number(gig.budget).toLocaleString('en-IN')}` : '—'} />
                 <SummaryCell label="DEADLINE" value={deadline} />
                 <SummaryCell label="LOCATION" value={gig?.location || '—'} />
-                <SummaryCell label="TYPE" value={`${workType} (derived)`} />
+                <SummaryCell label="TYPE" value={workType} />
               </View>
             </View>
 
@@ -170,7 +173,7 @@ export default function ConfirmSelectionScreen() {
                 tone="info"
                 icon="info"
                 title="No deliverables block"
-                description="This gig was posted without a deliverables list (they are stored as a labelled block inside the description — the schema has no deliverable-requirements column). Flagged, not faked."
+                description="This gig was posted without a deliverables list, so there is nothing to check off here. Everything else on this screen is live."
               />
             )}
 
@@ -236,7 +239,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.base,
-    paddingBottom: 160,
     gap: space.base,
     maxWidth: layout.maxContentWidth,
     width: '100%',

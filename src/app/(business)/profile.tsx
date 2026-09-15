@@ -12,10 +12,10 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, View } from 'react-native';
 
-import { Avatar, BottomTabBar, Button, InfoBanner, LoadingSkeleton, PrimaryButton, Screen, ScreenHeader, Sheet, Text, TextField } from '@/components/ui';
+import { Avatar, BottomTabBar, Button, ErrorState, InfoBanner, LoadingSkeleton, PrimaryButton, Screen, ScreenHeader, Sheet, Text, TextField } from '@/components/ui';
 import { BUSINESS_TABS } from '@/components/ui/BottomTabBar';
 import { apiErrorMessage } from '@/config/api';
 import { getProfile, updateProfile, uploadImage } from '@/lib/profile-api';
@@ -24,9 +24,12 @@ import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 import type { BusinessProfile } from '@/types/api';
 
 export default function BusinessProfileScreen() {
+  const { contentBottom } = useLayoutMetrics('tabbar');
+
   const { token, user, signOut } = useAuth();
   const client = useQueryClient();
   const query = useQuery({ queryKey: ['profile'], queryFn: () => getProfile(token!), enabled: !!token });
@@ -40,15 +43,21 @@ export default function BusinessProfileScreen() {
   const [shopImageUrl, setShopImageUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    if (profile) {
-      setBusinessName(profile.businessName ?? '');
-      setCategory(profile.category ?? '');
-      setRegistrationNumber(profile.registrationNumber ?? '');
-      setAddress(profile.address ?? '');
-      setShopImageUrl(profile.shopImageUrl ?? null);
-    }
-  }, [profile]);
+  /*
+   * Hydrate the editable fields the first time each profile arrives. This is the
+   * documented "adjust state when a prop changes" pattern: doing it during render
+   * avoids the extra pass (and the flash of empty inputs) that a synchronous
+   * setState-in-effect would cause.
+   */
+  const [hydratedProfile, setHydratedProfile] = useState<typeof profile>(undefined);
+  if (profile && hydratedProfile !== profile) {
+    setHydratedProfile(profile);
+    setBusinessName(profile.businessName ?? '');
+    setCategory(profile.category ?? '');
+    setRegistrationNumber(profile.registrationNumber ?? '');
+    setAddress(profile.address ?? '');
+    setShopImageUrl(profile.shopImageUrl ?? null);
+  }
 
   const save = useMutation({
     mutationFn: () => updateProfile(token!, { businessName: businessName.trim(), category: category.trim(), registrationNumber: registrationNumber.trim(), address: address.trim(), shopImageUrl }),
@@ -89,9 +98,16 @@ export default function BusinessProfileScreen() {
     <Screen testID="screen-business-profile">
       <ScreenHeader title="Business Profile" subtitle={user?.name ?? ''} />
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false}>
         {query.isLoading ? (
           <LoadingSkeleton count={3} variant="card" />
+        ) : query.isError ? (
+          <ErrorState
+            title="Could not load your business profile"
+            description={apiErrorMessage(query.error)}
+            retryLabel="Retry"
+            onRetry={() => query.refetch()}
+          />
         ) : (
           <>
             <View style={styles.headerCard}>
@@ -202,7 +218,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 120,
   },
   headerCard: {
     alignItems: 'center',

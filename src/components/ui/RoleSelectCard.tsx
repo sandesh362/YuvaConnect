@@ -1,4 +1,3 @@
-import React from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -65,7 +64,9 @@ export function RoleSelectCard({ title, description, icon, selected, onPress, st
           <Text variant="title2" uppercase numberOfLines={1} style={styles.title}>
             {title}
           </Text>
-          <Text variant="body" tone="secondary" numberOfLines={2} style={styles.description}>
+          {/* Descriptions are full sentences; a 2-line cap chopped them mid-word
+              ("...and build a ..."). 3 lines fits every shipped string at 320dp+. */}
+          <Text variant="body" tone="secondary" numberOfLines={3} style={styles.description}>
             {description}
           </Text>
         </View>

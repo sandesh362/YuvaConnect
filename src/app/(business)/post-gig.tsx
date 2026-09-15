@@ -12,7 +12,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -38,6 +38,7 @@ import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 
 const SUGGESTED_SKILLS = [
   'Product Photography',
@@ -107,6 +108,8 @@ function parseStoredGig(description: string) {
 }
 
 export default function PostGigScreen() {
+  const { contentBottom } = useLayoutMetrics('actionbar');
+
   const { token } = useAuth();
   const client = useQueryClient();
   const insets = useSafeAreaInsets();
@@ -144,9 +147,16 @@ export default function PostGigScreen() {
     enabled: !!token && editMode,
   });
 
-  useEffect(() => {
-    const gig = editGigQuery.data;
-    if (!gig) return;
+  /*
+   * Populate the form from the gig being edited (hydration pattern: adjust state
+   * during render rather than in an effect, so the fields are filled on the same
+   * pass the data arrives — no flicker of the empty create-form).
+   */
+  const [hydratedGig, setHydratedGig] = useState<typeof editGigQuery.data>(undefined);
+  const editGig = editGigQuery.data;
+  if (editGig && hydratedGig !== editGig) {
+    setHydratedGig(editGig);
+    const gig = editGig;
     const stored = parseStoredGig(gig.description);
     setTitle(gig.title);
     setDescription(stored.base);
@@ -158,12 +168,16 @@ export default function PostGigScreen() {
     setSkills(gig.skillsRequired ?? []);
     setBudget(String(Number(gig.budget)));
     setDeadline(new Date(gig.deadline).toISOString().slice(0, 10));
-  }, [editGigQuery.data]);
+  }
 
-  useEffect(() => {
-    const profile = profileQuery.data?.profile;
-    if (profile && 'category' in profile && profile.category && !category) setCategory(profile.category);
-  }, [profileQuery.data]);
+  // Default the category from the business profile when creating a new gig.
+  const [usedProfileCategory, setUsedProfileCategory] = useState(false);
+  const profileCategory =
+    profileQuery.data?.profile && 'category' in profileQuery.data.profile ? profileQuery.data.profile.category : '';
+  if (profileCategory && !usedProfileCategory && !category) {
+    setUsedProfileCategory(true);
+    setCategory(profileCategory);
+  }
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
@@ -244,13 +258,13 @@ export default function PostGigScreen() {
           label="Save Draft"
           iconRight={null}
           onPress={() =>
-            setNotice('Drafts are not supported yet — gigs are published directly. Your progress stays in the form until you publish.')
+            setNotice('Drafts aren’t available yet — your progress stays in this form until you publish.')
           }
         />
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
-        <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <Text variant="title2">Basic Details</Text>
           <Text variant="body" tone="secondary">
             Clearly describe the task to attract the right students.
@@ -542,7 +556,7 @@ export default function PostGigScreen() {
             Gig published successfully 🎉
           </Text>
           <Text variant="body" tone="secondary" style={styles.successDesc}>
-            Your gig is now live and visible to verified students. You'll get notified when someone applies.
+            Your gig is now live and visible to verified students. You’ll get notified when someone applies.
           </Text>
           <View style={styles.successActions}>
             <Button
@@ -615,7 +629,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.xl,
-    paddingBottom: 160,
     gap: space.base,
     maxWidth: layout.maxContentWidth,
     width: '100%',
@@ -629,6 +642,9 @@ const styles = StyleSheet.create({
     borderColor: color.primary,
     borderStyle: 'dashed',
     borderRadius: radius.full,
+    minHeight: layout.tapTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: space.base,
     paddingVertical: space.sm,
   },

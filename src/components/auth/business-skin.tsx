@@ -7,7 +7,6 @@
  * endpoints — all three render per the wireframe and raise explanatory notices
  * through the callbacks the screens pass in.
  */
-import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button, Icon, Text, TextLink } from '@/components/ui';
@@ -151,7 +150,7 @@ const styles = StyleSheet.create({
     padding: 4,
     gap: 4,
   },
-  segment: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: space.sm, borderRadius: radius.full },
+  segment: { flex: 1, minHeight: layout.tapTarget, alignItems: 'center', justifyContent: 'center', paddingVertical: space.sm, borderRadius: radius.full },
   segmentActive: { backgroundColor: color.successSoft },
   segmentLabel: { color: color.textSecondary },
   segmentLabelActive: { color: color.textPrimary, fontWeight: '700' },
