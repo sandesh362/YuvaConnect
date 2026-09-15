@@ -99,7 +99,7 @@ export default function EarningsScreen() {
     <Screen testID="screen-earnings">
       <ScreenHeader title="Earnings" subtitle="Track your income & growth" />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         {!token ? (
           <EmptyState title="Login to see your earnings" icon="wallet" primaryLabel="Login" onPrimary={() => router.replace('/login' as never)} />
         ) : query.isLoading ? (

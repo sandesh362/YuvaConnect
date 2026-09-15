@@ -200,7 +200,7 @@ export default function DesignSystemScreen() {
         actions={[{ icon: 'bell', accessibilityLabel: 'Notifications', onPress: () => undefined, count: 3 }]}
       />
 
-      <ScrollView style={g.scroll} contentContainerStyle={g.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={[g.scroll, {flex:1}]} contentContainerStyle={[g.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         {/* ---------------- COLOUR ---------------- */}
         <Section title="1 · Colour" note="src/theme/colors.ts — components use the `color.*` aliases, never raw hex.">
           <Text variant="overline" tone="tertiary" uppercase style={g.subLabel}>

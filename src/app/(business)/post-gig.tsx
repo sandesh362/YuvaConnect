@@ -250,7 +250,7 @@ export default function PostGigScreen() {
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <Text variant="title2">Basic Details</Text>
           <Text variant="body" tone="secondary">
             Clearly describe the task to attract the right students.
@@ -425,22 +425,26 @@ export default function PostGigScreen() {
       </KeyboardAvoidingView>
 
       <View style={[styles.stickyBar, { paddingBottom: Math.max(insets.bottom, space.md) }]}>
-        <Button
-          label={editMode ? 'Review & Save' : 'Review & Publish'}
-          size="lg"
-          disabled={!canPublish}
-          onPress={() => {
-            if (!validate()) return;
-            setSheet('review');
-          }}
-          style={styles.publishBtn}
-          testID="post-gig-review"
-        />
-        {!canPublish ? (
-          <Text variant="caption" tone="tertiary" style={styles.hint}>
-            Fill title, description (20+ chars), budget, and at least 1 skill to continue
-          </Text>
-        ) : null}
+        <View style={styles.stickyInner}>
+          <View style={{ width: '100%' }}>
+            <Button
+              label={editMode ? 'Review & Save' : 'Review & Publish'}
+              size="lg"
+              disabled={!canPublish}
+              onPress={() => {
+                if (!validate()) return;
+                setSheet('review');
+              }}
+              style={styles.publishBtn}
+              testID="post-gig-review"
+            />
+          </View>
+          {!canPublish ? (
+            <Text variant="caption" tone="tertiary" style={styles.hint}>
+              Fill title, description (20+ chars), budget, and at least 1 skill to continue
+            </Text>
+          ) : null}
+        </View>
       </View>
 
       <Sheet visible={sheet === 'category'} onClose={() => setSheet(null)} title="Category">
@@ -611,7 +615,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.xl,
-    paddingBottom: 140,
+    paddingBottom: 160,
     gap: space.base,
     maxWidth: layout.maxContentWidth,
     width: '100%',
@@ -665,15 +669,27 @@ const styles = StyleSheet.create({
 
   bottomSpacer: { height: space.lg },
   stickyBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: color.surface,
     borderTopWidth: 1,
     borderTopColor: color.divider,
-    paddingHorizontal: layout.screenGutter,
     paddingTop: space.md,
     gap: space.sm,
-    ...shadow.sm,
+    ...shadow.lg,
+    zIndex: 9,
+    elevation: 9,
   },
-  publishBtn: { alignSelf: 'stretch' },
+  stickyInner: {
+    width: '100%',
+    maxWidth: layout.maxContentWidth,
+    alignSelf: 'center',
+    paddingHorizontal: layout.screenGutter,
+    gap: space.sm,
+  },
+  publishBtn: { width: '100%' },
   hint: { textAlign: 'center' },
 
   reviewBlock: { gap: space.md },

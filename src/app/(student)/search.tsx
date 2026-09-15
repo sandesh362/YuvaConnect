@@ -171,7 +171,7 @@ export default function GlobalSearchScreen() {
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {!token ? (
             <EmptyState title="Login to search" description="Search looks through every open gig near you. Login to get started." icon="searchEmpty" primaryLabel="Login" onPrimary={() => router.push('/login' as never)} />
           ) : gigsQuery.isError ? (

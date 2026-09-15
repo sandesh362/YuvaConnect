@@ -1,18 +1,14 @@
 /**
- * Student / Business Signup — FIXED production QA version.
- * Route: /(auth)/signup
- *
- * Fixes:
- * - Keyboard-aware layout, CTA always visible
- * - Validation: name, email, password, role
- * - Inline errors
- * - Role persistence from ?role param
- * - Success navigation to /home
+ * Signup — PERFECT UI FIX version
+ * - Single KAV flex:1 keyboardVerticalOffset 20
+ * - ScrollView flex:1 flexGrow:1 paddingBottom safeArea+40
+ * - CTA width 100%
  */
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Icon, InfoBanner, Screen, SelectableChip, Text, TextField, TextLink } from '@/components/ui';
 import { BusinessHero, MintAuthSegments, OrContinueWith, SwitchStudentFooter, WhyHireCard } from '@/components/auth/business-skin';
@@ -30,6 +26,7 @@ type UserRole = Exclude<Role, 'ADMIN'>;
 export default function SignupScreen() {
   const params = useLocalSearchParams<{ role?: string }>();
   const { setSession } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const [role, setRole] = useState<UserRole>(params.role === 'BUSINESS' ? 'BUSINESS' : 'STUDENT');
   const [name, setName] = useState('');
@@ -71,9 +68,13 @@ export default function SignupScreen() {
   };
 
   return (
-    <Screen testID="screen-signup" includeBottomInset>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    <Screen testID="screen-signup" tone="sunken">
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav} keyboardVerticalOffset={20}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, 20) + 40 }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled">
           {businessSkin ? (
             <BusinessHero />
           ) : (
@@ -163,7 +164,9 @@ export default function SignupScreen() {
             {error ? <InfoBanner tone="danger" icon="offline" title="Could not create account" description={error} /> : null}
             {notice ? <InfoBanner tone="info" icon="info" title="Note" description={notice} /> : null}
 
-            <Button label="Create Account" size="lg" loading={pending} onPress={submit} testID="signup-submit" />
+            <View style={styles.ctaWrap}>
+              <Button label="Create Account" size="lg" loading={pending} onPress={submit} style={styles.cta} testID="signup-submit" />
+            </View>
 
             {businessSkin ? (
               <OrContinueWith
@@ -179,20 +182,26 @@ export default function SignupScreen() {
                   </Text>
                   <View style={styles.orLine} />
                 </View>
-
-                <Button
-                  label="Continue with Google"
-                  variant="secondary"
-                  size="lg"
-                  icon="logoGoogle"
-                  onPress={() => setNotice('Google sign-in has no live backend endpoint yet — email signup is the real path.')}
-                  testID="signup-google"
-                />
+                <View style={styles.ctaWrap}>
+                  <Button
+                    label="Continue with Google"
+                    variant="secondary"
+                    size="lg"
+                    icon="logoGoogle"
+                    onPress={() => setNotice('Google sign-in has no live backend endpoint yet — email signup is the real path.')}
+                    style={styles.cta}
+                    testID="signup-google"
+                  />
+                </View>
               </>
             )}
           </View>
 
-          {businessSkin ? <WhyHireCard /> : null}
+          {businessSkin ? (
+            <View style={styles.whyWrap}>
+              <WhyHireCard />
+            </View>
+          ) : null}
 
           {businessSkin ? (
             <View style={styles.footerWrap}>
@@ -207,8 +216,9 @@ export default function SignupScreen() {
             </View>
           )}
 
-          <InfoBanner tone="success" icon="shieldCheckFilled" title="Your data is protected with bank-grade security" style={styles.security} />
-          <View style={styles.bottomSpacer} />
+          <View style={styles.securityWrap}>
+            <InfoBanner tone="success" icon="shieldCheckFilled" title="Your data is protected with bank-grade security" />
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -217,7 +227,8 @@ export default function SignupScreen() {
 
 const styles = StyleSheet.create({
   kav: { flex: 1 },
-  content: { paddingBottom: 120, flexGrow: 1 },
+  scroll: { flex: 1 },
+  content: { flexGrow: 1, gap: space.base },
 
   hero: {
     alignItems: 'center',
@@ -228,6 +239,9 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: radius['2xl'],
     borderBottomRightRadius: radius['2xl'],
     paddingHorizontal: layout.screenGutter,
+    width: '100%',
+    maxWidth: layout.maxContentWidth,
+    alignSelf: 'center',
   },
   heroTile: {
     width: 84,
@@ -248,24 +262,29 @@ const styles = StyleSheet.create({
     marginTop: space.xl,
     padding: space.xl,
     gap: space.base,
-    maxWidth: layout.maxContentWidth,
-    alignSelf: 'stretch',
+    width: '100%',
+    maxWidth: layout.maxContentWidth - layout.screenGutter * 2,
+    alignSelf: 'center',
   },
   roleBlock: { gap: space.sm },
   roleRow: { flexDirection: 'row', gap: space.md },
   roleChip: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
+  ctaWrap: { width: '100%' },
+  cta: { width: '100%' },
+
   orRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.xs },
   orLine: { flex: 1, height: 1, backgroundColor: color.divider },
 
+  whyWrap: { marginHorizontal: layout.screenGutter, marginTop: space.xl, width: '100%', maxWidth: layout.maxContentWidth - layout.screenGutter * 2, alignSelf: 'center' },
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: space.md,
     marginTop: space.xl,
+    paddingHorizontal: layout.screenGutter,
   },
-  footerWrap: { marginTop: space.xl, marginHorizontal: layout.screenGutter },
-  security: { marginHorizontal: layout.screenGutter, marginTop: space.xl },
-  bottomSpacer: { height: 40 },
+  footerWrap: { marginTop: space.xl, marginHorizontal: layout.screenGutter, width: '100%', maxWidth: layout.maxContentWidth - layout.screenGutter * 2, alignSelf: 'center' },
+  securityWrap: { marginHorizontal: layout.screenGutter, marginTop: space.xl, width: '100%', maxWidth: layout.maxContentWidth - layout.screenGutter * 2, alignSelf: 'center' },
 });

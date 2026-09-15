@@ -139,7 +139,7 @@ export default function ManageApplicantsScreen() {
         })}
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         <View style={styles.countRow}>
           <Text variant="body">{`${visible.length} Candidates`}</Text>
           <Pressable accessibilityRole="button" accessibilityLabel={`Sort: ${SORT_LABEL[sort]}`} onPress={cycleSort} style={styles.sortButton} testID="applicants-sort">

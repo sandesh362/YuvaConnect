@@ -104,7 +104,7 @@ export default function SavedGigsScreen() {
         ))}
       </ScrollView>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         {gigsQuery.isLoading ? (
           <LoadingSkeleton count={3} variant="card" />
         ) : gigsQuery.isError ? (

@@ -233,7 +233,7 @@ export default function NotificationsScreen() {
         </View>
       ) : null}
 
-      <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.list, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         {!token ? (
           <EmptyState title="Login to see notifications" icon="bell" primaryLabel="Login" onPrimary={() => router.replace('/login' as never)} />
         ) : query.isLoading ? (

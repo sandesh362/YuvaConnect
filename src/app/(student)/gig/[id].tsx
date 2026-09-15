@@ -191,7 +191,7 @@ export default function GigDetailsScreen() {
         ]}
       />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {gigQuery.isLoading ? (
           <LoadingSkeleton count={4} variant="card" />
         ) : gigQuery.isError || !gig ? (
@@ -281,9 +281,13 @@ export default function GigDetailsScreen() {
       {gig ? (
         <BottomActionBar>
           {COMPLETED.includes(gig.status) ? (
-            <PrimaryButton label="Rate this gig" iconRight="arrowForward" onPress={() => router.push(`/rate/${gig.id}` as never)} />
+            <View style={{ width: '100%' }}>
+              <PrimaryButton label="Rate this gig" iconRight="arrowForward" onPress={() => router.push(`/rate/${gig.id}` as never)} style={{ width: '100%' }} />
+            </View>
           ) : gig.status === 'IN_PROGRESS' || gig.status === 'REVISION_REQUESTED' ? (
-            <PrimaryButton label={gig.status === 'REVISION_REQUESTED' ? 'Resubmit Deliverable' : 'Submit Deliverable'} onPress={() => router.push(`/(student)/submit/${gig.id}` as never)} testID="gig-submit-open" />
+            <View style={{ width: '100%' }}>
+              <PrimaryButton label={gig.status === 'REVISION_REQUESTED' ? 'Resubmit Deliverable' : 'Submit Deliverable'} onPress={() => router.push(`/(student)/submit/${gig.id}` as never)} style={{ width: '100%' }} testID="gig-submit-open" />
+            </View>
           ) : gig.status === 'SUBMITTED' ? (
             <View style={styles.pendingRow}>
               <StatusBadge label="SUBMITTED" tone="warning" />
@@ -292,7 +296,9 @@ export default function GigDetailsScreen() {
               </Text>
             </View>
           ) : gig.status === 'ASSIGNED' && myApplication ? (
-            <PrimaryButton label="Start Gig" loading={startMutation.isPending} onPress={() => startMutation.mutate()} />
+            <View style={{ width: '100%' }}>
+              <PrimaryButton label="Start Gig" loading={startMutation.isPending} onPress={() => startMutation.mutate()} style={{ width: '100%' }} />
+            </View>
           ) : myApplication ? (
             <View style={styles.pendingRow}>
               <StatusBadge label={myApplication.status} tone={myApplication.status === 'PENDING' ? 'warning' : 'neutral'} />
@@ -303,7 +309,9 @@ export default function GigDetailsScreen() {
           ) : (
             <View style={styles.applyRow}>
               <IconButton name={saved ? 'bookmarkFilled' : 'bookmark'} accessibilityLabel={saved ? 'Unsave' : 'Save gig'} variant="outline" onPress={toggleSave} />
-              <PrimaryButton label="Apply for this Gig" onPress={() => setApplyOpen(true)} style={styles.applyButton} testID="gig-apply-open" />
+              <View style={{ flex: 1, width: '100%' }}>
+                <PrimaryButton label="Apply for this Gig" onPress={() => setApplyOpen(true)} style={{ width: '100%' }} testID="gig-apply-open" />
+              </View>
             </View>
           )}
         </BottomActionBar>
@@ -399,7 +407,7 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 120,
+    paddingBottom: 160,
   },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexWrap: 'wrap' },
   businessName: { flexShrink: 1 },

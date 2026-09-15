@@ -80,7 +80,7 @@ export default function SkillSelectionScreen() {
     <Screen testID="screen-skills">
       <StepProgress total={5} current={3} style={styles.steps} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.intro}>
           <Text variant="title1">What are your skills?</Text>
           <Text variant="body" tone="secondary">
@@ -143,7 +143,9 @@ export default function SkillSelectionScreen() {
       <BottomActionBar>
         <View style={styles.bar}>
           <TextLink label="Back" iconRight={null} onPress={() => router.back()} style={styles.barBack} />
-          <Button label="Continue" loading={saving} disabled={!ready} onPress={save} style={styles.barContinue} testID="skills-continue" />
+          <View style={{ flex: 3, width: '100%' }}>
+            <Button label="Continue" loading={saving} disabled={!ready} onPress={save} style={{ width: '100%' }} testID="skills-continue" />
+          </View>
         </View>
       </BottomActionBar>
     </Screen>
@@ -158,7 +160,7 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 120,
+    paddingBottom: 160,
   },
   intro: { gap: space.md },
   searchBlock: { gap: space.sm },

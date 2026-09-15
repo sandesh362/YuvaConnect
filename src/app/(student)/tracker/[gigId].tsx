@@ -84,7 +84,7 @@ export default function WorkTrackerScreen() {
         trailing={<IconButton name="help" accessibilityLabel="Support" onPress={() => router.push('/support' as never)} />}
       />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         {gigQuery.isLoading ? (
           <LoadingSkeleton count={3} variant="card" />
         ) : gigQuery.isError || !gig ? (

@@ -126,7 +126,7 @@ export default function BusinessMyGigs() {
 
   return (
     <Screen testID="screen-manage-gigs">
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.headerRow}>
           <View style={styles.headerText}>

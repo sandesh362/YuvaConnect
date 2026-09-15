@@ -89,7 +89,7 @@ export default function BusinessProfileScreen() {
     <Screen testID="screen-business-profile">
       <ScreenHeader title="Business Profile" subtitle={user?.name ?? ''} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
         {query.isLoading ? (
           <LoadingSkeleton count={3} variant="card" />
         ) : (

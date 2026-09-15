@@ -88,7 +88,7 @@ export default function LocationAvailabilityScreen() {
       <StepProgress total={5} current={4} style={styles.steps} />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={styles.intro}>
             <Text variant="title1">Work Location</Text>
             <Text variant="body" tone="secondary">
@@ -215,7 +215,9 @@ export default function LocationAvailabilityScreen() {
       </KeyboardAvoidingView>
 
       <BottomActionBar>
-        <Button label="Save & Continue" iconRight="arrowForward" size="lg" loading={saving} onPress={save} testID="location-save" />
+        <View style={{ width: '100%' }}>
+          <Button label="Save & Continue" iconRight="arrowForward" size="lg" loading={saving} onPress={save} style={{ width: '100%' }} testID="location-save" />
+        </View>
       </BottomActionBar>
     </Screen>
   );
@@ -230,7 +232,7 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 120,
+    paddingBottom: 160,
   },
   intro: { gap: space.md },
 
