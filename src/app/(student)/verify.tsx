@@ -12,7 +12,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import {
@@ -36,6 +36,7 @@ import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 import { getStoredLocation, setStoredLocation } from '@/lib/location';
 
 const DOC_KEY = 'yuvaconnect:student-doc';
@@ -56,6 +57,8 @@ const POPULAR = [
 type StoredDoc = { name: string; size: string; url: string };
 
 export default function StudentVerificationScreen() {
+  const { contentBottom } = useLayoutMetrics('actionbar');
+
   const { token } = useAuth();
 
   const [skills, setSkills] = useState<string[]>([]);
@@ -112,7 +115,7 @@ export default function StudentVerificationScreen() {
     try {
       await updateProfile(token, { skills });
       const stored = await getStoredLocation();
-      await setStoredLocation({ location: stored.location, radiusKm, preference: stored.preference, availabilityDays: stored.availabilityDays });
+      await setStoredLocation({ location: stored.location, radiusKm, preference: stored.preference, days: stored.days });
       setSaved(true);
       router.push('/(student)/skills' as never);
     } catch (err) {
@@ -127,7 +130,7 @@ export default function StudentVerificationScreen() {
       <ScreenHeader title="Step 3 of 5" onBack={() => router.back()} trailing={<Icon name="help" size={22} color={color.textPrimary} />} variant="solid" />
       <StepProgress total={5} current={3} style={styles.steps} />
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.intro}>
           <Text variant="title1">Select your skills</Text>
           <Text variant="body" tone="secondary">
@@ -167,7 +170,7 @@ export default function StudentVerificationScreen() {
             </Text>
             <Slider value={radiusKm} min={1} max={30} step={1} onValueChange={setRadiusKm} testID="verify-radius" />
             <Text variant="callout" tone="secondary" style={styles.radiusHint}>
-              You'll see micro-gigs within {radiusKm} km of your college/home. This preference is used across Discover and Search.
+              You’ll see micro-gigs within {radiusKm} km of your college/home. This preference is used across Discover and Search.
             </Text>
           </View>
         </View>
@@ -208,7 +211,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 160,
   },
   intro: { gap: space.md },
   section: { gap: space.md },
@@ -228,6 +230,4 @@ const styles = StyleSheet.create({
   radiusHint: { lineHeight: 20 },
   bottomPad: { height: 20 },
   bar: { flexDirection: 'row', gap: space.md, width: '100%' },
-  barBack: { flex: 1 },
-  barContinue: { flex: 1.4 },
 });

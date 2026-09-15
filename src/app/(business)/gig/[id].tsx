@@ -38,7 +38,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
@@ -59,10 +59,12 @@ import { Applicant, initialsOf } from '@/components/business/candidate-card';
 import { apiErrorMessage } from '@/config/api';
 import { createPaymentOrder, getApplicants, getGig, releasePayment, requestRevision, verifyPayment, type RazorpayPaymentResponse } from '@/lib/gig-api';
 import { getMyRating } from '@/lib/trust-api';
+import { firstNameOf } from '@/lib/text';
 import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 import type { Gig } from '@/types/api';
 
 const COMPLETED = ['APPROVED', 'PAID', 'CLOSED'];
@@ -97,6 +99,8 @@ function milestonesFor(gig: Gig): Milestone[] {
 }
 
 export default function BusinessWorkTrackerScreen() {
+  const { contentBottom } = useLayoutMetrics('actionbar');
+
   const { id } = useLocalSearchParams<{ id: string }>();
   const { token, user } = useAuth();
   const client = useQueryClient();
@@ -213,13 +217,13 @@ export default function BusinessWorkTrackerScreen() {
   const needsFunding = !gig.payment || (gig.payment.status !== 'HELD' && gig.payment.status !== 'RELEASED');
   const isSubmitted = gig.status === 'SUBMITTED';
   const canRelease = isSubmitted && gig.payment?.status === 'HELD';
-  const firstName = selected?.student.name.split(' ')[0] ?? 'Student';
+  const firstName = firstNameOf(selected?.student.name, 'Student');
 
   return (
     <Screen testID="screen-business-tracker">
       <ScreenHeader title="Work Tracker" subtitle={gig.title} onBack={() => router.back()} variant="solid" />
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.body, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.body, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false}>
         {error ? <InfoBanner tone="danger" icon="offline" title="Action failed" description={error} /> : null}
 
         {/* Assigned student */}
@@ -381,7 +385,7 @@ export default function BusinessWorkTrackerScreen() {
               tone="success"
               icon="starFilled"
               title="Gig complete — rate your student"
-              description="One rating per gig, participant-only. The full ratings flow (wireframe 6) opens in its own screen."
+              description="One rating per gig, from the two people who took part. Tap to open the full ratings screen."
               actionLabel="Rate Now"
               onAction={() => router.push(`/(shared)/rate/${gig.id}` as never)}
             />
@@ -452,7 +456,6 @@ const styles = StyleSheet.create({
   body: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.base,
-    paddingBottom: 160,
     gap: space.base,
     maxWidth: layout.maxContentWidth,
     width: '100%',

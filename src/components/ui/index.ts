@@ -12,12 +12,14 @@
 export { Icon, IconButton, iconName, type IconProps, type IconButtonProps } from './Icon';
 export { Text, type TextProps } from './Text';
 export { Card, PressableCard, Divider, type CardProps, type PressableCardProps } from './Card';
+export { FilterRail, type FilterRailProps } from './FilterRail';
 
 // --- Layout / chrome ---
 export {
   Screen,
   ScrollScreen,
   BottomActionBar,
+  Fab,
   SectionHeader,
   type ScreenProps,
   type ScrollScreenProps,

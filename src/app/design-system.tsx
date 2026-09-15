@@ -65,6 +65,7 @@ import {
 } from '@/components/ui';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 import { layout, space } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
 
@@ -186,6 +187,9 @@ export default function DesignSystemScreen() {
   const [notify, setNotify] = useState(true);
   const [saved, setSaved] = useState(true);
   const [tab, setTab] = useState('home');
+  // This screen pins a <BottomActionBar/>, so its scroll content must clear it
+  // with the shared metric exactly like any other screen with an action bar.
+  const { contentBottom } = useLayoutMetrics('actionbar');
 
   const allSkills = ['Graphic Design', 'Video Editing', 'Social Media', 'Content Writing', 'Data Entry', 'Photography', 'Tally', 'Excel'];
   const toggleSkill = (skill: string) =>
@@ -200,7 +204,10 @@ export default function DesignSystemScreen() {
         actions={[{ icon: 'bell', accessibilityLabel: 'Notifications', onPress: () => undefined, count: 3 }]}
       />
 
-      <ScrollView style={[g.scroll, {flex:1}]} contentContainerStyle={[g.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={[g.scroll, { flex: 1 }]}
+        contentContainerStyle={[g.content, { flexGrow: 1, paddingBottom: contentBottom }]}
+        showsVerticalScrollIndicator={false}>
         {/* ---------------- COLOUR ---------------- */}
         <Section title="1 · Colour" note="src/theme/colors.ts — components use the `color.*` aliases, never raw hex.">
           <Text variant="overline" tone="tertiary" uppercase style={g.subLabel}>
@@ -822,7 +829,6 @@ const g = StyleSheet.create({
   scroll: { flex: 1 },
   content: {
     paddingHorizontal: layout.screenGutter,
-    paddingBottom: space['5xl'],
     width: '100%',
     maxWidth: layout.maxContentWidth,
     alignSelf: 'center',

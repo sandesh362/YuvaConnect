@@ -14,14 +14,16 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
+  FilterRail,
   Banner,
   BottomTabBar,
   EmptyState,
   ErrorState,
+  Fab,
   GigCard,
   Icon,
   InfoBanner,
@@ -45,7 +47,12 @@ import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
-import { getStoredLocation } from '@/lib/location';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
+import { getStoredLocation, isRemoteLocation, mockDistanceKm } from '@/lib/location';
+import { firstNameOf, initialsOf } from '@/lib/text';
+
+/** Stable fallback: a fresh `[]` each render would invalidate memos keyed on it. */
+const EMPTY_GIGS: Gig[] = [];
 
 const WORKING_STATUSES = ['ASSIGNED', 'IN_PROGRESS', 'REVISION_REQUESTED', 'SUBMITTED'];
 
@@ -65,14 +72,8 @@ function greeting(): string {
   return 'Good evening';
 }
 
-function initialsOf(name: string): string {
-  const parts = name.trim().split(/\\s+/).filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return name.trim().slice(0, 2).toUpperCase();
-}
-
-function pad2(n: number): string {
-  return String(n).padStart(2, '0');
+function zeroSafe(n: number): string {
+  return Number.isFinite(n) ? String(Math.max(0, Math.round(n))) : '0';
 }
 
 function timeAgo(iso: string): string {
@@ -123,7 +124,9 @@ function BusinessGigRow({ gig }: { gig: Gig }) {
 }
 
 export default function HomeScreen() {
-  const { token, user, signOut } = useAuth();
+  const { contentBottom, fabContentBottom } = useLayoutMetrics('tabbar');
+
+  const { token, user, isLoading, isOffline, refresh, signOut } = useAuth();
   const isStudent = user?.role !== 'BUSINESS';
   const [storedLocation, setStoredLocation] = useState<{ location: string; radiusKm: number }>({ location: 'Powai, Mumbai', radiusKm: 10 });
 
@@ -158,6 +161,62 @@ export default function HomeScreen() {
     enabled: !!token && !isStudent,
     refetchInterval: 30000,
   });
+
+  const unread = notificationsQuery.data?.unreadCount ?? 0;
+  const profile = profileQuery.data?.profile;
+  const isVerified = profile && 'isVerified' in profile ? profile.isVerified : false;
+  const gigs = gigsQuery.data ?? EMPTY_GIGS;
+
+  // Functional nearby filter: within radius
+  const nearbyGigs = useMemo(() => {
+    return gigs
+      .filter((g) => !isRemoteLocation(g.location) && mockDistanceKm(g.id) <= storedLocation.radiusKm)
+      .slice(0, 5);
+  }, [gigs, storedLocation.radiusKm]);
+
+  // A restored session hydrates the user asynchronously; show the shell's
+  // loading state instead of briefly rendering "Login to see your dashboard"
+  // for someone who is already signed in.
+  if (token && !user && isLoading) {
+    return (
+      <Screen testID="screen-home-loading">
+        {/*
+          Keep the app bar and greeting visible while the session hydrates, then
+          skeleton the content. A header-less skeleton screen reads as broken;
+          a stable header reads as loading.
+        */}
+        <View style={styles.topBar}>
+          <View style={styles.greeting}>
+            <View style={styles.headerSkeletonLine} />
+            <View style={[styles.headerSkeletonLine, styles.headerSkeletonLineShort]} />
+          </View>
+        </View>
+        <View style={styles.bizBody}>
+          <LoadingSkeleton count={3} />
+        </View>
+      </Screen>
+    );
+  }
+
+  // Token present but the identity could not be resolved (cold start with an
+  // unreachable server): say so and offer a retry instead of pretending the
+  // user is signed out.
+  if (token && !user && !isLoading) {
+    return (
+      <Screen testID="screen-home-offline">
+        <View style={styles.sessionGate}>
+          <ErrorState
+            title="We couldn't reach YuvaConnect"
+            description={isOffline ? 'Check your connection and try again — your session is still saved.' : 'Something went wrong while loading your profile.'}
+            retryLabel="Try again"
+            onRetry={() => void refresh()}
+            secondaryLabel="Sign out"
+            onSecondary={() => void signOut()}
+          />
+        </View>
+      </Screen>
+    );
+  }
 
   if (!token || !user) {
     return (
@@ -208,11 +267,17 @@ export default function HomeScreen() {
 
     return (
       <Screen testID="screen-home-business">
-        <ScrollView style={{flex:1}} contentContainerStyle={[styles.bizBody, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
+        <ScrollView style={{flex:1}} contentContainerStyle={[styles.bizBody, { flexGrow: 1, paddingBottom: fabContentBottom }]} showsVerticalScrollIndicator={false}>
           <View style={styles.bizHeaderRow}>
             <View style={styles.bizHeaderText}>
-              <Text variant="title1">{`${greeting()}, ${businessName || 'there'} 👋`}</Text>
-              <Text variant="body" tone="secondary">
+              <Text variant="callout" tone="secondary" numberOfLines={1}>
+                {greeting()}
+              </Text>
+              {/* Long business names must never push the avatar or wrap the header. */}
+              <Text variant="title2" numberOfLines={1} ellipsizeMode="tail">
+                {`${businessName || user.name || 'there'} 👋`}
+              </Text>
+              <Text variant="callout" tone="secondary" numberOfLines={2}>
                 Find the right local talent for your next task.
               </Text>
             </View>
@@ -224,9 +289,9 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.bizStatGrid}>
-            <StatBox variant="tinted" tone="brand" icon="briefcase" value={pad2(activeGigs.length)} label="Active Gigs" style={styles.bizStat} testID="biz-stat-gigs" />
-            <StatBox variant="tinted" tone="brand" icon="people" value={pad2(applicantCount)} label="Applicants" style={styles.bizStat} testID="biz-stat-applicants" />
-            <StatBox variant="tinted" tone="success" icon="clipboard" value={pad2(workerGigs.length)} label="Active Workers" hint="working" style={styles.bizStat} testID="biz-stat-workers" />
+            <StatBox variant="tinted" tone="brand" icon="briefcase" value={zeroSafe(activeGigs.length)} label="Active Gigs" style={styles.bizStat} testID="biz-stat-gigs" />
+            <StatBox variant="tinted" tone="brand" icon="people" value={zeroSafe(applicantCount)} label="Applicants" style={styles.bizStat} testID="biz-stat-applicants" />
+            <StatBox variant="tinted" tone="success" icon="clipboard" value={zeroSafe(workerGigs.length)} label="Active Workers" hint="working" style={styles.bizStat} testID="biz-stat-workers" />
             <StatBox
               variant="tinted"
               tone="success"
@@ -292,52 +357,27 @@ export default function HomeScreen() {
               }}
             />
           </View>
-          <View style={styles.bizFabSpacer} />
         </ScrollView>
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Post a Gig"
-          onPress={() => router.push('/(business)/post-gig' as never)}
-          style={({ pressed }) => [styles.bizFab, pressed && styles.pressed]}
-          testID="biz-fab">
-          <Icon name="add" size={18} color={color.surface} />
-          <Text variant="callout" style={styles.bizFabLabel}>
-            Post a Gig
-          </Text>
-        </Pressable>
+        <Fab label="Post a Gig" onPress={() => router.push('/(business)/post-gig' as never)} testID="biz-fab" />
 
         {tabbar}
       </Screen>
     );
   }
 
-  const firstName = user.name.split(' ')[0] || user.name;
-  const unread = notificationsQuery.data?.unreadCount ?? 0;
-  const profile = profileQuery.data?.profile;
-  const isVerified = profile && 'isVerified' in profile ? profile.isVerified : false;
-  const gigs = gigsQuery.data ?? [];
-
-  // Functional nearby filter: within radius
-  const nearbyGigs = useMemo(() => {
-    return gigs
-      .filter((g) => {
-        const isRemote = /remote/i.test(g.location);
-        if (isRemote) return false;
-        // Use deterministic mock distance
-        const { mockDistanceKm } = require('@/lib/location');
-        return mockDistanceKm(g.id) <= storedLocation.radiusKm;
-      })
-      .slice(0, 5);
-  }, [gigs, storedLocation.radiusKm]);
+  const firstName = firstNameOf(user.name);
 
   return (
     <Screen testID="screen-home">
       <View style={styles.topBar}>
         <View style={styles.greeting}>
-          <Text variant="title1">Hi, {firstName} 👋</Text>
-          <Text variant="body" tone="secondary">
-            Let's find your next gig • {storedLocation.location} • Within {storedLocation.radiusKm} km
+          {/* Long names truncate instead of wrapping into the bell. */}
+          <Text variant="title1" numberOfLines={1} ellipsizeMode="tail">
+            Hi, {firstName} 👋
+          </Text>
+          <Text variant="callout" tone="secondary" numberOfLines={1}>
+            {`Let's find your next gig • ${storedLocation.location} • Within ${storedLocation.radiusKm} km`}
           </Text>
         </View>
         <Pressable
@@ -356,7 +396,7 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Search by skill, company or location"
@@ -390,18 +430,18 @@ export default function HomeScreen() {
           ) : gigs.length === 0 ? (
             <EmptyState title="No open gigs right now" description="New micro-gigs appear as businesses post them — check back soon." icon="searchEmpty" />
           ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
+            <FilterRail>
               {gigs.slice(0, 8).map((gig) => (
                 <View key={gig.id} style={styles.railCard}>
                   <GigCard gig={toGigCardData(gig)} onPress={() => router.push(`/(student)/gig/${gig.id}` as never)} />
                 </View>
               ))}
-            </ScrollView>
+            </FilterRail>
           )}
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title={`Near your campus 📍 • Within ${storedLocation.radiusKm} km`} actionLabel="Change" onAction={() => router.push('/(student)/location' as never)} />
+          <SectionHeader title="Near your campus" actionLabel="Change" onAction={() => router.push('/(student)/location' as never)} />
           {nearbyGigs.length === 0 ? (
             <View style={styles.campusCard}>
               <Icon name="locateFilled" size={22} color={color.primary} />
@@ -440,7 +480,9 @@ const styles = StyleSheet.create({
     borderBottomColor: color.borderSubtle,
   },
   greeting: { flex: 1, gap: space.xs },
-  bell: { padding: space.sm, position: 'relative' },
+  headerSkeletonLine: { height: 16, borderRadius: radius.sm, backgroundColor: color.surfaceMuted, width: '55%' },
+  headerSkeletonLineShort: { height: 12, width: '80%', marginTop: space.sm },
+  bell: { position: 'relative', minWidth: layout.tapTarget, minHeight: layout.tapTarget, alignItems: 'center', justifyContent: 'center' },
   badge: {
     position: 'absolute',
     top: 2,
@@ -462,7 +504,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 120,
   },
 
   searchStrip: {
@@ -479,8 +520,8 @@ const styles = StyleSheet.create({
   },
 
   section: { gap: space.md },
-  rail: { gap: space.md, paddingRight: space.md },
-  railCard: { width: 300 },
+  railCard: { width: 288 },  // fixed card rail: sized to fit a 320pt-wide device with the gutter
+
   nearbyCard: { marginBottom: space.sm },
 
   campusCard: {
@@ -497,10 +538,10 @@ const styles = StyleSheet.create({
   campusCopy: { flex: 1, gap: space.xs },
   bottomPad: { height: 20 },
 
+  sessionGate: { flex: 1, justifyContent: 'center', paddingHorizontal: layout.screenGutter },
   bizBody: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.base,
-    paddingBottom: 120,
     gap: space.base,
     maxWidth: layout.maxContentWidth,
     width: '100%',
@@ -543,24 +584,8 @@ const styles = StyleSheet.create({
   bizGigTitle: { flex: 1 },
   bizGigMeta: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   bizGigDivider: { height: 1, backgroundColor: color.divider },
-  bizGigManage: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  bizGigManage: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: layout.tapTarget },
   bizGigApplicants: { flex: 1 },
   bizGigManageLabel: { color: color.primary, fontWeight: '700' },
   bizSignOut: { alignItems: 'center', paddingTop: space.md },
-  bizFabSpacer: { height: space['3xl'] },
-  bizFab: {
-    position: 'absolute',
-    right: layout.screenGutter,
-    bottom: 96,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.sm,
-    backgroundColor: color.primary,
-    borderRadius: radius.full,
-    paddingHorizontal: space.lg,
-    paddingVertical: space.md,
-    ...shadow.lg,
-    zIndex: 5,
-  },
-  bizFabLabel: { color: color.surface, fontWeight: '700' },
 });

@@ -14,11 +14,12 @@
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
+  FilterRail,
   Avatar,
   EmptyState,
   ErrorState,
@@ -239,7 +240,7 @@ export default function ChatScreen() {
               tone="info"
               icon="wallet"
               title="Payments are handled via Work Tracker"
-              description="Payments are released from the Work Tracker once work is approved. No separate request endpoint."
+              description="Payments are released from the Work Tracker once the work is approved — you never have to request them."
               style={styles.notice}
             />
           ) : null}
@@ -274,7 +275,7 @@ export default function ChatScreen() {
             </Pressable>
           </View>
           {railOpen ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
+            <FilterRail>
               {quickActions.map((action) => (
                 <Pressable
                   key={action.label}
@@ -288,7 +289,7 @@ export default function ChatScreen() {
                   </Text>
                 </Pressable>
               ))}
-            </ScrollView>
+            </FilterRail>
           ) : null}
         </View>
       </KeyboardAvoidingView>
@@ -326,7 +327,7 @@ const styles = StyleSheet.create({
   contextCopy: { flex: 1, gap: 2 },
 
   scroller: { flex: 1 },
-  thread: { padding: layout.screenGutter, gap: space.md, paddingBottom: 20, maxWidth: layout.maxContentWidth, width: '100%', alignSelf: 'center' },
+  thread: { padding: layout.screenGutter, gap: space.md, paddingBottom: space.xl, maxWidth: layout.maxContentWidth, width: '100%', alignSelf: 'center' },
   dayLabel: { textAlign: 'center', marginTop: space.md, marginBottom: space.xs },
 
   bubbleRow: { alignItems: 'flex-start' },
@@ -393,8 +394,6 @@ const styles = StyleSheet.create({
   },
   sendDisabled: { opacity: 0.45 },
   pressed: { opacity: 0.85 },
-
-  rail: { gap: space.md, paddingHorizontal: space.base, paddingBottom: space.xs },
   railChip: {
     flexDirection: 'row',
     alignItems: 'center',

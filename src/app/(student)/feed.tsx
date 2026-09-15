@@ -15,10 +15,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
+  FilterRail,
   Avatar,
   Banner,
   BottomTabBar,
@@ -49,6 +50,7 @@ import { STUDENT_TABS } from '@/components/ui/BottomTabBar';
 import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 import type { Gig } from '@/types/api';
 import { mockDistanceKm, getStoredLocation, isWithinRadius } from '@/lib/location';
 
@@ -77,11 +79,13 @@ function matchScore(gig: Gig, skills: string[]) {
 }
 
 export default function DiscoverFeedScreen() {
+  const { contentBottom } = useLayoutMetrics('tabbar');
+
   const { token, user } = useAuth();
   const [budget1k, setBudget1k] = useState(false);
   const [design, setDesign] = useState(false);
   const [nearMe, setNearMe] = useState(false);
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [verifiedOnly] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [location, setLocation] = useState('Powai, Mumbai');
   const [radius, setRadius] = useState(15);
@@ -199,9 +203,9 @@ export default function DiscoverFeedScreen() {
 
   return (
     <Screen testID="screen-feed">
-      <ScreenHeader title="Find your next opportunity" onBack={() => router.back()} trailing={<Avatar name={user?.name ?? 'Student'} size="md" />} />
+      <ScreenHeader title="Find your next opportunity" trailing={<Avatar name={user?.name ?? 'Student'} size="md" />} />
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Set your location"
@@ -225,12 +229,12 @@ export default function DiscoverFeedScreen() {
           </Text>
         </Pressable>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.railRow}>
+        <FilterRail>
           <SelectableChip label={`Near me (${radius}km)`} icon="locate" selected={nearMe} onToggle={() => setNearMe(!nearMe)} />
           <SelectableChip label="Budget: ₹1k" icon="wallet" selected={budget1k} onToggle={() => setBudget1k(!budget1k)} />
           <SelectableChip label="Design" icon="palette" selected={design} onToggle={() => setDesign(!design)} />
           <SelectableChip label="Remote" icon="laptop" selected={applied.workType === 'remote'} onToggle={() => setApplied((a) => ({ ...a, workType: a.workType === 'remote' ? 'all' : 'remote' }))} />
-        </ScrollView>
+        </FilterRail>
 
         {notice ? <InfoBanner tone="info" icon="info" title="Filters" description={notice} /> : null}
 
@@ -388,9 +392,8 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 120,
   },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.xs },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: layout.tapTarget, paddingVertical: space.xs },
   locationText: { color: color.successStrong },
 
   searchStrip: {
@@ -405,8 +408,6 @@ const styles = StyleSheet.create({
     paddingVertical: space.md,
   },
   pressed: { opacity: 0.8 },
-
-  railRow: { gap: space.md, paddingRight: space.md },
   filterHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
   budgetRow: { flexDirection: 'row', gap: space.md },

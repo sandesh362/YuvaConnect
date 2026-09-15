@@ -8,6 +8,12 @@
 // size, a padding literal, or an icon-family glyph name.
 // ============================================================
 
+import { color } from './colors';
+import { gradient } from './gradients';
+import { radius, shadow } from './radius';
+import { layout, space } from './spacing';
+import { typography } from './typography';
+
 export {
   // raw ramps (use sparingly — prefer `color.*` aliases)
   blue,
@@ -44,11 +50,5 @@ export type { IconName, IconGlyph } from './icons';
 // ------------------------------------------------------------
 // Convenience aggregate for prop-drilling a theme object.
 // ------------------------------------------------------------
-import { color } from './colors';
-import { space, layout } from './spacing';
-import { typography } from './typography';
-import { radius, shadow } from './radius';
-import { gradient } from './gradients';
-
 export const theme = { color, space, layout, typography, radius, shadow, gradient } as const;
 export type Theme = typeof theme;

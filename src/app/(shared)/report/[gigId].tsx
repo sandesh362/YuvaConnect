@@ -9,7 +9,7 @@
  */
 import { useMutation } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button, InfoBanner, PrimaryButton, Screen, ScreenHeader, SuccessState, Text, TextField } from '@/components/ui';
@@ -18,8 +18,11 @@ import { createReport } from '@/lib/trust-api';
 import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 
 export default function ReportScreen() {
+  const { contentBottom } = useLayoutMetrics('tabbar');
+
   const { gigId } = useLocalSearchParams<{ gigId: string }>();
   const { token } = useAuth();
   const [reason, setReason] = useState('');
@@ -51,9 +54,9 @@ export default function ReportScreen() {
     <Screen testID="screen-report">
       <ScreenHeader title="Report this gig" onBack={() => router.back()} subtitle={`Gig #${gigId ?? '—'}`} />
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Text variant="body" tone="secondary">
-          Tell us what's wrong — spam, fraud, inappropriate content, or anything else that concerns you. Reports are reviewed by our trust & safety team.
+          Tell us what’s wrong — spam, fraud, inappropriate content, or anything else that concerns you. Reports are reviewed by our trust & safety team.
         </Text>
 
         <TextField
@@ -90,7 +93,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 120,
   },
   protect: {
     backgroundColor: color.surfaceMuted,

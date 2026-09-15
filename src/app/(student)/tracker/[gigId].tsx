@@ -18,7 +18,6 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
@@ -44,6 +43,7 @@ import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 
 const STEPS = ['Assigned', 'Started', 'Submitted', 'Review', 'Paid'];
 const STATUS_STEP: Record<string, number> = {
@@ -65,6 +65,8 @@ function daysLeft(deadline: string) {
 }
 
 export default function WorkTrackerScreen() {
+  const { contentBottom } = useLayoutMetrics('tabbar');
+
   const { gigId } = useLocalSearchParams<{ gigId: string }>();
   const { token } = useAuth();
 
@@ -84,7 +86,7 @@ export default function WorkTrackerScreen() {
         trailing={<IconButton name="help" accessibilityLabel="Support" onPress={() => router.push('/support' as never)} />}
       />
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false}>
         {gigQuery.isLoading ? (
           <LoadingSkeleton count={3} variant="card" />
         ) : gigQuery.isError || !gig ? (
@@ -162,7 +164,7 @@ export default function WorkTrackerScreen() {
                   <View style={styles.flagRow}>
                     <Icon name="info" size={18} color={color.textSecondary} />
                     <Text variant="callout" tone="secondary" style={styles.flagCopy}>
-                      Required-task checklists have no backend column yet — this section lists your real submitted deliverables (none so far). Flagged, not faked.
+                      Checklists aren’t part of a gig yet — your submitted files and links are listed here instead.
                     </Text>
                   </View>
                 )}
@@ -221,7 +223,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 120,
   },
 
   summaryCard: {

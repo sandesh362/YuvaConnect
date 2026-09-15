@@ -56,17 +56,17 @@ export function formatDistanceShort(km: number): string {
   return `${km.toFixed(1)} km`;
 }
 
+/** A gig that is not tied to a physical location, so distance never applies. */
+export function isRemoteLocation(location: string | null | undefined): boolean {
+  return /remote|work from home|anywhere|online/i.test(location ?? '');
+}
+
 /**
  * Filter gigs by radius: if gig distance <= radius, keep it.
  * Remote gigs always pass radius filter (they are location independent).
  */
 export function filterByRadius<T extends { id: string; location: string }>(gigs: T[], radiusKm: number): T[] {
-  return gigs.filter((gig) => {
-    const isRemote = /remote|work from home|anywhere/i.test(gig.location);
-    if (isRemote) return true;
-    const dist = mockDistanceKm(gig.id);
-    return dist <= radiusKm;
-  });
+  return gigs.filter((gig) => isRemoteLocation(gig.location) || mockDistanceKm(gig.id) <= radiusKm);
 }
 
 export async function getStoredLocation(): Promise<StoredLocation> {

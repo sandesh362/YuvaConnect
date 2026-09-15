@@ -13,10 +13,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
 import { router, useFocusEffect } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
+  FilterRail,
   BottomTabBar,
   EmptyState,
   ErrorState,
@@ -37,6 +38,7 @@ import { goStudentTab } from '@/lib/tab-nav';
 import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 
 const SAVED_KEY = 'yuvaconnect:saved-gigs';
 
@@ -45,25 +47,47 @@ const SAVED_TABS: TabItem[] = STUDENT_TABS.map((tab) => (tab.key === 'mygigs' ? 
 const RAIL = ['Design', 'Marketing', 'Tech', 'Writing', 'Photography', 'Development'];
 
 export default function SavedGigsScreen() {
+  const { contentBottom } = useLayoutMetrics('tabbar');
+
   const { token } = useAuth();
   const [skill, setSkill] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
-  const loadSaved = async () => {
+  /*
+   * Saved gigs are a device-local list. The read is asynchronous, so the state
+   * update happens after the await (never synchronously inside the effect), and
+   * the `active` flag stops a late write after unmount.
+   */
+  const loadSaved = useCallback(async () => AsyncStorage.getItem(SAVED_KEY), []);
+  const applySaved = useCallback((raw: string | null) => {
+    if (!raw) return;
     try {
-      const raw = await AsyncStorage.getItem(SAVED_KEY);
-      if (raw) setSavedIds(new Set(JSON.parse(raw) as string[]));
-    } catch {}
-  };
+      setSavedIds(new Set(JSON.parse(raw) as string[]));
+    } catch {
+      // Corrupt local cache: ignore and fall back to an empty list.
+    }
+  }, []);
 
   useEffect(() => {
-    loadSaved();
-  }, []);
+    let active = true;
+    loadSaved().then((raw) => {
+      if (active) applySaved(raw);
+    });
+    return () => {
+      active = false;
+    };
+  }, [loadSaved, applySaved]);
 
   useFocusEffect(
     useCallback(() => {
-      loadSaved();
-    }, []),
+      let active = true;
+      loadSaved().then((raw) => {
+        if (active) applySaved(raw);
+      });
+      return () => {
+        active = false;
+      };
+    }, [loadSaved, applySaved]),
   );
 
   const gigsQuery = useQuery({
@@ -94,7 +118,7 @@ export default function SavedGigsScreen() {
     <Screen testID="screen-saved">
       <ScreenHeader title="Saved Gigs" subtitle={`${filtered.length} saved • Tap to view`} trailing={<IconButton name="search" accessibilityLabel="Search gigs" onPress={() => router.push('/(student)/search' as never)} />} />
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
+      <FilterRail>
         <Pressable accessibilityRole="radio" accessibilityLabel="All saved gigs" accessibilityState={{ selected: skill === null }} onPress={() => setSkill(null)} style={styles.allChip}>
           <Icon name="check" size={15} color={color.textPrimary} />
           <Text variant="calloutStrong">All Gigs</Text>
@@ -102,9 +126,9 @@ export default function SavedGigsScreen() {
         {RAIL.map((item) => (
           <SelectableChip key={item} label={item} selected={skill === item} indicator="none" onToggle={() => setSkill(skill === item ? null : item)} />
         ))}
-      </ScrollView>
+      </FilterRail>
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false}>
         {gigsQuery.isLoading ? (
           <LoadingSkeleton count={3} variant="card" />
         ) : gigsQuery.isError ? (
@@ -136,7 +160,6 @@ export default function SavedGigsScreen() {
 }
 
 const styles = StyleSheet.create({
-  rail: { gap: space.md, paddingHorizontal: layout.screenGutter, paddingVertical: space.md, alignItems: 'center' },
   allChip: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.sm },
   content: {
     padding: layout.screenGutter,
@@ -144,7 +167,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 120,
   },
   bottomPad: { height: 20 },
 });

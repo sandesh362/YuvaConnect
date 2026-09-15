@@ -15,10 +15,11 @@
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
+  FilterRail,
   BottomTabBar,
   EmptyState,
   ErrorState,
@@ -36,11 +37,16 @@ import { STUDENT_TABS, BUSINESS_TABS } from '@/components/ui/BottomTabBar';
 import { apiErrorMessage } from '@/config/api';
 import { listNotifications, markAllNotificationsRead, markNotificationRead } from '@/lib/trust-api';
 import { goStudentTab, goBusinessTab } from '@/lib/tab-nav';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
+import type { IconName } from '@/theme/icons';
 import { radius } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
 import type { NotificationItem, NotificationType } from '@/types/api';
+
+/** Stable fallback: a fresh `[]` each render would invalidate memos keyed on it. */
+const EMPTY_NOTIFICATIONS: NotificationItem[] = [];
 
 const PAGE_SIZE = 30;
 
@@ -61,6 +67,26 @@ const TYPE_COLOR: Record<NotificationType, string> = {
   NEW_MESSAGE: color.primary,
   PAYMENT_RELEASED: color.accent,
   GIG_STATUS_CHANGED: color.warningStrong,
+};
+
+/** Soft wash behind the notification glyph. */
+const TYPE_WASH: Record<NotificationType, string> = {
+  APPLICATION_SELECTED: color.successSoft,
+  APPLICATION_REJECTED: color.dangerSoft,
+  NEW_APPLICANT: color.primarySoft,
+  NEW_MESSAGE: color.primarySoft,
+  PAYMENT_RELEASED: color.accentSoft,
+  GIG_STATUS_CHANGED: color.warningSoft,
+};
+
+/** Semantic glyph per notification type — never a blank coloured disc. */
+const TYPE_ICON: Record<NotificationType, IconName> = {
+  APPLICATION_SELECTED: 'checkCircleFilled',
+  APPLICATION_REJECTED: 'closeCircleFilled',
+  NEW_APPLICANT: 'personAddFilled',
+  NEW_MESSAGE: 'chatFilled',
+  PAYMENT_RELEASED: 'walletFilled',
+  GIG_STATUS_CHANGED: 'syncFilled',
 };
 
 const TYPE_TITLE: Record<NotificationType, string> = {
@@ -86,6 +112,16 @@ function titleFor(item: NotificationItem) {
 function dotColorFor(item: NotificationItem) {
   if (item.type === 'GIG_STATUS_CHANGED' && item.message.toLowerCase().includes('revision')) return color.danger;
   return TYPE_COLOR[item.type];
+}
+
+function washFor(item: NotificationItem) {
+  if (item.type === 'GIG_STATUS_CHANGED' && item.message.toLowerCase().includes('revision')) return color.dangerSoft;
+  return TYPE_WASH[item.type];
+}
+
+function iconFor(item: NotificationItem) {
+  if (item.type === 'GIG_STATUS_CHANGED' && item.message.toLowerCase().includes('revision')) return 'refreshCircleFilled' as IconName;
+  return TYPE_ICON[item.type];
 }
 
 function timeAgo(iso: string) {
@@ -117,6 +153,8 @@ function matches(item: NotificationItem, filter: FilterKey) {
 }
 
 export default function NotificationsScreen() {
+  const { contentBottom } = useLayoutMetrics('tabbar');
+
   const { token, user } = useAuth();
   const client = useQueryClient();
   const [filter, setFilter] = useState<FilterKey>('All');
@@ -136,7 +174,7 @@ export default function NotificationsScreen() {
     onSuccess: () => client.invalidateQueries({ queryKey: ['notifications'] }),
   });
 
-  const notifications = query.data?.notifications ?? [];
+  const notifications = query.data?.notifications ?? EMPTY_NOTIFICATIONS;
   const total = query.data?.total ?? 0;
 
   const groups = useMemo(() => {
@@ -187,13 +225,13 @@ export default function NotificationsScreen() {
     <Screen testID="screen-notifications">
       <ScreenHeader
         title="Notifications"
-        onBack={() => router.back()}
+        onBack={isBusiness ? undefined : () => router.back()}
         trailing={
           isBusiness ? (
             <IconButton
               name="settings"
               accessibilityLabel="Notification settings (flagged)"
-              onPress={() => setNotice('Notification settings have no route or backend columns — the gear is kept per the wireframe and flagged, not faked. Mark-all-read stays available under the filter rail.')}
+              onPress={() => setNotice('Notification preferences aren’t available yet — use Mark all read above to clear your list.')}
             />
           ) : (
             <IconButton
@@ -207,7 +245,7 @@ export default function NotificationsScreen() {
       />
 
       {/* --- Check-mark filter rail (style 2; business set per wireframe 36) --- */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
+      <FilterRail>
         <Pressable
           accessibilityRole="radio"
           accessibilityLabel="All notifications"
@@ -220,11 +258,11 @@ export default function NotificationsScreen() {
         {(isBusiness ? BUSINESS_FILTERS : FILTERS).slice(1).map((item) => (
           <SelectableChip key={item} label={item} selected={filter === item} indicator="none" onToggle={() => setFilter(filter === item ? 'All' : item)} />
         ))}
-      </ScrollView>
+      </FilterRail>
 
       {isBusiness && notice ? (
         <View style={styles.noticeWrap}>
-          <InfoBanner tone="warning" icon="info" title="Flagged, not faked" description={notice} />
+          <InfoBanner tone="warning" icon="info" title="Not available yet" description={notice} />
         </View>
       ) : null}
       {isBusiness && token && notifications.some((item) => !item.isRead) ? (
@@ -233,7 +271,7 @@ export default function NotificationsScreen() {
         </View>
       ) : null}
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.list, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.list, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false}>
         {!token ? (
           <EmptyState title="Login to see notifications" icon="bell" primaryLabel="Login" onPrimary={() => router.replace('/login' as never)} />
         ) : query.isLoading ? (
@@ -275,7 +313,14 @@ export default function NotificationsScreen() {
                     accessibilityLabel={`${titleFor(item)}: ${item.message}`}
                     onPress={() => openItem(item)}
                     style={rowStyle}>
-                    <View style={[washedCard || !isBusiness ? styles.dot : styles.dotSmall, { backgroundColor: dotColorFor(item) }]} />
+                    <View
+                      style={[
+                        washedCard || !isBusiness ? styles.dot : styles.dotSmall,
+                        { backgroundColor: washFor(item) },
+                      ]}>
+                      <Icon name={iconFor(item)} size={washedCard || !isBusiness ? 24 : 19} color={dotColorFor(item)} />
+                      {!item.isRead ? <View style={styles.unreadDot} /> : null}
+                    </View>
                     <View style={styles.rowCopy}>
                       <View style={styles.rowHead}>
                         <Text variant="calloutStrong" numberOfLines={1} style={item.isRead ? styles.readTitle : styles.unreadTitle}>
@@ -307,7 +352,7 @@ export default function NotificationsScreen() {
 
       <BottomTabBar
         items={isBusiness ? BUSINESS_ALERT_TABS : STUDENT_TABS}
-        activeKey={isBusiness ? 'alerts' : 'messages'}
+        activeKey={isBusiness ? 'alerts' : 'home'}
         onSelect={isBusiness ? (key: string) => key !== 'alerts' && goBusinessTab(key) : goStudentTab}
       />
     </Screen>
@@ -315,10 +360,9 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  rail: { gap: space.md, paddingHorizontal: layout.screenGutter, paddingVertical: space.md, alignItems: 'center' },
   allChip: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.sm },
 
-  list: { paddingBottom: 120 },
+  list: {},
 
   dayBar: {
     backgroundColor: color.skeletonBase,
@@ -334,7 +378,7 @@ const styles = StyleSheet.create({
     paddingVertical: space.base,
   },
   rowDivider: { borderTopWidth: 1, borderTopColor: color.borderSubtle },
-  dot: { width: 56, height: 56, borderRadius: radius.full },
+  dot: { width: 52, height: 52, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   rowCopy: { flex: 1, gap: space.xs },
   rowHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
   readTitle: { color: color.textSecondary },
@@ -366,5 +410,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: layout.screenGutter,
     paddingVertical: space.base,
   },
-  dotSmall: { width: 40, height: 40, borderRadius: radius.full },
+  dotSmall: { width: 40, height: 40, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  unreadDot: {
+    position: 'absolute',
+    top: 1,
+    right: 1,
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    backgroundColor: color.danger,
+    borderWidth: 2,
+    borderColor: color.surface,
+  },
 });

@@ -11,7 +11,7 @@
  * - Keyboard-aware, CTA always visible
  */
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
@@ -31,6 +31,7 @@ import { getStoredLocation, setStoredLocation, MUMBAI_LOCALITIES } from '@/lib/l
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -50,6 +51,8 @@ function DayCircle({ label, selected, onToggle }: { label: string; selected: boo
 }
 
 export default function LocationAvailabilityScreen() {
+  const { contentBottom } = useLayoutMetrics('actionbar');
+
   const [location, setLocation] = useState('Powai, Mumbai');
   const [radiusKm, setRadiusKm] = useState(10);
   const [preference, setPreference] = useState<'on-site' | 'remote' | 'both'>('both');
@@ -88,7 +91,7 @@ export default function LocationAvailabilityScreen() {
       <StepProgress total={5} current={4} style={styles.steps} />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
-        <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={styles.intro}>
             <Text variant="title1">Work Location</Text>
             <Text variant="body" tone="secondary">
@@ -148,7 +151,7 @@ export default function LocationAvailabilityScreen() {
             <Text variant="bodyStrong">Distance: {radiusKm} km</Text>
             <Slider value={radiusKm} min={1} max={30} step={1} onValueChange={setRadiusKm} testID="location-radius" />
             <Text variant="caption" tone="secondary">
-              You'll see gigs within {radiusKm} km of "{location}". Remote gigs always show. Example distances: 1.2 km, 2.4 km, 4.8 km within this radius.
+              You’ll see gigs within {radiusKm} km of “{location}”. Remote gigs always show. Example distances: 1.2 km, 2.4 km, 4.8 km within this radius.
             </Text>
           </View>
 
@@ -232,7 +235,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 160,
   },
   intro: { gap: space.md },
 

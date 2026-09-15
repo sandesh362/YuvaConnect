@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { color } from '@/theme/colors';
@@ -264,7 +264,9 @@ export function Skeleton({
 
 /** Shared 1.1s opacity pulse so every skeleton in the app breathes in sync. */
 function usePulse() {
-  const value = useRef(new Animated.Value(0.45)).current;
+  // `useState` with an initialiser keeps one Animated.Value for the lifetime of
+  // the component without reading a ref during render (React 19 rule).
+  const [value] = useState(() => new Animated.Value(0.45));
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
@@ -354,8 +356,16 @@ export function InlineLoader({ label = 'Loading…', align = 'center' }: { label
 }
 
 const styles = StyleSheet.create({
-  state: { alignItems: 'center', paddingHorizontal: space['2xl'], paddingVertical: space['3xl'], gap: space.sm },
-  fill: { flex: 1, justifyContent: 'center' },
+  /**
+   * `flexGrow` (NOT `flex: 1`) + `flexBasis: 'auto'` is intentional: these states
+   * are rendered inside `ScrollView`s whose content container is `flexGrow: 1`.
+   * `flex: 1` clamps the state to the viewport height, so a taller-than-viewport
+   * empty/error state overflowed *downwards* and buried its own CTA under the
+   * bottom navigation. With `flexGrow` the box still fills the viewport when it
+   * has room to, but grows past it (and scrolls) when the content needs more.
+   */
+  state: { alignItems: 'center', paddingHorizontal: space.xl, paddingVertical: space.xl, gap: space.sm },
+  fill: { flexGrow: 1, flexBasis: 'auto', justifyContent: 'center' },
   well: {
     width: 68,
     height: 68,
@@ -364,11 +374,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: space.sm,
   },
-  wellSm: { width: 34, height: 34, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   wellLg: { width: 96, height: 96 },
   wellSq: { width: 48, height: 48, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   stateTitle: { textAlign: 'center' },
-  stateDescription: { textAlign: 'center', marginTop: space.xs, lineHeight: 20 },
+  stateDescription: { textAlign: 'center', marginTop: space.xs, lineHeight: 20, maxWidth: 320 },
   stateActions: { marginTop: space.lg, gap: space.md, alignItems: 'stretch', width: '100%', maxWidth: 320 },
   stateButton: { width: '100%' },
 

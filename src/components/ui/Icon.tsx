@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
 
 import { color } from '@/theme/colors';
@@ -67,23 +66,28 @@ export function IconButton({
       disabled={disabled || !onPress}
       hitSlop={4}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.button,
-        variant === 'soft' && styles.soft,
-        variant === 'outline' && styles.outline,
-        pressed && styles.pressed,
-        disabled && styles.disabled,
-      ]}>
-      <Icon name={name} size={size} color={tint} />
+      style={({ pressed }) => [styles.button, pressed && styles.pressed, disabled && styles.disabled]}>
+      <View style={[styles.chip, variant === 'soft' && styles.soft, variant === 'outline' && styles.outline]}>
+        <Icon name={name} size={size} color={tint} />
+      </View>
       {showDot ? <View style={styles.dot} /> : null}
     </Pressable>
   );
 }
 
+/* The painted chip stays compact; the tappable box is always the full 44pt
+ * target. Previously the button itself was 36pt with a 4pt `hitSlop`, which
+ * left the accessible touch target below the 44pt minimum on web. */
 const SIZE = layout.tapTarget - 8;
 
 const styles = StyleSheet.create({
   button: {
+    width: layout.tapTarget,
+    height: layout.tapTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chip: {
     width: SIZE,
     height: SIZE,
     alignItems: 'center',

@@ -1,3 +1,5 @@
+import type { ViewStyle } from 'react-native';
+
 // ============================================================
 // YuvaConnect Design System — Radius & Elevation Tokens
 // ============================================================
@@ -26,8 +28,6 @@ export const radius = {
 } as const;
 
 export type RadiusToken = keyof typeof radius;
-
-import type { ViewStyle } from 'react-native';
 
 /**
  * Elevation ramp.

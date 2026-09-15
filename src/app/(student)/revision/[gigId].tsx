@@ -18,7 +18,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
@@ -38,10 +38,12 @@ import {
 } from '@/components/ui';
 import { apiErrorMessage } from '@/config/api';
 import { getGig } from '@/lib/gig-api';
+import { shortBusinessName } from '@/lib/text';
 import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 
 function fileNameFrom(url: string) {
   const tail = url.split('/').pop() ?? 'submission-file';
@@ -56,6 +58,8 @@ function submittedAgo(iso: string) {
 }
 
 export default function RevisionRequestedScreen() {
+  const { contentBottom } = useLayoutMetrics('tabbar');
+
   const { gigId } = useLocalSearchParams<{ gigId: string }>();
   const { token } = useAuth();
 
@@ -79,7 +83,7 @@ export default function RevisionRequestedScreen() {
     <Screen testID="screen-revision">
       <ScreenHeader title="Revision Requested" subtitle={`Gig #${gigId ?? '—'}`} onBack={() => router.back()} />
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false}>
         {gigQuery.isLoading ? (
           <LoadingSkeleton count={3} variant="card" />
         ) : gigQuery.isError || !gig ? (
@@ -147,7 +151,7 @@ export default function RevisionRequestedScreen() {
                 </Text>
               </View>
               <Text variant="caption" tone="tertiary">
-                Revised deadlines have no backend field yet — this is the gig's real deadline. Flagged, not faked.
+                A revised deadline isn’t tracked yet — this is the gig’s original deadline.
               </Text>
             </View>
 
@@ -161,7 +165,7 @@ export default function RevisionRequestedScreen() {
                 <View style={styles.flagRow}>
                   <Icon name="info" size={18} color={color.textSecondary} />
                   <Text variant="callout" tone="secondary" style={styles.flagCopy}>
-                    Itemised change-tasks have no backend model yet — the business's feedback above is the authoritative list. Flagged, not faked.
+                    Change-tasks aren’t tracked one by one yet — treat the feedback above as your checklist.
                   </Text>
                 </View>
               </View>
@@ -198,7 +202,7 @@ export default function RevisionRequestedScreen() {
           testID="revision-resubmit"
         />
         <View style={styles.messageRow}>
-          <TextLink label={`Message ${businessName.split(' ')[0]}`} iconRight={null} onPress={() => router.push(`/(shared)/chat/${gigId}` as never)} />
+          <TextLink label={`Message ${shortBusinessName(businessName, 18)}`} iconRight={null} onPress={() => router.push(`/(shared)/chat/${gigId}` as never)} />
         </View>
       </View>
     </Screen>
@@ -212,7 +216,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 120,
   },
 
   card: {

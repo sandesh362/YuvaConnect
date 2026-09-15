@@ -21,57 +21,105 @@
  *  - Download Invoice: no endpoint — raises the flag notice.
  *  - Blue verified check omitted (isVerified not exposed), consistent with 29/30/34.
  */
-import { useQuery } from '@tanstack/react-query';
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useQuery } from "@tanstack/react-query";
+import { router, useLocalSearchParams } from "expo-router";
+import { useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
 
-import { Button, ErrorState, Icon, InfoBanner, LoadingSkeleton, Screen, ScreenHeader, Text } from '@/components/ui';
-import { Applicant } from '@/components/business/candidate-card';
-import { apiErrorMessage } from '@/config/api';
-import { getApplicants, getGig } from '@/lib/gig-api';
-import { useAuth } from '@/providers/auth-provider';
-import { color } from '@/theme/colors';
-import { radius } from '@/theme/radius';
-import { layout, space } from '@/theme/spacing';
-import type { PaymentStatus } from '@/types/api';
+import {
+  Button,
+  ErrorState,
+  Icon,
+  InfoBanner,
+  LoadingSkeleton,
+  Screen,
+  ScreenHeader,
+  Text,
+} from "@/components/ui";
+import { Applicant } from "@/components/business/candidate-card";
+import { apiErrorMessage } from "@/config/api";
+import { getApplicants, getGig } from "@/lib/gig-api";
+import { useAuth } from "@/providers/auth-provider";
+import { color } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { layout, space } from "@/theme/spacing";
+import { useLayoutMetrics } from "@/hooks/use-layout-metrics";
+import type { PaymentStatus } from "@/types/api";
 
-const STATUS_SKIN: Record<PaymentStatus, { title: string; pill: string; pillFg: string; pillBg: string }> = {
-  RELEASED: { title: 'Payment Released', pill: 'COMPLETED', pillFg: color.successStrong, pillBg: color.successSoft },
-  HELD: { title: 'Payment Held in Escrow', pill: 'IN ESCROW', pillFg: color.primary, pillBg: color.primarySoft },
-  PENDING: { title: 'Payment Pending', pill: 'PENDING', pillFg: color.textSecondary, pillBg: color.surfaceMuted },
-  REFUNDED: { title: 'Payment Refunded', pill: 'REFUNDED', pillFg: color.textSecondary, pillBg: color.surfaceMuted },
-  FAILED: { title: 'Payment Failed', pill: 'FAILED', pillFg: color.danger, pillBg: color.dangerSoft },
+const STATUS_SKIN: Record<
+  PaymentStatus,
+  { title: string; pill: string; pillFg: string; pillBg: string }
+> = {
+  RELEASED: {
+    title: "Payment Released",
+    pill: "COMPLETED",
+    pillFg: color.successStrong,
+    pillBg: color.successSoft,
+  },
+  HELD: {
+    title: "Payment Held in Escrow",
+    pill: "IN ESCROW",
+    pillFg: color.primary,
+    pillBg: color.primarySoft,
+  },
+  PENDING: {
+    title: "Payment Pending",
+    pill: "PENDING",
+    pillFg: color.textSecondary,
+    pillBg: color.surfaceMuted,
+  },
+  REFUNDED: {
+    title: "Payment Refunded",
+    pill: "REFUNDED",
+    pillFg: color.textSecondary,
+    pillBg: color.surfaceMuted,
+  },
+  FAILED: {
+    title: "Payment Failed",
+    pill: "FAILED",
+    pillFg: color.danger,
+    pillBg: color.dangerSoft,
+  },
 };
 
 function formatMoney(n: number): string {
-  return `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function formatWhen(iso: string): string {
-  return new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export default function PaymentDetailsScreen() {
-  const { id, gigId } = useLocalSearchParams<{ id: string; gigId?: string }>();
+  const { contentBottom } = useLayoutMetrics("tabbar");
+
+  const { gigId } = useLocalSearchParams<{ id: string; gigId?: string }>();
   const { token } = useAuth();
   const [notice, setNotice] = useState<string | null>(null);
 
   const gigQuery = useQuery({
-    queryKey: ['gig', gigId, token],
+    queryKey: ["gig", gigId, token],
     queryFn: () => getGig(token!, gigId!),
     enabled: !!token && !!gigId,
   });
   const applicantsQuery = useQuery({
-    queryKey: ['applicants', gigId, token],
+    queryKey: ["applicants", gigId, token],
     queryFn: () => getApplicants(token!, gigId!) as Promise<Applicant[]>,
     enabled: !!token && !!gigId,
   });
 
   const gig = gigQuery.data;
   const payment = gig?.payment ?? null;
-  const selected = applicantsQuery.data?.find((applicant) => applicant.status === 'SELECTED');
-  const skin = STATUS_SKIN[payment?.status ?? 'PENDING'];
+  const selected = applicantsQuery.data?.find(
+    (applicant) => applicant.status === "SELECTED",
+  );
+  const skin = STATUS_SKIN[payment?.status ?? "PENDING"];
 
   const amount = payment ? Number(payment.amount) : 0;
   const fee = amount * 0.05;
@@ -84,24 +132,48 @@ export default function PaymentDetailsScreen() {
         title="Payment Details"
         onBack={() => router.back()}
         variant="solid"
-        actions={[{ icon: 'help', accessibilityLabel: 'Help & Support', onPress: () => router.push('/(shared)/support' as never) }]}
+        actions={[
+          {
+            icon: "help",
+            accessibilityLabel: "Help & Support",
+            onPress: () => router.push("/(shared)/support" as never),
+          },
+        ]}
       />
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
-        {notice ? <InfoBanner tone="warning" icon="info" title="Flagged, not faked" description={notice} /> : null}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[
+          styles.content,
+          { flexGrow: 1, paddingBottom: contentBottom },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {notice ? (
+          <InfoBanner
+            tone="warning"
+            icon="info"
+            title="Not available yet"
+            description={notice}
+          />
+        ) : null}
 
         {!gigId ? (
           <InfoBanner
             tone="info"
             icon="info"
-            title="Missing gig context"
-            description="The live API has no GET /payment/:id — this screen reads the payment through its gig. Open it from the Work Tracker, which passes ?gigId=."
+            title="Open this from the Work Tracker"
+            description="We can’t look up a payment on its own yet. Open payment details from the Work Tracker and we’ll fill in this screen."
           />
         ) : null}
 
         {gigQuery.isLoading ? <LoadingSkeleton count={2} /> : null}
         {gigQuery.isError ? (
-          <ErrorState title="Could not load payment" description={apiErrorMessage(gigQuery.error)} onRetry={() => gigQuery.refetch()} />
+          <ErrorState
+            title="Could not load payment"
+            description={apiErrorMessage(gigQuery.error)}
+            onRetry={() => gigQuery.refetch()}
+          />
         ) : null}
 
         {gig && payment ? (
@@ -117,7 +189,9 @@ export default function PaymentDetailsScreen() {
               <Text variant="captionStrong" tone="secondary">
                 {`Transaction ID: ${payment.razorpayPaymentId ?? payment.razorpayOrderId}`}
               </Text>
-              <View style={[styles.statusPill, { backgroundColor: skin.pillBg }]}>
+              <View
+                style={[styles.statusPill, { backgroundColor: skin.pillBg }]}
+              >
                 <Text variant="captionStrong" style={{ color: skin.pillFg }}>
                   {skin.pill}
                 </Text>
@@ -136,12 +210,15 @@ export default function PaymentDetailsScreen() {
                     {gig.title}
                   </Text>
                   <Text variant="caption" tone="tertiary">
-                    {selected ? `Assigned to ${selected.student.name}` : 'No student assigned'}
+                    {selected
+                      ? `Assigned to ${selected.student.name}`
+                      : "No student assigned"}
                   </Text>
                 </View>
               </View>
               <Text variant="caption" tone="tertiary">
-                Gigs have no image column — an icon tile stands in for the wireframe's photo thumb.
+                Gigs have no image column — an icon tile stands in for the
+                wireframe’s photo thumb.
               </Text>
             </View>
 
@@ -149,31 +226,68 @@ export default function PaymentDetailsScreen() {
             <Text variant="title3">Payment Breakdown</Text>
             <View style={styles.card}>
               <BreakdownRow label="Gig Amount" value={formatMoney(amount)} />
-              <BreakdownRow label="Platform Fee (5%)" value={`- ${formatMoney(fee)}`} valueColor={color.danger} />
-              <BreakdownRow label="GST (18% on fee)" value={`- ${formatMoney(gst)}`} valueColor={color.danger} />
+              <BreakdownRow
+                label="Platform Fee (5%)"
+                value={`- ${formatMoney(fee)}`}
+                valueColor={color.danger}
+              />
+              <BreakdownRow
+                label="GST (18% on fee)"
+                value={`- ${formatMoney(gst)}`}
+                valueColor={color.danger}
+              />
               <View style={styles.divider} />
-              <BreakdownRow label="Total Payout" value={formatMoney(payout)} valueColor={color.successStrong} bold />
+              <BreakdownRow
+                label="Total Payout"
+                value={formatMoney(payout)}
+                valueColor={color.successStrong}
+                bold
+              />
               <Text variant="caption" tone="tertiary">
-                Fee and GST are not stored on the Payment row — this is the pilot's illustrative 5% + 18%-on-fee breakdown, computed on-device from the real amount.
+                Fee and GST are not stored on the Payment row — this is the
+                pilot’s illustrative 5% + 18%-on-fee breakdown, computed
+                on-device from the real amount.
               </Text>
             </View>
 
             {/* Timeline — real timestamps only */}
             <Text variant="title3">Transaction Timeline</Text>
             <View style={styles.card}>
-              <TimelineRow icon="checkCircleFilled" title="Payment Order Created" caption={formatWhen(payment.createdAt)} done />
+              <TimelineRow
+                icon="checkCircleFilled"
+                title="Payment Order Created"
+                caption={formatWhen(payment.createdAt)}
+                done
+              />
               <TimelineRow
                 icon="checkCircleFilled"
                 title="Funds Held in Escrow"
-                caption="Hold time is not stored separately — the pilot backend keeps created/updated only"
-                done={payment.status !== 'PENDING' && payment.status !== 'FAILED'}
+                caption="Hold time isn’t tracked separately yet"
+                done={
+                  payment.status !== "PENDING" && payment.status !== "FAILED"
+                }
               />
-              {payment.status === 'RELEASED' ? (
-                <TimelineRow icon="checkCircleFilled" title="Payment Released" caption={formatWhen(payment.updatedAt)} done />
+              {payment.status === "RELEASED" ? (
+                <TimelineRow
+                  icon="checkCircleFilled"
+                  title="Payment Released"
+                  caption={formatWhen(payment.updatedAt)}
+                  done
+                />
               ) : (
-                <TimelineRow icon="clock" title="Payment Release" caption="Opens when you approve submitted work" done={false} />
+                <TimelineRow
+                  icon="clock"
+                  title="Payment Release"
+                  caption="Opens when you approve submitted work"
+                  done={false}
+                />
               )}
-              <TimelineRow icon="clock" title="Settlement" caption="Razorpay settlement is not tracked by the pilot backend" done={false} />
+              <TimelineRow
+                icon="clock"
+                title="Settlement"
+                caption="Settlement to your bank isn’t tracked yet"
+                done={false}
+              />
             </View>
 
             <Button
@@ -181,38 +295,78 @@ export default function PaymentDetailsScreen() {
               variant="secondary"
               size="lg"
               icon="download"
-              onPress={() => setNotice('There is no invoice endpoint or PDF generation in the backend — the button is kept per the wireframe and flagged, not faked.')}
+              onPress={() =>
+                setNotice(
+                  "Invoices aren’t available yet — ask support from the Help centre if you need a payment receipt.",
+                )
+              }
               testID="payment-invoice"
             />
           </>
         ) : null}
 
         {gig && !payment ? (
-          <InfoBanner tone="info" icon="wallet" title="No payment on this gig" description="A Payment row is created when the gig is funded (create-order). This gig has none yet." />
+          <InfoBanner
+            tone="info"
+            icon="wallet"
+            title="No payment on this gig"
+            description="A payment appears here once the business funds the gig."
+          />
         ) : null}
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
       <View style={styles.backWrap}>
-        <Button label="Back to Dashboard" variant="secondary" onPress={() => router.replace('/home' as never)} testID="payment-back-dashboard" />
+        <Button
+          label="Back to Dashboard"
+          variant="secondary"
+          onPress={() => router.replace("/home" as never)}
+          testID="payment-back-dashboard"
+        />
       </View>
     </Screen>
   );
 }
 
-function BreakdownRow({ label, value, valueColor, bold }: { label: string; value: string; valueColor?: string; bold?: boolean }) {
+function BreakdownRow({
+  label,
+  value,
+  valueColor,
+  bold,
+}: {
+  label: string;
+  value: string;
+  valueColor?: string;
+  bold?: boolean;
+}) {
   return (
     <View style={styles.breakdownRow}>
-      <Text variant={bold ? 'bodyStrong' : 'body'}>{label}</Text>
-      <Text variant={bold ? 'bodyStrong' : 'body'} style={[styles.breakdownValue, valueColor ? { color: valueColor } : null]}>
+      <Text variant={bold ? "bodyStrong" : "body"}>{label}</Text>
+      <Text
+        variant={bold ? "bodyStrong" : "body"}
+        style={[
+          styles.breakdownValue,
+          valueColor ? { color: valueColor } : null,
+        ]}
+      >
         {value}
       </Text>
     </View>
   );
 }
 
-function TimelineRow({ icon, title, caption, done }: { icon: 'checkCircleFilled' | 'clock'; title: string; caption: string; done: boolean }) {
+function TimelineRow({
+  icon,
+  title,
+  caption,
+  done,
+}: {
+  icon: "checkCircleFilled" | "clock";
+  title: string;
+  caption: string;
+  done: boolean;
+}) {
   return (
     <View style={styles.timelineRow}>
       {done ? (
@@ -223,7 +377,7 @@ function TimelineRow({ icon, title, caption, done }: { icon: 'checkCircleFilled'
         </View>
       )}
       <View style={styles.timelineText}>
-        <Text variant="body" tone={done ? 'primary' : 'secondary'}>
+        <Text variant="body" tone={done ? "primary" : "secondary"}>
           {title}
         </Text>
         <Text variant="caption" tone="tertiary">
@@ -238,24 +392,28 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.base,
-    paddingBottom: 120,
     gap: space.base,
     maxWidth: layout.maxContentWidth,
-    width: '100%',
-    alignSelf: 'center',
+    width: "100%",
+    alignSelf: "center",
   },
 
-  heroCard: { alignItems: 'center', gap: space.sm, paddingVertical: space.md },
+  heroCard: { alignItems: "center", gap: space.sm, paddingVertical: space.md },
   heroCircle: {
     width: 72,
     height: 72,
     borderRadius: radius.full,
     backgroundColor: color.successSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  heroTitle: { textAlign: 'center' },
-  statusPill: { borderRadius: radius.full, paddingHorizontal: space.base, paddingVertical: 4, marginTop: space.xs },
+  heroTitle: { textAlign: "center" },
+  statusPill: {
+    borderRadius: radius.full,
+    paddingHorizontal: space.base,
+    paddingVertical: 4,
+    marginTop: space.xs,
+  },
 
   card: {
     backgroundColor: color.surface,
@@ -265,26 +423,42 @@ const styles = StyleSheet.create({
     padding: space.base,
     gap: space.md,
   },
-  gigRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  gigThumb: { width: 56, height: 56, borderRadius: 12, backgroundColor: color.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  gigRow: { flexDirection: "row", alignItems: "center", gap: space.md },
+  gigThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: color.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   gigText: { flex: 1, gap: 2 },
 
-  breakdownRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
-  breakdownValue: { textAlign: 'right' },
+  breakdownRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: space.md,
+  },
+  breakdownValue: { textAlign: "right" },
   divider: { height: 1, backgroundColor: color.divider },
 
-  timelineRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  timelineRow: { flexDirection: "row", alignItems: "center", gap: space.md },
   timelineOutline: {
     width: 28,
     height: 28,
     borderRadius: 14,
     borderWidth: 1.5,
     borderColor: color.borderStrong,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   timelineText: { flex: 1, gap: 2 },
 
   bottomSpacer: { height: space.sm },
-  backWrap: { alignItems: 'center', paddingHorizontal: layout.screenGutter, paddingBottom: space.lg },
+  backWrap: {
+    alignItems: "center",
+    paddingHorizontal: layout.screenGutter,
+    paddingBottom: space.lg,
+  },
 });

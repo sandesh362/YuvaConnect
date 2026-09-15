@@ -8,13 +8,20 @@ import type { GigCardData } from '@/components/ui/GigCard';
 import type { Gig } from '@/types/api';
 import { mockDistanceKm, formatDistanceShort } from '@/lib/location';
 
+/** Pluralise a count: `1 week`, `2 weeks`. Never `1 weeks`. */
+function plural(count: number, singular: string, pluralForm = `${singular}s`): string {
+  return `${count} ${count === 1 ? singular : pluralForm}`;
+}
+
 function deriveDuration(deadline: string): string {
-  const days = Math.ceil((new Date(deadline).getTime() - Date.now()) / 86400000);
+  const time = new Date(deadline).getTime();
+  if (!Number.isFinite(time)) return 'No deadline';
+  const days = Math.ceil((time - Date.now()) / 86400000);
   if (days <= 0) return 'Due today';
-  if (days === 1) return '1 day';
-  if (days < 7) return `${days} days`;
-  if (days < 30) return `${Math.round(days / 7)} weeks`;
-  return `${Math.round(days / 30)} months`;
+  if (days === 1) return '1 day left';
+  if (days < 7) return `${plural(days, 'day')} left`;
+  if (days < 30) return `${plural(Math.round(days / 7), 'week')} left`;
+  return `${plural(Math.round(days / 30), 'month')} left`;
 }
 
 export const toGigCardData = (gig: Gig): GigCardData => {

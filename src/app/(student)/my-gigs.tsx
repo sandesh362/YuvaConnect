@@ -19,10 +19,11 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
+  FilterRail,
   Avatar,
   BottomTabBar,
   Divider,
@@ -47,6 +48,7 @@ import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 import type { Application } from '@/types/api';
 
 const COMPLETED = ['APPROVED', 'PAID', 'CLOSED'];
@@ -83,6 +85,8 @@ function appliedLabel(iso: string) {
 }
 
 export default function MyApplicationsScreen() {
+  const { contentBottom } = useLayoutMetrics('tabbar');
+
   const { token } = useAuth();
   const [filter, setFilter] = useState<CardStatus | 'All'>('All');
   const [notice, setNotice] = useState<string | null>(null);
@@ -107,7 +111,7 @@ export default function MyApplicationsScreen() {
       />
 
       {/* --- Check-mark filter rail (style 2) --- */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
+      <FilterRail>
         <Pressable
           accessibilityRole="radio"
           accessibilityLabel="All applications"
@@ -120,10 +124,10 @@ export default function MyApplicationsScreen() {
         {(FILTERS.slice(1) as CardStatus[]).map((item) => (
           <SelectableChip key={item} label={item} selected={filter === item} indicator="none" onToggle={() => setFilter(filter === item ? 'All' : item)} />
         ))}
-      </ScrollView>
+      </FilterRail>
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
-        {notice ? <InfoBanner tone="info" icon="info" title="Flagged, not faked" description={notice} /> : null}
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false}>
+        {notice ? <InfoBanner tone="info" icon="info" title="Not available yet" description={notice} /> : null}
 
         {!token ? (
           <EmptyState title="Login to see your applications" icon="clipboard" primaryLabel="Login" onPrimary={() => router.replace('/login' as never)} />
@@ -228,7 +232,7 @@ export default function MyApplicationsScreen() {
                         tone="danger"
                         iconRight={null}
                         onPress={() =>
-                          setNotice('Withdraw exists only on the retired prototype router — the live API has no withdraw endpoint, so the link is shown but cannot act yet. Flagged, not faked.')
+                          setNotice('Withdrawing an application isn’t available yet — message the business from the gig chat if your plans change.')
                         }
                       />
                     ) : null}
@@ -246,7 +250,6 @@ export default function MyApplicationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  rail: { gap: space.md, paddingHorizontal: layout.screenGutter, paddingVertical: space.md, alignItems: 'center' },
   allChip: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.sm },
 
   content: {
@@ -255,7 +258,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 120,
   },
 
   card: {
@@ -274,20 +276,26 @@ const styles = StyleSheet.create({
   progress: { marginTop: space.xs },
   divider: { marginVertical: space.xs },
 
-  cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
+  cardFooter: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
   budget: { gap: 2 },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: space.base },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: space.base, flexShrink: 1, marginLeft: 'auto' },
 
   pillOutline: {
     borderWidth: 1,
     borderColor: color.primary,
     borderRadius: radius.full,
+    minHeight: layout.tapTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: space.base,
     paddingVertical: space.sm,
   },
   pillSolid: {
     backgroundColor: color.primary,
     borderRadius: radius.full,
+    minHeight: layout.tapTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: space.base,
     paddingVertical: space.sm,
   },

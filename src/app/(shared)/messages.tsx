@@ -15,7 +15,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
@@ -24,7 +24,6 @@ import {
   EmptyState,
   ErrorState,
   Icon,
-  IconButton,
   LoadingSkeleton,
   Screen,
   ScreenHeader,
@@ -33,13 +32,14 @@ import {
 } from '@/components/ui';
 import { BUSINESS_TABS, STUDENT_TABS } from '@/components/ui/BottomTabBar';
 import { apiErrorMessage } from '@/config/api';
-import { getMyGigs, listGigs } from '@/lib/gig-api';
+import { getMyGigs } from '@/lib/gig-api';
 import { listNotifications } from '@/lib/trust-api';
 import { goBusinessTab, goStudentTab } from '@/lib/tab-nav';
 import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 import type { Gig } from '@/types/api';
 
 function timeAgo(iso: string): string {
@@ -105,6 +105,8 @@ function ConversationRow({
 }
 
 export default function MessagesListScreen() {
+  const { contentBottom } = useLayoutMetrics('tabbar');
+
   const { token, user } = useAuth();
   const isBusiness = user?.role === 'BUSINESS';
   const [query, setQuery] = useState('');
@@ -115,11 +117,6 @@ export default function MessagesListScreen() {
     enabled: !!token,
   });
 
-  const openGigsQuery = useQuery({
-    queryKey: ['gigs', 'open', 'messages'],
-    queryFn: () => listGigs(token!, {}),
-    enabled: !!token && !isBusiness,
-  });
 
   const notificationsQuery = useQuery({
     queryKey: ['notifications', 'messages-badge'],
@@ -187,7 +184,7 @@ export default function MessagesListScreen() {
         <SearchBar value={query} onChangeText={setQuery} placeholder="Search conversations..." testID="messages-search" />
       </View>
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {!token ? (
           <EmptyState
             title="Login to see messages"
@@ -268,7 +265,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.md,
-    paddingBottom: 120,
     gap: space.sm,
     maxWidth: layout.maxContentWidth,
     width: '100%',

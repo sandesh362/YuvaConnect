@@ -13,7 +13,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, Share, StyleSheet, View } from 'react-native';
 
 import {
@@ -43,6 +43,7 @@ import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 import { formatDistance, mockDistanceKm } from '@/lib/location';
 
 const SAVED_KEY = 'yuvaconnect:saved-gigs';
@@ -63,6 +64,8 @@ function deadlineLabel(deadline: string) {
 }
 
 export default function GigDetailsScreen() {
+  const { contentBottom } = useLayoutMetrics('actionbar');
+
   const { id } = useLocalSearchParams<{ id: string }>();
   const { token, user } = useAuth();
   const client = useQueryClient();
@@ -191,7 +194,7 @@ export default function GigDetailsScreen() {
         ]}
       />
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {gigQuery.isLoading ? (
           <LoadingSkeleton count={4} variant="card" />
         ) : gigQuery.isError || !gig ? (
@@ -249,8 +252,12 @@ export default function GigDetailsScreen() {
 
             <View style={styles.section}>
               <View style={styles.locationHead}>
-                <Text variant="title2">Work Location</Text>
-                <Text variant="calloutStrong" tone="brand" numberOfLines={1}>
+                {/* The heading keeps its intrinsic width; the value yields and
+                    truncates instead of forcing the heading to wrap. */}
+                <Text variant="title2" style={styles.locationTitle}>
+                  Work Location
+                </Text>
+                <Text variant="calloutStrong" tone="brand" numberOfLines={1} style={styles.locationValue}>
                   {gig.location} • {distanceLabel}
                 </Text>
               </View>
@@ -303,7 +310,7 @@ export default function GigDetailsScreen() {
             <View style={styles.pendingRow}>
               <StatusBadge label={myApplication.status} tone={myApplication.status === 'PENDING' ? 'warning' : 'neutral'} />
               <Text variant="caption" tone="secondary" style={styles.pendingCopy}>
-                You've applied — the business will review your application.
+                You’ve applied — the business will review your application.
               </Text>
             </View>
           ) : (
@@ -407,7 +414,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 160,
   },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexWrap: 'wrap' },
   businessName: { flexShrink: 1 },
@@ -418,7 +424,9 @@ const styles = StyleSheet.create({
   pillWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
   pill: { backgroundColor: color.successSoft, borderRadius: radius.full, paddingHorizontal: space.base, paddingVertical: space.sm },
   pillText: { color: color.successStrong },
-  locationHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
+  locationHead: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  locationTitle: { flexShrink: 0 },
+  locationValue: { flexShrink: 1, textAlign: 'right', marginLeft: 'auto' },
   locationCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -442,7 +450,6 @@ const styles = StyleSheet.create({
   },
   businessCopy: { flex: 1, gap: 2 },
   applyRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, width: '100%' },
-  applyButton: { flex: 1 },
   pendingRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, width: '100%' },
   applyFooter: { gap: space.md, width: '100%' },
   applyingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },

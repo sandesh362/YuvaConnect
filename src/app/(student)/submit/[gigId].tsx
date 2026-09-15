@@ -19,7 +19,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
@@ -43,6 +43,7 @@ import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius, shadow } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 import type { Deliverable } from '@/types/api';
 
 const APPROVED_STATES = ['APPROVED', 'PAID', 'CLOSED'];
@@ -52,6 +53,8 @@ function versionStamp(iso: string) {
 }
 
 export default function SubmitWorkScreen() {
+  const { contentBottom } = useLayoutMetrics('tabbar');
+
   const { gigId } = useLocalSearchParams<{ gigId: string }>();
   const { token } = useAuth();
   const client = useQueryClient();
@@ -123,7 +126,7 @@ export default function SubmitWorkScreen() {
     <Screen testID="screen-submit">
       <ScreenHeader title="Submit Work" subtitle={gig?.title ?? '…'} onBack={() => router.back()} />
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {gigQuery.isLoading ? (
           <LoadingSkeleton count={3} variant="card" />
         ) : gigQuery.isError || !gig ? (
@@ -141,7 +144,7 @@ export default function SubmitWorkScreen() {
                 <View style={styles.flagRow}>
                   <Icon name="info" size={18} color={color.textSecondary} />
                   <Text variant="callout" tone="secondary" style={styles.flagCopy}>
-                    Required-task checklists have no backend column yet — completed rows appear here as you submit real versions. Flagged, not faked.
+                    Checklists aren’t part of a gig yet — the files and links you submit appear here instead.
                   </Text>
                 </View>
               )}
@@ -311,7 +314,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 120,
   },
 
   card: {

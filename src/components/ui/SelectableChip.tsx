@@ -1,9 +1,8 @@
-import React from 'react';
 import { Pressable, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { color } from '@/theme/colors';
 import { radius } from '@/theme/radius';
-import { space } from '@/theme/spacing';
+import { layout, space } from '@/theme/spacing';
 import type { IconName } from '@/theme/icons';
 import { Icon } from './Icon';
 import { Text } from './Text';
@@ -55,38 +54,42 @@ export function SelectableChip({
       accessibilityState={{ selected, checked: selected, disabled }}
       disabled={disabled}
       onPress={onToggle}
-      style={({ pressed }) => [
-        styles.chip,
-        size === 'sm' ? styles.chipSm : styles.chipMd,
-        selected ? (selectedStyle === 'soft' ? styles.chipSelectedSoft : styles.chipSelected) : styles.chipIdle,
-        pressed && { opacity: 0.75 },
-        disabled && { opacity: 0.4 },
-        style,
-      ]}>
-      {icon ? (
-        <Icon
-          name={icon}
-          size={size === 'sm' ? 13 : 15}
-          color={selected ? (selectedStyle === 'soft' ? color.primaryText : color.textInverse) : color.iconDefault}
-        />
-      ) : null}
-      <Text
-        variant={size === 'sm' ? 'caption' : 'label'}
-        style={{
-          color: selected ? (selectedStyle === 'soft' ? color.primaryText : color.textInverse) : color.textPrimary,
-          fontWeight: selected ? '700' : '500',
-        }}
-        numberOfLines={1}>
-        {label}
-      </Text>
-      {count !== undefined ? (
-        <Text variant="caption" style={{ color: selected ? (selectedStyle === 'soft' ? color.primaryText : 'rgba(255,255,255,0.8)') : color.textTertiary }}>
-          {count}
-        </Text>
-      ) : null}
-      {selected && indicator === 'check' ? (
-        <Icon name="check" size={size === 'sm' ? 13 : 15} color={selectedStyle === 'soft' ? color.primaryText : color.textInverse} />
-      ) : null}
+      style={[styles.touch, style]}>
+      {({ pressed }) => (
+        <View
+          style={[
+            styles.chip,
+            size === 'sm' ? styles.chipSm : styles.chipMd,
+            selected ? (selectedStyle === 'soft' ? styles.chipSelectedSoft : styles.chipSelected) : styles.chipIdle,
+            pressed && { opacity: 0.75 },
+            disabled && { opacity: 0.4 },
+          ]}>
+          {icon ? (
+            <Icon
+              name={icon}
+              size={size === 'sm' ? 13 : 15}
+              color={selected ? (selectedStyle === 'soft' ? color.primaryText : color.textInverse) : color.iconDefault}
+            />
+          ) : null}
+          <Text
+            variant={size === 'sm' ? 'caption' : 'label'}
+            style={{
+              color: selected ? (selectedStyle === 'soft' ? color.primaryText : color.textInverse) : color.textPrimary,
+              fontWeight: selected ? '700' : '500',
+            }}
+            numberOfLines={1}>
+            {label}
+          </Text>
+          {count !== undefined ? (
+            <Text variant="caption" style={{ color: selected ? (selectedStyle === 'soft' ? color.primaryText : 'rgba(255,255,255,0.8)') : color.textTertiary }}>
+              {count}
+            </Text>
+          ) : null}
+          {selected && indicator === 'check' ? (
+            <Icon name="check" size={size === 'sm' ? 13 : 15} color={selectedStyle === 'soft' ? color.primaryText : color.textInverse} />
+          ) : null}
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -152,6 +155,8 @@ export function ChipGroup({
 }
 
 const styles = StyleSheet.create({
+  /* Transparent tap box so a compact pill still offers a 44pt target. */
+  touch: { minHeight: layout.tapTarget, minWidth: layout.tapTarget, justifyContent: 'center' },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',

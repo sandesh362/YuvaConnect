@@ -12,7 +12,7 @@
  */
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import {
@@ -37,6 +37,7 @@ import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import { radius } from '@/theme/radius';
 import { layout, space } from '@/theme/spacing';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 
 type CategoryKey = 'user' | 'payment' | 'verification' | 'other';
 
@@ -75,6 +76,8 @@ const FAQ = [
 ];
 
 export default function SupportScreen() {
+  const { contentBottom } = useLayoutMetrics('actionbar');
+
   const { token } = useAuth();
   const [category, setCategory] = useState<CategoryKey | null>(null);
   const [reason, setReason] = useState('');
@@ -139,7 +142,7 @@ export default function SupportScreen() {
         trailing={<Icon name="info" size={22} color={color.textPrimary} />}
       />
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {done ? (
           <SuccessState
             fill={false}
@@ -289,7 +292,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxContentWidth,
     width: '100%',
     alignSelf: 'center',
-    paddingBottom: 160,
   },
   section: { gap: space.md },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
@@ -303,11 +305,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: color.borderSubtle,
+    // Full width: sizing this row to its content let a long label push the card
+    // past the screen edge on a 320pt phone.
+    alignSelf: 'stretch',
     padding: space.base,
-    alignSelf: 'flex-start',
-    paddingRight: space['2xl'],
   },
-  uploadCopy: { gap: 2 },
+  uploadCopy: { flex: 1, minWidth: 0, gap: 2 },
   attachmentList: { gap: space.xs },
   attachmentRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   attachmentUrl: { flex: 1 },
@@ -315,5 +318,4 @@ const styles = StyleSheet.create({
   error: { marginTop: space.sm },
   bar: { gap: space.sm, width: '100%' },
   barHint: { textAlign: 'center' },
-  submitWrap: { width: '100%' },
 });
