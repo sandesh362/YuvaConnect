@@ -7,7 +7,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 
 import { Banner, BottomActionBar, Button, Icon, RoleSelectCard, Screen, Text, TextLink } from '@/components/ui';
 import { color } from '@/theme/colors';
@@ -30,7 +30,7 @@ const LOGO_TILE = 56;
 export default function RoleSelectionScreen() {
   const params = useLocalSearchParams<{ role?: string }>();
   const [role, setRole] = useState<UserRole>(params.role === 'BUSINESS' ? 'BUSINESS' : 'STUDENT');
-  const insets = useSafeAreaInsets();
+  const { contentBottom } = useLayoutMetrics('actionbar');
 
   const continueToSignup = () => router.push(`/(auth)/signup?role=${role}` as never);
 
@@ -38,7 +38,7 @@ export default function RoleSelectionScreen() {
     <Screen testID="screen-role-selection" tone="sunken">
       <ScrollView
         style={styles.scroller}
-        contentContainerStyle={[styles.content, { paddingBottom: 160 + Math.max(insets.bottom, 0) }]}
+        contentContainerStyle={[styles.content, { paddingBottom: contentBottom }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
         <View style={styles.brand}>

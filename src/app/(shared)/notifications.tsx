@@ -37,6 +37,7 @@ import { STUDENT_TABS, BUSINESS_TABS } from '@/components/ui/BottomTabBar';
 import { apiErrorMessage } from '@/config/api';
 import { listNotifications, markAllNotificationsRead, markNotificationRead } from '@/lib/trust-api';
 import { goStudentTab, goBusinessTab } from '@/lib/tab-nav';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import type { IconName } from '@/theme/icons';
@@ -152,6 +153,8 @@ function matches(item: NotificationItem, filter: FilterKey) {
 }
 
 export default function NotificationsScreen() {
+  const { contentBottom } = useLayoutMetrics('tabbar');
+
   const { token, user } = useAuth();
   const client = useQueryClient();
   const [filter, setFilter] = useState<FilterKey>('All');
@@ -268,7 +271,7 @@ export default function NotificationsScreen() {
         </View>
       ) : null}
 
-      <ScrollView style={{flex:1}} contentContainerStyle={[styles.list, {flexGrow:1}]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex:1}} contentContainerStyle={[styles.list, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false}>
         {!token ? (
           <EmptyState title="Login to see notifications" icon="bell" primaryLabel="Login" onPrimary={() => router.replace('/login' as never)} />
         ) : query.isLoading ? (
@@ -359,7 +362,7 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   allChip: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.sm },
 
-  list: { paddingBottom: 120 },
+  list: {},
 
   dayBar: {
     backgroundColor: color.skeletonBase,

@@ -116,21 +116,27 @@ export default function TalentPoolScreen() {
           />
         ) : null}
 
-        <InfoBanner
-          tone="info"
-          icon="info"
-          title="Saved talent isn’t available yet"
-          description="Saving a candidate isn’t supported yet, so this list stays empty. Review, shortlist and select students from Manage Applicants instead — that flow is live."
-        />
+        {/* The notice and the empty state are one message, so they travel
+            together: centred as a pair instead of one pinned to the top and the
+            other floating in the middle of the screen. */}
+        <View style={styles.emptyGroup}>
+          <InfoBanner
+            tone="info"
+            icon="info"
+            title="Saved talent isn’t available yet"
+            description="Saving a candidate isn’t supported yet, so this list stays empty. Review, shortlist and select students from Manage Applicants instead — that flow is live."
+          />
 
-        <EmptyState
-          title="No saved talent yet"
-          description="Nothing can be saved here yet. Use Manage Applicants to review the students who applied to your gigs."
-          icon="people"
-          wellSize="lg"
-          primaryLabel="Manage Gigs"
-          onPrimary={() => router.push("/(business)/my-gigs" as never)}
-        />
+          <EmptyState
+            title="No saved talent yet"
+            description="Nothing can be saved here yet. Use Manage Applicants to review the students who applied to your gigs."
+            icon="people"
+            wellSize="lg"
+            fill={false}
+            primaryLabel="Manage Gigs"
+            onPrimary={() => router.push("/(business)/my-gigs" as never)}
+          />
+        </View>
       </ScrollView>
 
       <BottomTabBar
@@ -143,6 +149,12 @@ export default function TalentPoolScreen() {
 }
 
 const styles = StyleSheet.create({
+  /* Notice + empty state travel together, centred in the free space. */
+  emptyGroup: {
+    flexGrow: 1,
+    justifyContent: "center",
+    gap: space.base,
+  },
   content: {
     paddingHorizontal: layout.screenGutter,
     paddingTop: space.base,

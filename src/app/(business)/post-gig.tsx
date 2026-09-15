@@ -32,6 +32,7 @@ import {
   TextLink,
 } from '@/components/ui';
 import { apiErrorMessage } from '@/config/api';
+import { BUSINESS_CATEGORIES, isKnownBusinessCategory } from '@/lib/business-categories';
 import { createGig, getGig, updateGig } from '@/lib/gig-api';
 import { getProfile } from '@/lib/profile-api';
 import { useAuth } from '@/providers/auth-provider';
@@ -54,17 +55,6 @@ const SUGGESTED_SKILLS = [
   'Web Development',
 ];
 
-const CATEGORIES = [
-  'Photography',
-  'Food & Restaurant',
-  'Retail & Shop',
-  'Digital Services',
-  'Education & Coaching',
-  'Events & Media',
-  'Salon & Wellness',
-  'Logistics & Delivery',
-  'Other',
-];
 
 const PAYMENT_TYPES = ['Fixed Price', 'Hourly'];
 
@@ -170,13 +160,16 @@ export default function PostGigScreen() {
     setDeadline(new Date(gig.deadline).toISOString().slice(0, 10));
   }
 
-  // Default the category from the business profile when creating a new gig.
+  // Default the category from the business profile when creating a new gig —
+  // but only when the stored value is one of the picker's options.
+  // BusinessProfile.category is a free string, so an off-list value would
+  // otherwise sit in the field with no matching row in the sheet.
   const [usedProfileCategory, setUsedProfileCategory] = useState(false);
   const profileCategory =
     profileQuery.data?.profile && 'category' in profileQuery.data.profile ? profileQuery.data.profile.category : '';
-  if (profileCategory && !usedProfileCategory && !category) {
+  if (!usedProfileCategory && profileQuery.data && !category) {
     setUsedProfileCategory(true);
-    setCategory(profileCategory);
+    if (isKnownBusinessCategory(profileCategory)) setCategory(profileCategory);
   }
 
   const validate = (): boolean => {
@@ -462,7 +455,7 @@ export default function PostGigScreen() {
       </View>
 
       <Sheet visible={sheet === 'category'} onClose={() => setSheet(null)} title="Category">
-        {CATEGORIES.map((item) => (
+        {BUSINESS_CATEGORIES.map((item) => (
           <RadioRow
             key={item}
             label={item}

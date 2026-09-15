@@ -41,6 +41,7 @@ import { apiErrorMessage } from '@/config/api';
 import { listGigs } from '@/lib/gig-api';
 import { toGigCardData } from '@/lib/gig-card-data';
 import { goStudentTab } from '@/lib/tab-nav';
+import { useLayoutMetrics } from '@/hooks/use-layout-metrics';
 import { useAuth } from '@/providers/auth-provider';
 import { color } from '@/theme/colors';
 import type { IconName } from '@/theme/icons';
@@ -60,6 +61,8 @@ const POPULAR: { label: string; icon: IconName; tint: string; fg: string }[] = [
 ];
 
 export default function GlobalSearchScreen() {
+  const { contentBottom } = useLayoutMetrics('tabbar');
+
   const { token } = useAuth();
 
   const [query, setQuery] = useState('');
@@ -169,7 +172,7 @@ export default function GlobalSearchScreen() {
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
-        <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, {flexGrow:1}]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView style={{flex:1}} contentContainerStyle={[styles.content, { flexGrow: 1, paddingBottom: contentBottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {!token ? (
             <EmptyState title="Login to search" description="Search looks through every open gig near you. Login to get started." icon="searchEmpty" primaryLabel="Login" onPrimary={() => router.push('/login' as never)} />
           ) : gigsQuery.isError ? (
@@ -310,7 +313,7 @@ const styles = StyleSheet.create({
   field: { flex: 1 },
   rail: { paddingHorizontal: space.base },
 
-  content: { padding: layout.screenGutter, gap: space.xl, maxWidth: layout.maxContentWidth, width: '100%', alignSelf: 'center', paddingBottom: 120 },
+  content: { padding: layout.screenGutter, gap: space.xl, maxWidth: layout.maxContentWidth, width: '100%', alignSelf: 'center' },
   section: { gap: space.md },
   notice: { marginBottom: space.none },
   list: { gap: space.xl },

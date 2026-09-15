@@ -42,6 +42,7 @@ import {
   TextLink,
 } from "@/components/ui";
 import { apiErrorMessage } from "@/config/api";
+import { BUSINESS_CATEGORIES } from "@/lib/business-categories";
 import { getProfile, updateProfile, uploadImage } from "@/lib/profile-api";
 import { useAuth } from "@/providers/auth-provider";
 import { color } from "@/theme/colors";
@@ -51,16 +52,6 @@ import { useLayoutMetrics } from "@/hooks/use-layout-metrics";
 
 const DOCS_KEY = "yuvaconnect:business-docs";
 
-const CATEGORIES = [
-  "Food & Restaurant",
-  "Retail & Shop",
-  "Digital Services",
-  "Education & Coaching",
-  "Events & Media",
-  "Salon & Wellness",
-  "Logistics & Delivery",
-  "Other",
-];
 
 type StoredDocs = { pan: StoredDoc | null; address: StoredDoc | null };
 type StoredDoc = { name: string; size: string; url: string };
@@ -349,7 +340,7 @@ export default function BusinessVerificationScreen() {
         onClose={() => setCategoryOpen(false)}
         title="Business Category"
       >
-        {CATEGORIES.map((item) => (
+        {BUSINESS_CATEGORIES.map((item) => (
           <RadioRow
             key={item}
             label={item}
